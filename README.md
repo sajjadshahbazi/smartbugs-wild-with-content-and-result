@@ -1,1 +1,1 @@
-# -smartbugs-wild_content_result
+# smartbugs-wild_content_result
