@@ -1,0 +1,179 @@
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol ... [0m/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.10;
+^---------------------^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:36:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:42:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:48:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:54:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:60:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:66:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:72:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:78:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol ... [0m/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.10;
+^---------------------^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:36:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:42:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:48:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:54:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:60:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:66:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:72:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:78:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:87:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol ... [0m/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.10;
+^---------------------^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:36:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:42:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:48:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:54:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:60:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:66:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:72:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:78:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol ... [0m/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.10;
+^---------------------^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:36:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:42:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:48:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:54:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:60:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:66:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:72:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:78:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol ... [0m/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.10;
+^---------------------^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:36:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:42:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:48:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:54:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:60:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:66:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:72:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:78:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol ... [0m/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.10;
+^---------------------^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:36:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:42:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:48:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:54:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:60:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:66:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:72:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+            ^---^
+/unique_chucks/10/0x851b7f3ab81bd8df354f0d7640efcd7288553419.sol:78:13: Warning: "throw" is deprecated in favour of "revert()", "require()" and "assert()".
+            throw;
+
+[91m[-] Cannot compile the contract [0m

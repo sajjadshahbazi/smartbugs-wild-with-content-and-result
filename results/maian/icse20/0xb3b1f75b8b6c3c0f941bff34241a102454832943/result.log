@@ -1,0 +1,421 @@
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+    function implementsERC721() public view returns (bool implementsERC721) {
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+    function implementsERC721() public view returns (bool implementsERC721) {
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+    function implementsERC721() public view returns (bool implementsERC721) {
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+    function implementsERC721() public view returns (bool implementsERC721) {
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+    function implementsERC721() public view returns (bool implementsERC721) {
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+    function implementsERC721() public view returns (bool implementsERC721) {
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+    function implementsERC721() public view returns (bool implementsERC721) {
+    ^ (Relevant source part starts here and spans across multiple lines).
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+    function implementsERC721() public view returns (bool implementsERC721) {
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+    function implementsERC721() public view returns (bool implementsERC721) {
+    ^ (Relevant source part starts here and spans across multiple lines).
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+    function implementsERC721() public view returns (bool implementsERC721) {
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+    function implementsERC721() public view returns (bool implementsERC721) {
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+    function implementsERC721() public view returns (bool implementsERC721) {
+    ^ (Relevant source part starts here and spans across multiple lines).
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+    function implementsERC721() public view returns (bool implementsERC721) {
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol ... [0m/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.24;
+^---------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:77:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Ownable() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:137:5: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+    function MineralBase() public {
+    ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:54: Warning: This declaration shadows an existing declaration.
+    function implementsERC721() public view returns (bool implementsERC721) {
+                                                     ^-------------------^
+/unique_chucks/6/0xb3b1f75b8b6c3c0f941bff34241a102454832943.sol:356:5: The shadowed declaration is here:
+
+[91m[-] Cannot compile the contract [0m

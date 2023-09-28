@@ -1,0 +1,343 @@
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function SerenityToken() ERC20Token("Serenity", "SRNT", 18) public {
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function SerenityToken() ERC20Token("Serenity", "SRNT", 18) public {
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function SerenityToken() ERC20Token("Serenity", "SRNT", 18) public {
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function SerenityToken() ERC20Token("Serenity", "SRNT", 18) public {
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function SerenityToken() ERC20Token("Serenity", "SRNT", 18) public {
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function SerenityToken() ERC20Token("Serenity", "SRNT", 18) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:270:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+
+[91m[-] Cannot compile the contract [0m
+
+====================================================================================================
+[1m[ ] Compiling Solidity contract from the file /unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol ... [0m/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:1:1: Error: Source file requires different compiler version (current compiler is 0.4.25+commit.59dbf8f1.Linux.g++ - note that nightly builds are considered to be strictly less than the released version
+pragma solidity 0.4.18;
+^---------------------^
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:11:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function Owned() public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:86:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+  function ERC20Token(string _name, string _symbol, uint8 _decimals) public {
+  ^ (Relevant source part starts here and spans across multiple lines).
+/unique_chucks/3/0xbc7942054f77b82e8a71ace170e4b00ebae67eb6.sol:151:3: Warning: Defining constructors as functions with the same name as the contract is deprecated. Use "constructor(...) { ... }" instead.
+
+[91m[-] Cannot compile the contract [0m

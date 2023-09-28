@@ -1,0 +1,12 @@
+{
+  "contract": "0xee3e4e2467c0c5aa7b7d944881d51ccb36fefcca",
+  "tool": "maian",
+  "start": 1565527685.4733195,
+  "end": 1565528238.5859234,
+  "duration": 553.1126039028168,
+  "analysis": {
+    "is_lock_vulnerable": false,
+    "is_prodigal_vulnerable": false,
+    "is_suicidal_vulnerable": false
+  }
+}
