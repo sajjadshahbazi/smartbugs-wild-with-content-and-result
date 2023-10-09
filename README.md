@@ -1,5 +1,7 @@
 # smartbugs wild with content and result
-'''def read_text_file(file_path, name):
+
+```
+def read_text_file(file_path, name):
     with open(file_path, encoding="utf8") as f:
         smartContractContent = f.read()
         words = runTasks(smartContractContent)
@@ -7,13 +9,14 @@
         print(words)
         model = Word2Vec([words], vector_size=100, window=5, min_count=1, sg=0)
         print(model.wv.vectors)
+
         print(name)
         # print(smartContractContent)
         isVulnarable = gerResultVulnarable(name)
         print(isVulnarable)
         print("======================================================================================")
-        return isVulnarable'''
-
+        return isVulnarable
+```
 
         
 After inspecting all 35 analysis tools presented in Table 1, we found 9 tools that meet the inclusion criteria outlined. Table 2 presents the excluded and included tools, and for the excluded ones, it also shows which criteria they did not meet.
