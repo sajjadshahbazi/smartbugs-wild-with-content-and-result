@@ -1,5 +1,24 @@
 # smartbugs wild with content and result
 
+```
+def read_text_file(file_path, name):
+    with open(file_path, encoding="utf8") as f:
+        smartContractContent = f.read()
+        words = runTasks(smartContractContent)
+        # Example: Accessing word embeddings
+        print(words)
+        model = Word2Vec([words], vector_size=100, window=5, min_count=1, sg=0)
+        print(model.wv.vectors)
+
+        print(name)
+        # print(smartContractContent)
+        isVulnarable = gerResultVulnarable(name)
+        print(isVulnarable)
+        print("======================================================================================")
+        return isVulnarable
+```
+
+        
 After inspecting all 35 analysis tools presented in Table 1, we found 9 tools that meet the inclusion criteria outlined. Table 2 presents the excluded and included tools, and for the excluded ones, it also shows which criteria they did not meet.
 - HoneyBadger is developed by a group of researchers at the University of Luxembourg and is an Oyente-based (see below) tool that employs symbolic execution and a set of heuristics to pinpoint honeypots in smart contracts. Honeypots are smart contracts that appear to have an obvious flaw in their design, which allows an arbitrary user to drain Ether2 from the contract, given that the user transfers a priori a certain amount of Ether to the contract. When HoneyBadger detects that a contract appears to be vulnerable, it means that the developer of the contract wanted to make the contract look vulnerable, but is not vulnerable.
 - Maian, developed jointly by researchers from the National University of Singapore and University College London, is also based on the Oyente tool. Maian looks for contracts that can be self destructed or drained of Ether from arbitrary addresses, or that accept Ether but do not have a payout functionality. A dynamic analysis in a private blockchain is then used to reduce the number of false positives.
