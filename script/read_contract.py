@@ -4,7 +4,6 @@ import os
 import json
 import sys
 import operator
-import re
 from datetime import timedelta
 from pre_proccessing import runTasks
 from gensim.models import Word2Vec
@@ -15,7 +14,7 @@ vul_count = 0
 # Folder Path
 ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 path = f"{ROOT}\\contract\\" # temp data set
-# path = f"{ROOT}\\contract\\" # main data set
+# path = f"{ROOT}\\contracts\\" # main data set
   
 # Change the directorygrdf
 os.chdir(path)
