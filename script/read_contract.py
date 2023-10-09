@@ -6,13 +6,16 @@ import sys
 import operator
 import re
 from datetime import timedelta
+from pre_proccessing import runTasks
+from gensim.models import Word2Vec
 
 safe_count = 0
 vul_count = 0
   
 # Folder Path
 ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-path = f"{ROOT}\\contracts\\"
+path = f"{ROOT}\\contract\\" # temp data set
+# path = f"{ROOT}\\contract\\" # main data set
   
 # Change the directorygrdf
 os.chdir(path)
@@ -21,9 +24,15 @@ def read_text_file(file_path, name):
     with open(file_path, encoding="utf8") as f:
         print("######################################################################################")
         smartContractContent = f.read()
+        words = runTasks(smartContractContent)
+        # Example: Accessing word embeddings
+        print(words)
+        model = Word2Vec([words], vector_size=100, window=5, min_count=1, sg=0)
+        print(model.wv.vectors)
+
         print("######################################################################################")
         print(name)
-        print(smartContractContent)
+        # print(smartContractContent)
         isVulnarable = gerResultVulnarable(name)
         print(isVulnarable)
         print("======================================================================================")
