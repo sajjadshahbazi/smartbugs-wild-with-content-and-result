@@ -5,8 +5,11 @@ import json
 import sys
 import operator
 from datetime import timedelta
-from pre_proccessing import runTasks
+from pre_proccessing import run_tasks
+from pre_proccessing import run_takes01
+from pre_proccessing import run_task02
 from gensim.models import Word2Vec
+from tokeniz import get_vec
 
 safe_count = 0
 vul_count = 0
@@ -23,18 +26,23 @@ def read_text_file(file_path, name):
     with open(file_path, encoding="utf8") as f:
         print("######################################################################################")
         smartContractContent = f.read()
-        words = runTasks(smartContractContent)
+        # words = get_vec(smartContractContent)
+        # words = run_takes01(smartContractContent)
+        words = run_tasks(smartContractContent)
+        # words = run_task02(smartContractContent)
         # Example: Accessing word embeddings
         print(words)
         model = Word2Vec([words], vector_size=100, window=5, min_count=1, sg=0)
-        print(model.wv.vectors)
-
-        print("######################################################################################")
+        # print(model.wv.vectors)
+        # print(parse_file(words))
+        print(words)
         print(name)
-        # print(smartContractContent)
+        print(smartContractContent)
         isVulnarable = gerResultVulnarable(name)
-        print(isVulnarable)
-        print("======================================================================================")
+        # print(isVulnarable)
+        print("######################################################################################")
+
+        # print("======================================================================================")
         return isVulnarable
             
         
@@ -44,10 +52,14 @@ duration_stat = {}
 
 count = {}
 output = {}
-# tools = ['mythril','slither','osiris','smartcheck','manticore','maian','securify', 'honeybadger'] 
+# tools = ['mythril','slither','osiris','smartcheck','manticore','maian','securify', 'honeybadger'] # all tools
 # if you want show result of tools, you most put name tools in the list
-tools = ['mythril','securify','maian','manticore', 'osiris', 'honeybadger']
-# tools = ['mythril','securify','smartcheck','smartcheck','manticore','smartcheck']
+# tools = ['mythril','securify','maian','manticore', 'osiris', 'honeybadger'] # sum safe smart contract: 10000, sum vulnarable smart contract: 35000
+# tools = ['smartcheck','slither'] #sum safe smart contract: 110, sum vulnarable smart contract: 47288
+# tools = ['slither'] #sum safe smart contract: 6710, sum vulnarable smart contract: 40688
+#tools = ['smartcheck'] #sum safe smart contract: 126, sum vulnarable smart contract: 47272
+tools = ['mythril','securify','maian','manticore', 'honeybadger'] #sum safe smart contract: 12618, sum vulnarable smart contract: 34780
+
 
 def gerResultVulnarable(contract):
         total_duration = 0
@@ -136,6 +148,26 @@ def gerResultVulnarable(contract):
         return res
 
 
+def parse_file(contract):
+    fragment = []
+    fragment_val = 0
+    for line in contract:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if "-" * 33 in line and fragment:
+            yield fragment, fragment_val
+            fragment = []
+        elif stripped.split()[0].isdigit():
+            if fragment:
+                if stripped.isdigit():
+                    fragment_val = int(stripped)
+                else:
+                    fragment.append(stripped)
+        else:
+            fragment.append(stripped)
+
+
 # iterate through all file
 for sss in ["1"]:
     for file in os.listdir():
@@ -147,7 +179,7 @@ for sss in ["1"]:
             # call read text file function
             if(read_text_file(file_path, name)):
                 vul_count += 1
-            else : 
+            else :
                 safe_count += 1
 
 print(f"sum safe smart contract: {safe_count}")
