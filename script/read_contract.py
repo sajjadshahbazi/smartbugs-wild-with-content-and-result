@@ -10,6 +10,8 @@ from pre_proccessing import run_tasks
 from pre_proccessing import run_takes01
 from pre_proccessing import run_task02
 from gensim.models import Word2Vec
+
+from script.embeding_word_03 import run_task_04
 from tokeniz import get_vec
 
 safe_count = 0
@@ -29,23 +31,25 @@ def read_text_file(file_path, name):
         smartContractContent = f.read()
         # words = get_vec(smartContractContent)
         # words = run_takes01(smartContractContent)
-        words = preprocess_contract3(smartContractContent)
+        words = run_task_04(smartContractContent)
         # words = run_tasks(smartContractContent)
         # words = run_task02(smartContractContent)
         # Example: Accessing word embeddings
         print(words)
-        # model = Word2Vec([words], vector_size=100, window=5, min_count=1, sg=0)
-        # print(model.wv.vectors)
+        # model = Word2Vec([words], vector_size=300, window=5, min_count=1, sg=0)
+        model = Word2Vec(words, vector_size=300, window=5, min_count=1, sg=0)
+        # Vectors
+        print(model.wv.vectors)
         # print(parse_file(words))
         # print(words)
         print(name)
-        print(smartContractContent)
+        # print(smartContractContent)
         isVulnarable = gerResultVulnarable(name)
-        # print(isVulnarable)
+        print(isVulnarable)
         print("######################################################################################")
 
         # print("======================================================================================")
-        return isVulnarable
+        # return isVulnarable
             
         
 
