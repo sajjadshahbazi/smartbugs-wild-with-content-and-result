@@ -2,6 +2,7 @@
 # Import Module
 import os
 import json
+import re
 import sys
 import operator
 from datetime import timedelta
@@ -21,21 +22,22 @@ path = f"{ROOT}\\contract\\" # temp data set
   
 # Change the directorygrdf
 os.chdir(path)
-  
+
 def read_text_file(file_path, name):
     with open(file_path, encoding="utf8") as f:
         print("######################################################################################")
         smartContractContent = f.read()
         # words = get_vec(smartContractContent)
         # words = run_takes01(smartContractContent)
-        words = run_tasks(smartContractContent)
+        words = preprocess_contract3(smartContractContent)
+        # words = run_tasks(smartContractContent)
         # words = run_task02(smartContractContent)
         # Example: Accessing word embeddings
         print(words)
-        model = Word2Vec([words], vector_size=100, window=5, min_count=1, sg=0)
+        # model = Word2Vec([words], vector_size=100, window=5, min_count=1, sg=0)
         # print(model.wv.vectors)
         # print(parse_file(words))
-        print(words)
+        # print(words)
         print(name)
         print(smartContractContent)
         isVulnarable = gerResultVulnarable(name)
@@ -166,6 +168,61 @@ def parse_file(contract):
                     fragment.append(stripped)
         else:
             fragment.append(stripped)
+
+
+def preprocess_contract3(solidity_code):
+    # 1. Remove Solidity version pragma
+    solidity_code = re.sub(r'pragma solidity\s+\^?\d+\.\d+\.\d+;', '', solidity_code)
+
+    # 2. Remove comments and non-ASCII values
+    solidity_code = re.sub(r'\/\/[^\n]*|\/\*[\s\S]*?\*\/|[^ -~]', ' ', solidity_code)
+
+    # 3. Remove blank lines
+    solidity_code = '\n'.join(line for line in solidity_code.split('\n') if line.strip())
+
+    # 4. Remove lines that just consist of spaces
+    solidity_code = '\n'.join(line for line in solidity_code.split('\n') if not line.isspace())
+
+    # 5. Remove the first spaces before sentences on each line
+    solidity_code = re.sub(r'^\s+', '', solidity_code, flags=re.MULTILINE)
+
+    # 6. Represent user-defined function names as FUN plus numbers
+    function_names = re.findall(r'function\s+(\w+)\s*\(', solidity_code)
+    function_name_mapping = {}
+    for i, name in enumerate(function_names):
+        function_name_mapping[name] = f'FUN{i}'
+    for name, replacement in function_name_mapping.items():
+        solidity_code = re.sub(f'function\\s+{name}\\b', f'function {replacement}', solidity_code)
+
+    # 7. Represent user-defined variable names as VAR plus numbers
+    variable_names = re.findall(r'\bvar\s+(\w+)\s*;', solidity_code)
+    variable_name_mapping = {}
+    for i, name in enumerate(variable_names):
+        variable_name_mapping[name] = f'VAR{i}'
+    for name, replacement in variable_name_mapping.items():
+        solidity_code = re.sub(f'\\bvar\\s+{name}\\s*;', f'var {replacement};', solidity_code)
+
+    # Print the processed Solidity code
+    # print(solidity_code)
+
+    # Extract words from the processed Solidity code
+    words = re.findall(r'\b\w+\b', solidity_code)
+    return words
+
+
+def preprocess_contract2(contract):
+    # Remove the solidity version pragma
+    contract = re.sub(r'pragma\s+solidity\s+\^?\d+\.\d+\.\d+;', '', contract)
+    # Remove every line containing 'pragma solidity'
+    contract = re.sub(r'^\s*pragma\s+solidity\s+.*\n', '\n', contract, flags=re.MULTILINE)
+    # Remove blank lines and lines with only spaces
+    contract = re.sub(r'(?:(?:\r\n|\r|\n)\s*){2,}', '\n', contract)
+    # Remove comments and non-ASCII characters
+    contract_text = re.sub(r'//.*?\n|/\*.*?\*/', '', contract, flags=re.S)
+
+    # Remove non-ASCII characters
+    contract_text = ''.join(char for char in contract_text if ord(char) < 128)
+    return contract_text
 
 
 # iterate through all file
