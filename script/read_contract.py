@@ -19,7 +19,7 @@ vul_count = 0
   
 # Folder Path
 ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-path = f"{ROOT}\\contract\\" # temp data set
+path = f"{ROOT}\\contracts\\" # temp data set
 # path = f"{ROOT}\\contracts\\" # main data set
   
 # Change the directorygrdf
@@ -64,7 +64,8 @@ output = {}
 # tools = ['smartcheck','slither'] #sum safe smart contract: 110, sum vulnarable smart contract: 47288
 # tools = ['slither'] #sum safe smart contract: 6710, sum vulnarable smart contract: 40688
 #tools = ['smartcheck'] #sum safe smart contract: 126, sum vulnarable smart contract: 47272
-tools = ['mythril','securify','maian','manticore', 'honeybadger'] #sum safe smart contract: 12618, sum vulnarable smart contract: 34780
+# tools = ['mythril','securify','maian','manticore', 'honeybadger'] #sum safe smart contract: 12618, sum vulnarable smart contract: 34780
+tools = ['mythril']  # sum safe smart contract: 24354 sum vulnarable smart contract: 23044
 
 
 def gerResultVulnarable(contract):
