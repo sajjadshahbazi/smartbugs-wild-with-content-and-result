@@ -288,8 +288,8 @@ def run_task_04(contract):
     fragments = clean_fragment(segments)
     for fragment in fragments:
         frg = tokenize(fragment)
-        print(frg)
+        # print(frg)
         frgs.append(frg)
-        print("--------------------------------------------------------------")
+        # print("--------------------------------------------------------------")
 
     return frgs
