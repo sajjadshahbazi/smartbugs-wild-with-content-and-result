@@ -277,6 +277,24 @@ def rename_user_defined_identifiers(contract_text):
     return contract_text
 
 
+def run_task_06(contract):
+    frgs = []
+    contract = remove_version(contract)
+    contract = remove_comments_and_non_ascii(contract)
+    contract = remove_begginer_space(contract)
+    contract = remove_black_lines(contract)
+    contract = rename_user_defined_identifiers(contract)
+    segments = contract.strip().split('\n')
+    fragments = clean_fragment(segments)
+    # for fragment in fragments:
+    #     frg = tokenize(fragment)
+    #     # print(frg)
+    #     frgs.append(frg)
+        # print("--------------------------------------------------------------")
+
+    return fragments
+
+
 def run_task_04(contract):
     frgs = []
     contract = remove_version(contract)
@@ -293,3 +311,22 @@ def run_task_04(contract):
         # print("--------------------------------------------------------------")
 
     return frgs
+
+
+
+    # def run_task_05(contract):
+    # frgms = []
+    # contract = remove_version(contract)
+    # contract = remove_comments_and_non_ascii(contract)
+    # contract = remove_begginer_space(contract)
+    # contract = remove_black_lines(contract)
+    # contract = rename_user_defined_identifiers(contract)
+    # segments = contract.strip().split('\n')
+    # fragments = clean_fragment(segments)
+    # for fragment in fragments:
+    #     frg = tokenize(fragment)
+    #     # print(frg)
+    #     frgms.append(frg)
+    #     # print("--------------------------------------------------------------")
+    #
+    # return frgms

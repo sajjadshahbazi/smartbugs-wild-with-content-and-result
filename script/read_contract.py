@@ -65,7 +65,8 @@ output = {}
 # tools = ['slither'] #sum safe smart contract: 6710, sum vulnarable smart contract: 40688
 #tools = ['smartcheck'] #sum safe smart contract: 126, sum vulnarable smart contract: 47272
 # tools = ['mythril','securify','maian','manticore', 'honeybadger'] #sum safe smart contract: 12618, sum vulnarable smart contract: 34780
-tools = ['mythril']  # sum safe smart contract: 24354 sum vulnarable smart contract: 23044
+# tools = ['mythril']  # sum safe smart contract: 24354 sum vulnarable smart contract: 23044
+tools = ['mythril', 'oyente','maian','securify'] #
 
 
 def gerResultVulnarable(contract):
@@ -106,21 +107,25 @@ def gerResultVulnarable(contract):
                     if analysis['issues'] is not None:
                         for result in analysis['issues']:
                             vulnerability = result['title'].strip()
+                            # print(vulnerability)
                             res = True
                 elif tool == 'oyente' or tool == 'osiris':
                     for analysis in data['analysis']:
                         if analysis['errors'] is not None:
                             for result in analysis['errors']:
                                 vulnerability = result['message'].strip()
+                                # print(vulnerability)
                                 res = True
                 elif tool == 'manticore':
                     for analysis in data['analysis']:
                         for result in analysis:
                             vulnerability = result['name'].strip()
+                            # print(vulnerability)
                             res = True
                 elif tool == 'maian':
                     for vulnerability in data['analysis']:
                         if data['analysis'][vulnerability]:
+                            # print(vulnerability)
                             res = True
                 elif tool == 'securify':
                     for f in data['analysis']:
@@ -128,29 +133,34 @@ def gerResultVulnarable(contract):
                         for vulnerability in analysis:
                             for line in analysis[vulnerability]['violations']:
                                 res = True
+                                # print(vulnerability)
                 elif tool == 'slither':
                     analysis = data['analysis']
                     for result in analysis:
                         vulnerability = result['check'].strip()
                         line = None
                         if 'source_mapping' in result['elements'][0] and len(result['elements'][0]['source_mapping']['lines']) > 0:
-                            line = result['elements'][0]['source_mapping']['lines'][0] 
+                            line = result['elements'][0]['source_mapping']['lines'][0]
+                            # print(vulnerability)
                             res = True
                 elif tool == 'smartcheck':
                     analysis = data['analysis']
                     for result in analysis:
                         vulnerability = result['name'].strip()
+                        # print(vulnerability)
                         res = True
                 elif tool == 'solhint':
                     analysis = data['analysis']
                     for result in analysis:
                         vulnerability = result['type'].strip()
+                        print(vulnerability)
                         res = True
                 elif tool == 'honeybadger':
                     for analysis in data['analysis']:
                         if analysis['errors'] is not None:
                             for result in analysis['errors']:
                                 vulnerability = result['message'].strip()
+                                # print(vulnerability)
                                 res = True
         return res
 
