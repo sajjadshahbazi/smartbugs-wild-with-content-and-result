@@ -44,6 +44,35 @@ count = {}
 output = {}
 
 
+# def get_vectors_df(filename, vector_length=300):
+#     fragments = []
+#     count = 0
+#     vectorizer = FragmentVectorizer(vector_length)
+#     for fragment, val in parse_file(filename):
+#         count += 1
+#         print("Collecting fragments...", count, end="\r")
+#         vectorizer.add_fragment(fragment)
+#         row = {"fragment": fragment, "val": val}
+#         fragments.append(row)
+#     print('Found {} forward slices and {} backward slices'
+#           .format(vectorizer.forward_slices, vectorizer.backward_slices))
+#     print()
+#     print("Training model...", end="\r")
+#     vectorizer.train_model()
+#     print()
+#     vectors = []
+#     count = 0
+#     for fragment in fragments:
+#         count += 1
+#         print("Processing fragments...", count, end="\r")
+#         vector = vectorizer.vectorize(fragment["fragment"])
+#         row = {"vector": vector, "val": fragment["val"]}
+#         vectors.append(row)
+#     print()
+#     df = pandas.DataFrame(vectors)
+#     return df
+
+
 def vectorize(self, fragment):
     tokenized_fragment, backwards_slice = FragmentVectorizer.tokenize_fragment(fragment)
     vectors = np.zeros(shape=(100, self.vector_length))
