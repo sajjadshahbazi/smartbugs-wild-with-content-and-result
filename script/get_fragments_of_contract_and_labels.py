@@ -202,7 +202,7 @@ if __name__ == '__main__':
                 name = file.replace(".sol", "")
 
                 # set type vulnerability
-                target_vulner = target_vulnerability_callstack_depth_attack
+                target_vulner = target_vulnerability_integer_overflow
 
                 if (read_text_file(file_path, name, target_vulner)):
                     vul_count += 1
