@@ -114,23 +114,27 @@ class FragmentVectorizer:
     Number of tokens used is min of number_of_tokens and 100
     """
 
-    def train_model(self):
-        # Set min_count to 1 to prevent out-of-vocabulary errors
-        model = Word2Vec(self.fragments, min_count=1, vector_size=300, sg=0)  # sg=0: CBOW; sg=1: Skip-Gram
-        self.embeddings = model.wv
-        del model
-        del self.fragments
+    # def train_model(self):
+    #     # Set min_count to 1 to prevent out-of-vocabulary errors
+    #     print("train model", len(self.fragments))
+    #     model = Word2Vec(self.fragments, min_count=1, vector_size=300, sg=0)  # sg=0: CBOW; sg=1: Skip-Gram
+    #     self.embeddings = model.wv
+    #     del model
+    #     del self.fragments
 
 
     def vectorize(self, fragment):
-        tokenized_fragment, backwards_slice = FragmentVectorizer.tokenize_fragment(fragment)
-        vectors = np.zeros(shape=(100, self.vector_length))
-        if backwards_slice:
-            for i in range(min(len(tokenized_fragment), 100)):
-                vectors[100 - 1 - i] = self.embeddings[tokenized_fragment[len(tokenized_fragment) - 1 - i]]
-        else:
-            for i in range(min(len(tokenized_fragment), 100)):
-                vectors[i] = self.embeddings[tokenized_fragment[i]]
+        # tokenized_fragment, backwards_slice = FragmentVectorizer.tokenize_fragment(fragment)
+        vectors = np.zeros(shape=(300, self.vector_length))
+        # if backwards_slice:
+        #     for i in range(min(len(tokenized_fragment), 300)):
+        #         vectors[100 - 1 - i] = self.embeddings[tokenized_fragment[len(tokenized_fragment) - 1 - i]]
+        # else:
+        for i in range(min(len(fragment), 300)):
+            print("fragment", fragment)
+            vec = self.embeddings[fragment[i]]
+            print("vec", vec)
+            vectors[i] = vec
         return vectors
 
     """
@@ -138,9 +142,10 @@ class FragmentVectorizer:
     Only keep list of embeddings, delete model and list of fragments
     """
 
-    def train_model(self):
+    def train_model(self, frgs):
         # Set min_count to 1 to prevent out-of-vocabulary errors
-        model = Word2Vec(self.fragments, min_count=1, vector_size=300, sg=0)  # sg=0: CBOW; sg=1: Skip-Gram
+
+        model = Word2Vec(frgs, min_count=1, vector_size=300, sg=0)  # sg=0: CBOW; sg=1: Skip-Gram
         self.embeddings = model.wv
         del model
         del self.fragments
