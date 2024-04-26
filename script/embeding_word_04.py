@@ -277,7 +277,40 @@ def rename_user_defined_identifiers(contract_text):
     return contract_text
 
 
+def preprocess_contract(contract_text):
+    # Remove version pragma
+    contract_text = re.sub(r'pragma\s+solidity\s+\w+;', '', contract_text)
+
+    # Remove comments
+    pattern = r'//.*?$|/\*(?:.|[\r\n])*?\*/'
+    contract_text = re.sub(pattern, '', contract_text, flags=re.M)
+
+    # Remove non-ASCII characters
+    contract_text = contract_text.encode('ascii', errors='ignore').decode()
+
+    # Represent function/variable names with placeholders
+    contract_text = re.sub(r'function\s+(\w+)\s*\(', 'function FUN\(', contract_text)
+    contract_text = re.sub(r'\s(\w+)\s*=', ' VAR =', contract_text)
+
+    # Remove whitespace
+    contract_text = ''.join(contract_text.split())
+
+    return contract_text
+
+
 def get_fragments(contract):
+    contract = remove_version(contract)
+    contract = remove_comments_and_non_ascii(contract)
+    contract = remove_begginer_space(contract)
+    contract = remove_black_lines(contract)
+    # contract = preprocess_contract(contract)
+    # contract = rename_user_defined_identifiers(contract)
+    segments = contract.strip().split('\n')
+    print(f"Fragment 01 {segments}")
+    fragments = clean_fragment(segments)
+    return fragments
+
+def get_fragments_without_line(contract):
     contract = remove_version(contract)
     contract = remove_comments_and_non_ascii(contract)
     contract = remove_begginer_space(contract)
@@ -285,7 +318,8 @@ def get_fragments(contract):
     contract = rename_user_defined_identifiers(contract)
     segments = contract.strip().split('\n')
     fragments = clean_fragment(segments)
-    return fragments
+    result_string = "|".join(fragments)
+    return result_string
 
 
 def get_tokens(fragments):
@@ -293,4 +327,20 @@ def get_tokens(fragments):
     for fragment in fragments:
         frg = tokenize(fragment)
         tokens.append(frg)
+    return tokens
+
+
+def get_tokens_string(fragments):
+    tokens = []
+    for fragment in fragments:
+        frg = tokenize(fragment)
+        frg.append("space")
+        tokens.append(frg)
+    return tokens
+
+def get_tokens_string_without_line(fragment):
+    tokens = []
+    frg = tokenize(fragment)
+    frg.append("space")
+    tokens.extend(frg)
     return tokens

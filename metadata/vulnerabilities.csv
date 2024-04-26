@@ -2,3 +2,67 @@ slither,incorrect-equality
 oyente,Integer Underflow.
 oyente,Timestamp Dependency.
 smartcheck,SOLIDITY_GAS_LIMIT_IN_LOOPS
+mythril,Integer Overflow
+mythril,Exception state
+oyente,Integer Overflow.
+slither,low-level-calls
+osiris,overflow_bugs
+osiris,underflow_bugs
+smartcheck,SOLIDITY_FUNCTIONS_RETURNS_TYPE_AND_NO_RETURN
+slither,locked-ether
+slither,reentrancy-eth
+slither,reentrancy-no-eth
+slither,reentrancy-benign
+smartcheck,SOLIDITY_DIV_MUL
+oyente,Callstack Depth Attack Vulnerability.
+manticore,Unsigned integer overflow at SUB instruction
+smartcheck,SOLIDITY_LOCKED_MONEY
+mythril,Message call to external contract
+mythril,State change after external call
+slither,unused-return
+osiris,callstack_bug
+smartcheck,SOLIDITY_TX_ORIGIN
+securify,UnhandledException
+securify,DAOConstantGas
+slither,timestamp
+slither,uninitialized-state
+slither,uninitialized-local
+slither,calls-loop
+osiris,division_bugs
+osiris,truncation_bugs
+smartcheck,SOLIDITY_ARRAY_LENGTH_MANIPULATION
+securify,TODReceiver
+securify,TODAmount
+mythril,Transaction order dependence
+securify,DAO
+mythril,Integer Underflow
+smartcheck,SOLIDITY_CALL_WITHOUT_DATA
+manticore,Reachable external call to sender
+smartcheck,SOLIDITY_SEND
+securify,TODTransfer
+slither,arbitrary-send
+manticore,INVALID instruction
+mythril,Dependence on predictable environment variable
+mythril,Dependence on predictable variable
+mythril,Unchecked CALL return value
+osiris,time_dependency_bug
+smartcheck,SOLIDITY_TRANSFER_IN_LOOP
+smartcheck,SOLIDITY_UINT_CANT_BE_NEGATIVE
+securify,LockedEther
+mythril,Use of tx.origin
+oyente,Re-Entrancy Vulnerability.
+mythril,Ether send
+slither,suicidal
+manticore,Potentially reading uninitialized storage
+smartcheck,SOLIDITY_UNCHECKED_CALL
+smartcheck,SOLIDITY_VAR
+osiris,reentrancy_bug
+slither,tx-origin
+mythril,Unchecked SUICIDE
+smartcheck,SOLIDITY_BALANCE_EQUALITY
+manticore,Warning TIMESTAMP instruction used
+slither,uninitialized-storage
+manticore,Warning ORIGIN instruction used
+manticore,Warning NUMBER instruction used
+securify,UnrestrictedEtherFlow
+securify,UnrestrictedWrite

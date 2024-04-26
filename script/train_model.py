@@ -126,7 +126,7 @@ def run_process(contractss, labelss):
     tokenizer = Tokenizer(num_words=max_words, char_level=True)
     tokenizer.fit_on_texts(contractsss)
     sequences = tokenizer.texts_to_sequences(contractsss)
-
+    print(f"eferfrefe ====>>> {sequences[0]}")
     # 3. Sequence Padding
     max_sequence_length = 1000  # Choose an appropriate sequence length
     data = pad_sequences(sequences, maxlen=max_sequence_length)
