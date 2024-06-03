@@ -7,7 +7,6 @@ from datetime import timedelta
 
 tools = ['mythril', 'slither', 'oyente', 'osiris', 'smartcheck', 'manticore', 'maian', 'securify', 'honeybadger']
 
-# ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 
 output_name = 'icse20'
@@ -46,7 +45,6 @@ vulnerability_fd = open(os.path.join(ROOT, 'metadata', 'vulnerabilities.csv'), '
 
 
 def add_vul(contract, tool, vulnerability, line):
-    print(f"add_vul, cantract : {contract}, tool: {tool}, val : {vulnerability}, line : {line}")
     original_vulnerability = vulnerability
     vulnerability = vulnerability.strip().lower().title().replace('_', ' ').replace('.', '').replace('Solidity ',
                                                                                                      '').replace(
@@ -101,8 +99,7 @@ with open(os.path.join(ROOT, 'metadata', 'unique_contracts.csv')) as ufd:
         contract = line.split(',')[0]
         index += 1
         for tool in tools:
-            # path_result = os.path.join('results', tool, output_name, contract, 'result.json')
-            path_result = os.path.join(f"{ROOT}\\results\\", tool, output_name, contract, 'result.json')
+            path_result = os.path.join('results', tool, output_name, contract, 'result.json')
             if not os.path.exists(path_result):
                 continue
             with open(path_result, 'r', encoding='utf-8') as fd:
@@ -185,19 +182,19 @@ for contract in output:
 with open(os.path.join(ROOT, 'metadata', 'results_wild.json'), 'w') as fd:
     json.dump(output, fd)
 #### Generate table ####
-# print("# Execution Time Stat\n")
-#
-# index_duration = 1
-# print("|  #  | Tool       | Avg. Execution Time | Total Execution Time |")
-# print("| --- | ---------- | ------------------- | -------------------- |")
-# for tool in sorted(duration_stat):
-#     value = str(timedelta(seconds=round(duration_stat[tool] / count[tool])))
-#     line = "| {:3} | {:10} | {:10} | {:10} |".format(index_duration, tool.title(), value,
-#                                                      str(timedelta(seconds=round(duration_stat[tool]))))
-#     index_duration += 1
-#     print(line)
-#
-# print("\nTotal: %s" % timedelta(seconds=(round(total_duration))))
+print("# Execution Time Stat\n")
+
+index_duration = 1
+print("|  #  | Tool       | Avg. Execution Time | Total Execution Time |")
+print("| --- | ---------- | ------------------- | -------------------- |")
+for tool in sorted(duration_stat):
+    value = str(timedelta(seconds=round(duration_stat[tool] / count[tool])))
+    line = "| {:3} | {:10} | {:10} | {:10} |".format(index_duration, tool.title(), value,
+                                                     str(timedelta(seconds=round(duration_stat[tool]))))
+    index_duration += 1
+    print(line)
+
+print("\nTotal: %s" % timedelta(seconds=(round(total_duration))))
 
 print("\n# Detection\n")
 

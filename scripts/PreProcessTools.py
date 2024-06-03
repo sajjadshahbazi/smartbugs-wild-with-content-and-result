@@ -1,5 +1,6 @@
 import re
 
+
 # keywords of solidity; immutable set
 keywords = frozenset(
     {'bool', 'break', 'case', 'catch', 'const', 'continue', 'default', 'do', 'double', 'struct',
@@ -99,7 +100,70 @@ def clean_fragment(fragment):
     return cleaned_fragment
 
 
-if __name__ == '__main__':
-    test1 = ['if (credit[msg.sender] < amount) {']
-    # print(clean_fragment(test1))
+def remove_version(contract_text):
+    # Remove solidity version pragma
+    res = re.sub(r'pragma solidity\s+\^?\d+\.\d+\.\d+;', '', contract_text)
+    res = '\n'.join([line for line in res.split('\n') if 'pragma solidity' not in line])
+    return res
+
+
+def remove_black_lines(contract):
+    solidity_code = '\n'.join([line for line in contract.split('\n') if line.strip() != ''])
+    solidity_code = '\n'.join(line for line in solidity_code.split('\n') if line.strip())
+    solidity_code = '\n'.join(line for line in solidity_code.split('\n') if not line.isspace())
+    return solidity_code
+
+def remove_comments_and_non_ascii(contract):
+    contract = re.sub(r'\/\*[\s\S]*?\*\/|\/\/[^\n]*', '', contract)
+    contract = re.sub(r'\/\/.*', '', contract)  # Remove comments
+    contract = re.sub(r'[^\x00-\x7F]+', '', contract)
+    contract = ''.join([i if ord(i) < 128 else ' ' for i in contract])
+
+    return contract
+
+def minify_solidity_code(code):
+    # حذف کامنت‌های چند خطی
+    code = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
+    # حذف کامنت‌های تک خطی
+    code = re.sub(r'//.*', '', code)
+    # حذف فضاهای اضافی و خطوط جدید بین عبارات، با حفظ رشته‌ها و محتوای داخل آنها
+    code = re.sub(r'\s+', ' ', code)  # جایگزینی تمام whitespace ها با یک فضای خالی
+    code = re.sub(r'\s*;\s*', ';', code)  # حذف فضاهای اضافی دور نقطه‌ویرگول
+    code = re.sub(r'\s*{\s*', '{', code)  # حذف فضاهای اضافی دور کروشه باز
+    code = re.sub(r'\s*}\s*', '}', code)  # حذف فضاهای اضافی دور کروشه بسته
+    code = re.sub(r'\s*\(\s*', '(', code)  # حذف فضاهای اضافی دور پرانتز باز
+    code = re.sub(r'\s*\)\s*', ')', code)  # حذف فضاهای اضافی دور پرانتز بسته
+    code = re.sub(r'\s*,\s*', ',', code)  # حذف فضاهای اضافی دور کاما
+    return code.strip()
+
+def preprocess_contract(contract):
+    # Remove the solidity version pragma
+    contract = re.sub(r'pragma\s+solidity\s+\^?\d+\.\d+\.\d+;', '', contract)
+    # Remove every line containing 'pragma solidity'
+    contract = re.sub(r'^\s*pragma\s+solidity\s+.*\n', '\n', contract, flags=re.MULTILINE)
+    # Remove blank lines and lines with only spaces
+    contract = re.sub(r'(?:(?:\r\n|\r|\n)\s*){2,}', '\n', contract)
+    # Remove comments and non-ASCII characters
+    contract = re.sub(r'\/\/[^\n]*|\/\*[\s\S]*?\*\/|[^ -~]', ' ', contract)
+    return contract
+
+def remove_begginer_space(contract):
+    # Split the text into lines and remove leading spaces
+    lines = [line.lstrip() for line in contract.splitlines()]
+
+    # Join the lines back into a single text
+    cleaned_text = '\n'.join(lines)
+    return cleaned_text
+def get_fragments(contract):
+    contract = remove_version(contract)
+    contract = remove_comments_and_non_ascii(contract)
+    contract = remove_begginer_space(contract)
+    contract = remove_black_lines(contract)
+    # contract = minify_solidity_code(contract)
+    segments = contract.strip().split('\n')
+    fragments = clean_fragment(segments)
+
+    return fragments
+
+
 
