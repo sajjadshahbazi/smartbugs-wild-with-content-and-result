@@ -1,77 +1,63 @@
-slither,reentrancy-no-eth
-slither,reentrancy-benign
+smartcheck,SOLIDITY_GAS_LIMIT_IN_LOOPS
+manticore,Unsigned integer overflow at SUB instruction
 slither,low-level-calls
-oyente,Integer Underflow.
-smartcheck,SOLIDITY_CALL_WITHOUT_DATA
+osiris,overflow_bugs
 smartcheck,SOLIDITY_FUNCTIONS_RETURNS_TYPE_AND_NO_RETURN
-mythril,Unchecked CALL return value
+smartcheck,SOLIDITY_LOCKED_MONEY
 mythril,Message call to external contract
-mythril,Integer Overflow
-oyente,Integer Overflow.
-securify,DAOConstantGas
 mythril,State change after external call
-slither,arbitrary-send
+slither,reentrancy-no-eth
+slither,unused-return
+slither,reentrancy-benign
+mythril,Integer Overflow
 slither,reentrancy-eth
 slither,incorrect-equality
-oyente,Callstack Depth Attack Vulnerability.
-osiris,underflow_bugs
-osiris,truncation_bugs
 osiris,callstack_bug
-osiris,time_dependency_bug
-osiris,overflow_bugs
-osiris,division_bugs
-smartcheck,SOLIDITY_LOCKED_MONEY
-smartcheck,SOLIDITY_UNCHECKED_CALL
-mythril,Exception state
-slither,uninitialized-local
-slither,controlled-delegatecall
-mythril,Integer Underflow
-slither,suicidal
-smartcheck,SOLIDITY_GAS_LIMIT_IN_LOOPS
-securify,TODReceiver
-securify,TODTransfer
-securify,TODAmount
-slither,unused-return
-securify,UnhandledException
 smartcheck,SOLIDITY_DIV_MUL
-mythril,Transaction order dependence
-smartcheck,SOLIDITY_SEND
-manticore,Warning NUMBER instruction used
-securify,UnrestrictedWrite
-slither,uninitialized-state
-osiris,reentrancy_bug
-smartcheck,SOLIDITY_ARRAY_LENGTH_MANIPULATION
-slither,calls-loop
-smartcheck,SOLIDITY_VAR
-securify,DAO
-mythril,Call data forwarded with delegatecall()
-mythril,DELEGATECALL to a user-supplied address
-manticore,Potentially reading uninitialized storage
-slither,locked-ether
-manticore,Warning TIMESTAMP instruction used
-smartcheck,SOLIDITY_UINT_CANT_BE_NEGATIVE
-manticore,INVALID instruction
-slither,timestamp
-smartcheck,SOLIDITY_EXACT_TIME
-maian,is_prodigal_vulnerable
-maian,is_lock_vulnerable
-mythril,Dependence on predictable environment variable
-manticore,Reachable ether leak to sender via argument
-manticore,Reachable external call to sender via argument
-oyente,Timestamp Dependency.
-manticore,Unsigned integer overflow at MUL instruction
-smartcheck,SOLIDITY_BALANCE_EQUALITY
-securify,LockedEther
-slither,tx-origin
 smartcheck,SOLIDITY_TX_ORIGIN
-smartcheck,SOLIDITY_TRANSFER_IN_LOOP
-manticore,Unsigned integer overflow at SUB instruction
-manticore,Delegatecall to user controlled function
-manticore,Warning BLOCKHASH instruction used
-oyente,Re-Entrancy Vulnerability.
-mythril,Use of tx.origin
-smartcheck,SOLIDITY_INCORRECT_BLOCKHASH
+securify,UnhandledException
+securify,DAOConstantGas
+mythril,Exception state
+slither,timestamp
+slither,uninitialized-state
+osiris,underflow_bugs
+slither,uninitialized-local
+slither,calls-loop
+osiris,division_bugs
+osiris,truncation_bugs
+smartcheck,SOLIDITY_ARRAY_LENGTH_MANIPULATION
+slither,locked-ether
+securify,TODReceiver
+securify,TODAmount
+mythril,Transaction order dependence
+securify,DAO
+mythril,Integer Underflow
+smartcheck,SOLIDITY_CALL_WITHOUT_DATA
 manticore,Reachable external call to sender
-manticore,Returned value at CALL instruction is not used
+smartcheck,SOLIDITY_SEND
+securify,TODTransfer
+slither,arbitrary-send
+manticore,INVALID instruction
+mythril,Dependence on predictable environment variable
+mythril,Dependence on predictable variable
+mythril,Unchecked CALL return value
+osiris,time_dependency_bug
+smartcheck,SOLIDITY_TRANSFER_IN_LOOP
+smartcheck,SOLIDITY_UINT_CANT_BE_NEGATIVE
+securify,LockedEther
+mythril,Use of tx.origin
 mythril,Ether send
+slither,suicidal
+manticore,Potentially reading uninitialized storage
+smartcheck,SOLIDITY_UNCHECKED_CALL
+smartcheck,SOLIDITY_VAR
+osiris,reentrancy_bug
+slither,tx-origin
+mythril,Unchecked SUICIDE
+smartcheck,SOLIDITY_BALANCE_EQUALITY
+manticore,Warning TIMESTAMP instruction used
+slither,uninitialized-storage
+manticore,Warning ORIGIN instruction used
+manticore,Warning NUMBER instruction used
 securify,UnrestrictedEtherFlow
+securify,UnrestrictedWrite
