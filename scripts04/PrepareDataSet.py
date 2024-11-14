@@ -1,19 +1,11 @@
 import json
 import re
 import os
-
 import pandas as pd
-from gensim.models import Word2Vec
-from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from gensim.models import Word2Vec
 import numpy as np
 import pickle
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-# from keras.preprocessing.text import Tokenizer
-# from keras.preprocessing.sequence import pad_sequences
 import PreProcessTools
 
 duration_stat = {}
@@ -56,26 +48,6 @@ vulnerability_fd = open(os.path.join(ROOT, 'metadata', 'vulnerabilities.csv'), '
 PATH = f"{ROOT}\\contract\\"  # part of main data set
 # PATH = f"{ROOT}\\contra\\"  # one smart contract
 os.chdir(PATH)
-
-
-# with open(os.path.join(ROOT, 'metadata', 'vulnerabilities_mapping.csv')) as fd:
-#     header = fd.readline().strip().split(',')
-#     line = fd.readline()
-#     while line:
-#         v = line.strip().split(',')
-#         index = -1
-#         if 'TRUE' in v:
-#             index = v.index('TRUE')
-#         elif 'MAYBE' in v:
-#             index = v.index('MAYBE')
-#         if index > -1:
-#             vulnerability_mapping[v[1]] = header[index]
-#         line = fd.readline()
-#         print(f" Mapppppp {vulnerability_mapping}")
-# categories = sorted(list(set(vulnerability_mapping.values())))
-# categories.remove('Ignore')
-# categories.remove('Other')
-# categories.append('Other')
 
 def is_sentence_in_text(sentence, text):
     sentence = sentence.lower()
@@ -229,75 +201,11 @@ def main(file_path, name, target_vulnerability):
 
         dataframes_list.append(data_fr)
 
+    combined_dataf = pd.concat(dataframes_list, ignore_index=True)
+    combined_dataf = combined_dataf[~combined_dataf['Frag'].str.strip().isin(['', '}'])]
 
-        # print(f"NAAAAAAAAAAAAAMMMMEEEEEEEEEEEEEEEE => {name}")
-        # print(vulnerable_lines)
-        # print(data_fr.to_string(index=False))
-        # print(df.to_string())
-        # print("__________________________________________________________________________________")
+    X, Y = tokenize_fragments(combined_dataf)
 
-        # fragment_contracts.append(fragments)
-
-        # isVal = 0
-        # if (isVulnarable):
-        #     isVal = 1
-
-        # labels.append(isVal)
-        # return isVulnarable
-
-    combined_df = pd.concat(dataframes_list, ignore_index=True)
-    combined_df = combined_df[~combined_df['Frag'].str.strip().isin(['', '}'])]
-
-    X, Y, word2vec_model = tokenize_fragments(combined_df, save_path='tokenized_data.pkl')
-
-    # بررسی ابعاد داده‌ها و مشاهده نمونه‌ای از برچسب‌ها
-    print("Shape of X:", X.shape)
-    print("Shape of Y:", Y.shape)
-    print("First 5 labels in Y:", Y[:5])
-
-
-def get_word2vec_embeddingss(text, word2vec_model):
-    embeddings = [word2vec_model.wv[word] for word in text if word in word2vec_model.wv]
-    return embeddings
-
-
-def tokenize_fragmentss(combined_df):
-    # tokenizer = Tokenizer()
-    # tokenizer.fit_on_texts(combined_df['Frag'])  # 'Frag' ستونی است که شامل خطوط کد است
-    #
-    # # تبدیل خطوط کد به توالی اعداد
-    # sequences = tokenizer.texts_to_sequences(combined_df['Frag'])
-    # max_length = max(len(seq) for seq in sequences)  # تعیین طول بیشینه توالی
-    #
-    # # پد کردن یا برش توالی‌ها به طول ثابت 100
-    # X = pad_sequences(sequences, maxlen=100, padding='post', truncating='post')
-    # y = combined_df['Vul'].values  # لیبل‌ها
-    #
-    # for i in range(5):  # 5 نمونه اول
-    #     print("Original:", combined_df['Frag'].iloc[i])
-    #     print("Tokenized:", sequences[i])
-    #     print()
-
-    # ایجاد مجموعه داده برای Word2Vec
-    tokenized_texts = [line.split() for line in combined_df['Frag']]  # هر خط را به لیست کلمات تبدیل کنید
-
-    # آموزش مدل Word2Vec
-    word2vec_model = Word2Vec(sentences=tokenized_texts, vector_size=200, window=5, min_count=1, workers=4)
-
-    # تبدیل همه خطوط کد به بردارهای Word2Vec
-    X = [get_word2vec_embeddingss(line.split(), word2vec_model) for line in combined_df['Frag']]
-
-    # پد کردن توالی‌ها
-    X = pad_sequences([np.array(seq).mean(axis=0) for seq in X if len(seq) > 0], maxlen=200, dtype='float32', padding='post')
-    Y = combined_df['Vul'].values
-
-    # similarity = word2vec_model.wv.similarity('transfer', 'send')
-    # print("Similarity between 'call' and 'send':", similarity)
-
-    sample_embedding = get_word2vec_embeddingss(tokenized_texts[0], word2vec_model)
-    if len(sample_embedding) > 0:
-        mean_embedding = np.array(sample_embedding).mean(axis=0)
-        print("Mean embedding shape:", mean_embedding.shape)
 
 
 def get_word2vec_embeddings(text, word2vec_model):
@@ -305,68 +213,22 @@ def get_word2vec_embeddings(text, word2vec_model):
     return embeddings
 
 
-def tokenize_fragments(combined_df, save_path='tokenized_data.pkl'):
-    try:
-        # بررسی اینکه فایل ذخیره‌شده وجود دارد یا نه
-        with open(save_path, 'rb') as file:
-            data = pickle.load(file)
-            X, Y, word2vec_model = data['X'], data['Y'], data['word2vec_model']
-            print("Loaded tokenized data from saved file.")
-    except FileNotFoundError:
-        print("No saved file found. Generating tokenized data...")
-        # لیست توکن‌های هر خط از کد
-        tokenized_texts = [line.split() for line in combined_df['Frag']]
+def tokenize_fragments(combined_df):
+    # لیست توکن‌های هر خط از کد
+    tokenized_texts = [line.split() for line in combined_df['Frag']]
 
-        # آموزش مدل Word2Vec
-        word2vec_model = Word2Vec(sentences=tokenized_texts, vector_size=200, window=5, min_count=1, workers=4)
+    # آموزش مدل Word2Vec
+    word2vec_model = Word2Vec(sentences=tokenized_texts, vector_size=200, window=5, min_count=1, workers=4)
 
-        # تبدیل خطوط کد به بردارهای word2vec و محاسبه میانگین
-        X = [get_word2vec_embeddings(line.split(), word2vec_model) for line in combined_df['Frag']]
-        X = [np.array(seq).mean(axis=0) if len(seq) > 0 else np.zeros(word2vec_model.vector_size) for seq in X]
+    # تبدیل خطوط کد به بردارهای word2vec و محاسبه میانگین
+    X = [get_word2vec_embeddings(line.split(), word2vec_model) for line in combined_df['Frag']]
+    X = [np.array(seq).mean(axis=0) if len(seq) > 0 else np.zeros(word2vec_model.vector_size) for seq in X]
 
-        # پد کردن توالی‌ها به طول ثابت
-        X = pad_sequences([X], maxlen=200, dtype='float32', padding='post')
-        Y = combined_df['Vul'].values
+    # پد کردن توالی‌ها به طول ثابت
+    X = pad_sequences([X], maxlen=200, dtype='float32', padding='post')
+    Y = combined_df['Vul'].values
 
-        # بررسی نتایج نمونه
-        # sample_embedding = get_word2vec_embeddings(tokenized_texts[0], word2vec_model)
-        # if len(sample_embedding) > 0:
-        #     mean_embedding = np.array(sample_embedding).mean(axis=0)
-        #     print("Mean embedding shape:", mean_embedding.shape)
-
-        # print("Word2Vec vocabulary:", list(word2vec_model.wv.key_to_index.keys())[:10])  # 10 کلمه اول واژه‌نامه
-
-        # if 'call' in word2vec_model.wv:
-        #     print("Embedding for 'send':", word2vec_model.wv['send'])
-        #
-        # sample_embedding = get_word2vec_embeddings(tokenized_texts[0], word2vec_model)
-        # if len(sample_embedding) > 0:
-        #     mean_embedding = np.array(sample_embedding).mean(axis=0)
-        #     print("Mean embedding shape for one line:", mean_embedding.shape)
-        #     print("Mean embedding vector:", mean_embedding)  # چاپ بردار میانگین
-        #
-        # print("Shape of padded X:", X.shape)  # باید (تعداد نمونه‌ها، 200، 200) باشد
-        # print("First sequence after padding:", X[0])  # مشاهده اولین توالی پد شده
-        #
-        # print("Shape of Y:", Y.shape)  # مطمئن شوید که تعداد ردیف‌های Y با X مطابقت دارد
-        # print("Sample labels:", Y[:5])  # مشاهده چند نمونه از برچسب‌ها
-        # print("Number of non-vulnerable (0) samples:", sum(Y == 0))
-        # print("Number of vulnerable (1) samples:", sum(Y == 1))
-        # print("Value counts in 'Vul' column:")
-        # print(combined_df['Vul'].value_counts())
-
-
-
-        # plt.figure(figsize=(10, 5))
-        # sns.countplot(data=combined_df, x='Vul')
-        # plt.title("Distribution of Vulnerability Labels")
-        # plt.show()
-
-        with open(save_path, 'wb') as file:
-            pickle.dump({'X': X, 'Y': Y, 'word2vec_model': word2vec_model}, file)
-            print("Tokenized data saved to file.")
-
-    return X, Y, word2vec_model
+    return X, Y
 
 if __name__ == "__main__":
     for file in os.listdir():
@@ -374,9 +236,6 @@ if __name__ == "__main__":
         if file.endswith(".sol"):
             file_path = f"{PATH}\{file}"
             name = file.replace(".sol", "")
-
-            # set type vulnerability
-            # target_vulner = target_vulnerability_integer_overflow
 
             if (main(file_path, name, target_vulner)):
                 vul_count += 1
