@@ -5,7 +5,7 @@ import pandas as pd
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.utils import Sequence
-
+import sys
 from gensim.models import Word2Vec
 import numpy as np
 import pickle
@@ -409,9 +409,30 @@ def train_LSTM():
     print("Training complete.")
 
 if __name__ == "__main__":
+
+    # ساخت مسیر پویا
+    log_path = os.path.join(ROOT, "logs", "output_log.txt")
+
+    # اطمینان از وجود پوشه
+    os.makedirs(os.path.dirname(log_path), exist_ok=True)
+
+    # باز کردن فایل
+    log_file = open(log_path, "w")
+    sys.stdout = log_file  # هدایت خروجی به فایل
+
+    print("This message will be saved in the log file.")
+
+
+
+    print("!!!!!!!!!!!!!!!!!!!!!!!!!")
+
     files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
     for i in range(0, len(files), batch_size):
         batch_files = files[i:i + batch_size]
         process_batch(batch_files, target_vulner)
 
     train_LSTM()
+
+
+    # sys.stdout = sys.__stdout__  # بازگرداندن خروجی به حالت اولیه
+    log_file.close()
