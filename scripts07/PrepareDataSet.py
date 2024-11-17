@@ -55,10 +55,10 @@ cache_path = os.path.join(CACHE_DIR, 'tokenized_fragments.pkl')
 vulnerability_fd = open(os.path.join(ROOT, 'metadata', 'vulnerabilities.csv'), 'w', encoding='utf-8')
 
 # PATH = f"{ROOT}\\contracts\\"  # main data set
-# PATH = f"{ROOT}\\contracts\\"  # part of main data set
+PATH = f"{ROOT}\\contracts\\"  # part of main data set
 # PATH = f"{ROOT}\\contra\\"  # one smart contract
 
-PATH = os.path.join(ROOT, 'contracts') # linux
+# PATH = os.path.join(ROOT, 'contracts') # linux
 os.chdir(PATH)
 
 final_df = pd.DataFrame(columns=['X', 'Y'])

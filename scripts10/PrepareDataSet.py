@@ -3,6 +3,9 @@ import re
 import os
 import pandas as pd
 from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.utils import Sequence
+import sys
 from gensim.models import Word2Vec
 import numpy as np
 import pickle
@@ -52,10 +55,10 @@ cache_path = os.path.join(CACHE_DIR, 'tokenized_fragments.pkl')
 vulnerability_fd = open(os.path.join(ROOT, 'metadata', 'vulnerabilities.csv'), 'w', encoding='utf-8')
 
 # PATH = f"{ROOT}\\contracts\\"  # main data set
-PATH = f"{ROOT}\\contracts\\"  # part of main data set
+# PATH = f"{ROOT}\\contracts\\"  # part of main data set
 # PATH = f"{ROOT}\\contra\\"  # one smart contract
 
-# PATH = os.path.join(ROOT, 'contracts') # linux
+PATH = os.path.join(ROOT, 'contracts') # linux
 os.chdir(PATH)
 
 final_df = pd.DataFrame(columns=['X', 'Y'])
@@ -101,7 +104,7 @@ def getResultVulnarable(contract_name, target_vulnerability):
     res = False
     lines = []
     for tool in tools:
-        path_result = os.path.join(f"{ROOT}\\results\\", tool, output_name, contract_name, 'result.json')
+        path_result = os.path.join(f"{ROOT}results", tool, output_name, contract_name, 'result.json')
         if not os.path.exists(path_result):
             continue
         with open(path_result, 'r', encoding='utf-8') as fd:
@@ -213,84 +216,155 @@ def load_batches():
             Y_batches.append(Y)
     return np.vstack(X_batches), np.hstack(Y_batches)
 
-def main(file_path, name, target_vulnerability):
-    global final_df
-    with open(file_path, encoding="utf8") as f:
-        smartContractContent = f.read()
-        isVulnarable, vulnerable_lines = getResultVulnarable(name, target_vulnerability)
-
-        # get fragments
-        fragments = PreProcessTools.get_fragments(smartContractContent)
-
-        vulnerability_status = [1 if (i+1) in vulnerable_lines else 0 for i in range(len(fragments))]
-
-        data_fr = pd.DataFrame({
-            'Vul': vulnerability_status,
-            'Frag': fragments
-        })
-        data_fr = data_fr[~data_fr['Frag'].str.strip().isin(['', '}'])]
-        refine_labels_for_reentrancy(data_fr)
-
-
-
-        # **افزودن فرگمنت‌های خالی در صورت نیاز**
-        fragment_count = len(data_fr)
-        padding_needed = sequence_length - (fragment_count % sequence_length) if (fragment_count % sequence_length) != 0 else 0
-
-        if padding_needed > 0:
-            # اگر به padding نیاز بود، فرگمنت‌های خالی با لیبل ۰ اضافه می‌شوند
-            empty_fragments = [''] * padding_needed
-            empty_labels = [0] * padding_needed  # لیبل ۰ برای فرگمنت‌های خالی
-            padding_df = pd.DataFrame({'Vul': empty_labels, 'Frag': empty_fragments})
-            data_fr = pd.concat([data_fr, padding_df], ignore_index=True)
-
-        dataframes_list.append(data_fr)
-
-    combined_dataf = pd.concat(dataframes_list, ignore_index=True)
-    combined_dataf = combined_dataf[~combined_dataf['Frag'].str.strip().isin(['', '}'])]
-
-    X, Y = tokenize_fragments(combined_dataf)
-    # print(f"-------------------------------->>>> {len(X)} , {len(Y)}")
-    # print(f"-------------------------------->>>> {X}")
-    # print(f"Length of X: {len(X)}, Shape of X: {X.shape}")
-    # print(f"Length of Y: {len(Y)}, Shape of Y: {Y.shape}")
-    contract_df = pd.DataFrame({'X': list(X), 'Y': Y})
-    final_df = pd.concat([final_df, contract_df], ignore_index=True)
-
-
-
-
-def get_word2vec_embeddings(text, word2vec_model):
-    embeddings = [word2vec_model.wv[word] for word in text if word in word2vec_model.wv]
-    return embeddings
+# def main(file_path, name, target_vulnerability):
+#     global final_df
+#     with open(file_path, encoding="utf8") as f:
+#         smartContractContent = f.read()
+#         isVulnarable, vulnerable_lines = getResultVulnarable(name, target_vulnerability)
+#
+#         # get fragments
+#         fragments = PreProcessTools.get_fragments(smartContractContent)
+#
+#         vulnerability_status = [1 if (i+1) in vulnerable_lines else 0 for i in range(len(fragments))]
+#
+#         data_fr = pd.DataFrame({
+#             'Vul': vulnerability_status,
+#             'Frag': fragments
+#         })
+#         data_fr = data_fr[~data_fr['Frag'].str.strip().isin(['', '}'])]
+#         refine_labels_for_reentrancy(data_fr)
+#
+#
+#
+#         # **افزودن فرگمنت‌های خالی در صورت نیاز**
+#         fragment_count = len(data_fr)
+#         padding_needed = sequence_length - (fragment_count % sequence_length) if (fragment_count % sequence_length) != 0 else 0
+#
+#         if padding_needed > 0:
+#             # اگر به padding نیاز بود، فرگمنت‌های خالی با لیبل ۰ اضافه می‌شوند
+#             empty_fragments = [''] * padding_needed
+#             empty_labels = [0] * padding_needed  # لیبل ۰ برای فرگمنت‌های خالی
+#             padding_df = pd.DataFrame({'Vul': empty_labels, 'Frag': empty_fragments})
+#             data_fr = pd.concat([data_fr, padding_df], ignore_index=True)
+#
+#         dataframes_list.append(data_fr)
+#
+#     combined_dataf = pd.concat(dataframes_list, ignore_index=True)
+#     combined_dataf = combined_dataf[~combined_dataf['Frag'].str.strip().isin(['', '}'])]
+#
+#     X, Y = tokenize_fragments(combined_dataf)
+#     # print(f"-------------------------------->>>> {len(X)} , {len(Y)}")
+#     # print(f"-------------------------------->>>> {X}")
+#     # print(f"Length of X: {len(X)}, Shape of X: {X.shape}")
+#     # print(f"Length of Y: {len(Y)}, Shape of Y: {Y.shape}")
+#     contract_df = pd.DataFrame({'X': list(X), 'Y': Y})
+#     final_df = pd.concat([final_df, contract_df], ignore_index=True)
 
 
 
-def tokenize_fragments(combined_df):
-    tokenized_texts = [line.split() for line in combined_df['Frag']]
-    word2vec_model = Word2Vec(sentences=tokenized_texts, vector_size=200, window=5, min_count=1, workers=4)
-    X_padded = []
-    for line in combined_df['Frag']:
-        embeddings = [word2vec_model.wv[word] if word in word2vec_model.wv else np.zeros(200) for word in line.split()]
-        embeddings = embeddings[:sequence_length] + [np.zeros(200)] * (sequence_length - len(embeddings))
-        X_padded.append(embeddings)
-    X = np.array(X_padded, dtype='float16')
-    Y = combined_df['Vul'].values
-    return X, Y
 
+# def get_word2vec_embeddings(text, word2vec_model):
+#     embeddings = [word2vec_model.wv[word] for word in text if word in word2vec_model.wv]
+#     return embeddings
+
+
+
+# def tokenize_fragments(combined_df):
+#     tokenized_texts = [line.split() for line in combined_df['Frag']]
+#     word2vec_model = Word2Vec(sentences=tokenized_texts, vector_size=200, window=5, min_count=1, workers=4)
+#     X_padded = []
+#     for line in combined_df['Frag']:
+#         embeddings = [word2vec_model.wv[word] if word in word2vec_model.wv else np.zeros(200) for word in line.split()]
+#         embeddings = embeddings[:sequence_length] + [np.zeros(200)] * (sequence_length - len(embeddings))
+#         X_padded.append(embeddings)
+#     X = np.array(X_padded, dtype='float16')
+#     Y = combined_df['Vul'].values
+#     return X, Y
+
+# def process_batch(files, target_vulnerability):
+#     dataframes_list = []
+#     for file in files:
+#         with open(file, encoding="utf8") as f:
+#             smartContractContent = f.read()
+#             vulnerable_lines = getResultVulnarable(file, target_vulnerability)
+#             fragments = PreProcessTools.get_fragments(smartContractContent)
+#             vulnerability_status = [1 if (i + 1) in vulnerable_lines else 0 for i in range(len(fragments))]
+#
+#             data_fr = pd.DataFrame({'Vul': vulnerability_status, 'Frag': fragments})
+#             data_fr = data_fr[~data_fr['Frag'].str.strip().isin(['', '}'])]
+#
+#             # پد کردن برای طول ثابت sequence_length
+#             padding_needed = sequence_length - (len(data_fr) % sequence_length) if (len(data_fr) % sequence_length) != 0 else 0
+#             if padding_needed > 0:
+#                 empty_fragments = [''] * padding_needed
+#                 empty_labels = [0] * padding_needed
+#                 padding_df = pd.DataFrame({'Vul': empty_labels, 'Frag': empty_fragments})
+#                 data_fr = pd.concat([data_fr, padding_df], ignore_index=True)
+#
+#             dataframes_list.append(data_fr)
+#
+#     combined_dataf = pd.concat(dataframes_list, ignore_index=True)
+#     X, Y = tokenize_fragments(combined_dataf)
+#
+#     # ذخیره داده‌های پردازش شده به صورت دسته‌ای
+#     batch_file = os.path.join(CACHE_DIR, f"batch_{len(os.listdir(CACHE_DIR))}.pkl")
+#     with open(batch_file, 'wb') as f:
+#         pickle.dump((X, Y), f)
+#     print(f"Batch saved to {batch_file}")
+
+def load_batches():
+    X_batches, Y_batches = [], []
+    for file in os.listdir(CACHE_DIR):
+        with open(os.path.join(CACHE_DIR, file), 'rb') as f:
+            X, Y = pickle.load(f)
+            X_batches.append(X)
+            Y_batches.append(Y)
+    return np.vstack(X_batches), np.hstack(Y_batches)
+
+# def train_LSTM():
+#     X, Y = load_batches()
+#     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+#     model = Sequential([
+#         LSTM(128, input_shape=(sequence_length, X.shape[2]), return_sequences=True),
+#         Dropout(0.2),
+#         LSTM(64),
+#         Dropout(0.2),
+#         Dense(1, activation='sigmoid')
+#     ])
+#     model.compile(optimizer=Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
+#     model.fit(X_train, Y_train, epochs=10, batch_size=32, validation_split=0.1)
+#     Y_pred = (model.predict(X_test) > 0.5).astype("int32")
+#     print("Accuracy:", accuracy_score(Y_test, Y_pred))
+#     print("Classification Report:")
+#     print(classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable']))
+
+class DataGenerator(Sequence):
+    def __init__(self, cache_dir, batch_size):
+        self.cache_dir = cache_dir
+        self.batch_size = batch_size
+        self.files = os.listdir(cache_dir)
+
+    def __len__(self):
+        return len(self.files)
+
+    def __getitem__(self, index):
+        file_path = os.path.join(self.cache_dir, self.files[index])
+        with open(file_path, 'rb') as f:
+            X, Y = pickle.load(f)
+        return X, Y
+
+# تابع پردازش دسته‌ها و ذخیره در فایل‌های pickle
 def process_batch(files, target_vulnerability):
     dataframes_list = []
     for file in files:
         with open(file, encoding="utf8") as f:
             smartContractContent = f.read()
-            vulnerable_lines = getResultVulnarable(file, target_vulnerability)
             fragments = PreProcessTools.get_fragments(smartContractContent)
+            vulnerable_lines = getResultVulnarable(file, target_vulnerability)
             vulnerability_status = [1 if (i + 1) in vulnerable_lines else 0 for i in range(len(fragments))]
 
             data_fr = pd.DataFrame({'Vul': vulnerability_status, 'Frag': fragments})
             data_fr = data_fr[~data_fr['Frag'].str.strip().isin(['', '}'])]
-
-            # پد کردن برای طول ثابت sequence_length
             padding_needed = sequence_length - (len(data_fr) % sequence_length) if (len(data_fr) % sequence_length) != 0 else 0
             if padding_needed > 0:
                 empty_fragments = [''] * padding_needed
@@ -303,114 +377,64 @@ def process_batch(files, target_vulnerability):
     combined_dataf = pd.concat(dataframes_list, ignore_index=True)
     X, Y = tokenize_fragments(combined_dataf)
 
-    # ذخیره داده‌های پردازش شده به صورت دسته‌ای
     batch_file = os.path.join(CACHE_DIR, f"batch_{len(os.listdir(CACHE_DIR))}.pkl")
     with open(batch_file, 'wb') as f:
         pickle.dump((X, Y), f)
     print(f"Batch saved to {batch_file}")
 
-def load_batches():
-    X_batches, Y_batches = [], []
-    for file in os.listdir(CACHE_DIR):
-        with open(os.path.join(CACHE_DIR, file), 'rb') as f:
-            X, Y = pickle.load(f)
-            X_batches.append(X)
-            Y_batches.append(Y)
-    return np.vstack(X_batches), np.hstack(Y_batches)
+# تابع تبدیل داده‌ها به بردارهای Word2Vec
+def tokenize_fragments(combined_df):
+    tokenized_texts = [line.split() for line in combined_df['Frag']]
+    word2vec_model = Word2Vec(sentences=tokenized_texts, vector_size=200, window=5, min_count=1, workers=4)
+    X_padded = []
+    for line in combined_df['Frag']:
+        embeddings = [word2vec_model.wv[word] if word in word2vec_model.wv else np.zeros(200) for word in line.split()]
+        embeddings = embeddings[:sequence_length] + [np.zeros(200)] * (sequence_length - len(embeddings))
+        X_padded.append(embeddings)
+    X = np.array(X_padded, dtype='float16')  # استفاده از float16 برای کاهش مصرف حافظه
+    Y = combined_df['Vul'].values
+    return X, Y
 
+# تابع آموزش مدل با داده‌های مرحله‌ای
 def train_LSTM():
-    X, Y = load_batches()
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+    generator = DataGenerator(CACHE_DIR, batch_size)
+
     model = Sequential([
-        LSTM(128, input_shape=(sequence_length, X.shape[2]), return_sequences=True),
+        LSTM(128, input_shape=(sequence_length, 200), return_sequences=True),
         Dropout(0.2),
         LSTM(64),
         Dropout(0.2),
         Dense(1, activation='sigmoid')
     ])
     model.compile(optimizer=Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
-    model.fit(X_train, Y_train, epochs=10, batch_size=32, validation_split=0.1)
-    Y_pred = (model.predict(X_test) > 0.5).astype("int32")
-    print("Accuracy:", accuracy_score(Y_test, Y_pred))
-    print("Classification Report:")
-    print(classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable']))
+    model.fit(generator, epochs=10)
+    print("Training complete.")
 
-# اجرای برنامه اصلی
 if __name__ == "__main__":
+
+    # ساخت مسیر پویا
+    log_path = os.path.join(ROOT, "logs", "output_log.txt")
+
+    # اطمینان از وجود پوشه
+    os.makedirs(os.path.dirname(log_path), exist_ok=True)
+
+    # باز کردن فایل
+    log_file = open(log_path, "w")
+    sys.stdout = log_file  # هدایت خروجی به فایل
+
+    print("This message will be saved in the log file.")
+
+
+
+    print("!!!!!!!!!!!!!!!!!!!!!!!!!")
+
     files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
     for i in range(0, len(files), batch_size):
         batch_files = files[i:i + batch_size]
         process_batch(batch_files, target_vulner)
+
     train_LSTM()
 
-# def tokenize_fragments(combined_df):
-#     tokenized_texts = [line.split() for line in combined_df['Frag']]
-#     word2vec_model = Word2Vec(sentences=tokenized_texts, vector_size=200, window=5, min_count=1, workers=4)
-#
-#     X_padded = []
-#     for line in combined_df['Frag']:
-#         embeddings = get_word2vec_embeddings(line.split(), word2vec_model)
-#         embeddings = embeddings[:sequence_length] + [np.zeros(200)] * (sequence_length - len(embeddings))
-#         X_padded.append(embeddings)
-#
-#     X = np.array(X_padded, dtype='float16')  # استفاده از float16 برای کاهش حافظه
-#     Y = combined_df['Vul'].values
-#     return X, Y
-#
-#
-# def process_batch(files, target_vulnerability):
-#     dataframes_list = []
-#     for file in files:
-#         with open(file, encoding="utf8") as f:
-#             smartContractContent = f.read()
-#             fragments = PreProcessTools.get_fragments(smartContractContent)
-#             vulnerability_status = [1 if (i + 1) in target_vulnerability else 0 for i in range(len(fragments))]
-#
-#             data_fr = pd.DataFrame({'Vul': vulnerability_status, 'Frag': fragments})
-#             data_fr = data_fr[~data_fr['Frag'].str.strip().isin(['', '}'])]
-#             refine_labels_for_reentrancy(data_fr)
-#
-#             padding_needed = sequence_length - (len(data_fr) % sequence_length) if (
-#                                                                                                len(data_fr) % sequence_length) != 0 else 0
-#             if padding_needed > 0:
-#                 empty_fragments = [''] * padding_needed
-#                 empty_labels = [0] * padding_needed
-#                 padding_df = pd.DataFrame({'Vul': empty_labels, 'Frag': empty_fragments})
-#                 data_fr = pd.concat([data_fr, padding_df], ignore_index=True)
-#
-#             dataframes_list.append(data_fr)
-#
-#     combined_dataf = pd.concat(dataframes_list, ignore_index=True)
-#     X, Y = tokenize_fragments(combined_dataf)
-#
-#     batch_file = os.path.join(CACHE_DIR, f"batch_{len(os.listdir(CACHE_DIR))}.pkl")
-#     with open(batch_file, 'wb') as f:
-#         pickle.dump((X, Y), f)
-#     print(f"Batch saved to {batch_file}")
-#
-#
-# def train_LSTM():
-#     X, Y = load_batches()
-#     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
-#
-#     model = Sequential([
-#         LSTM(128, input_shape=(sequence_length, X.shape[2]), return_sequences=True),
-#         Dropout(0.2),
-#         LSTM(64),
-#         Dropout(0.2),
-#         Dense(1, activation='sigmoid')
-#     ])
-#     model.compile(optimizer=Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
-#     model.fit(X_train, Y_train, epochs=10, batch_size=32, validation_split=0.1)
-#     Y_pred = (model.predict(X_test) > 0.5).astype("int32")
-#
-#     print("Accuracy:", accuracy_score(Y_test, Y_pred))
-#     print("Classification Report:")
-#     print(classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable']))
-#
-#
-# if __name__ == "__main__":
-#     files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
-#     for i in range(0, len(files), batch_size):
-#         process_batch(files[i:i + batch_size], target_vulnerability_reentrancy)
-#     train_LSTM()
+
+    # sys.stdout = sys.__stdout__  # بازگرداندن خروجی به حالت اولیه
+    log_file.close()
