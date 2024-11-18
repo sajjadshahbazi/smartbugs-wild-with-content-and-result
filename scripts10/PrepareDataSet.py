@@ -27,7 +27,7 @@ fragment_contracts = []
 dataframes_list = []
 batch_size = 5000  # کاهش اندازه دسته به 500 قرارداد
 output_name = 'icse20'
-
+vector_length = 100
 vulnerability_stat = {
 }
 tool_stat = {}
@@ -271,11 +271,11 @@ def load_batches():
 
 # def tokenize_fragments(combined_df):
 #     tokenized_texts = [line.split() for line in combined_df['Frag']]
-#     word2vec_model = Word2Vec(sentences=tokenized_texts, vector_size=200, window=5, min_count=1, workers=4)
+#     word2vec_model = Word2Vec(sentences=tokenized_texts, vector_size=vector_length, window=5, min_count=1, workers=4)
 #     X_padded = []
 #     for line in combined_df['Frag']:
-#         embeddings = [word2vec_model.wv[word] if word in word2vec_model.wv else np.zeros(200) for word in line.split()]
-#         embeddings = embeddings[:sequence_length] + [np.zeros(200)] * (sequence_length - len(embeddings))
+#         embeddings = [word2vec_model.wv[word] if word in word2vec_model.wv else np.zeros(vector_length) for word in line.split()]
+#         embeddings = embeddings[:sequence_length] + [np.zeros(vector_length)] * (sequence_length - len(embeddings))
 #         X_padded.append(embeddings)
 #     X = np.array(X_padded, dtype='float16')
 #     Y = combined_df['Vul'].values
@@ -385,11 +385,11 @@ def process_batch(files, target_vulnerability):
 # تابع تبدیل داده‌ها به بردارهای Word2Vec
 def tokenize_fragments(combined_df):
     tokenized_texts = [line.split() for line in combined_df['Frag']]
-    word2vec_model = Word2Vec(sentences=tokenized_texts, vector_size=200, window=5, min_count=1, workers=4)
+    word2vec_model = Word2Vec(sentences=tokenized_texts, vector_size=vector_length, window=5, min_count=1, workers=4)
     X_padded = []
     for line in combined_df['Frag']:
-        embeddings = [word2vec_model.wv[word] if word in word2vec_model.wv else np.zeros(200) for word in line.split()]
-        embeddings = embeddings[:sequence_length] + [np.zeros(200)] * (sequence_length - len(embeddings))
+        embeddings = [word2vec_model.wv[word] if word in word2vec_model.wv else np.zeros(vector_length) for word in line.split()]
+        embeddings = embeddings[:sequence_length] + [np.zeros(vector_length)] * (sequence_length - len(embeddings))
         X_padded.append(embeddings)
     X = np.array(X_padded, dtype='float16')  # استفاده از float16 برای کاهش مصرف حافظه
     Y = combined_df['Vul'].values
@@ -400,7 +400,7 @@ def train_LSTM():
     generator = DataGenerator(CACHE_DIR, batch_size)
 
     model = Sequential([
-        LSTM(128, input_shape=(sequence_length, 200), return_sequences=True),
+        LSTM(128, input_shape=(sequence_length, vector_length), return_sequences=True),
         Dropout(0.2),
         LSTM(64),
         Dropout(0.2),
