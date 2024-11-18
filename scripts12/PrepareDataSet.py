@@ -430,7 +430,7 @@ def train_LSTM():
     model.compile(optimizer=Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
 
     # تنظیم مقدار steps_per_epoch
-    steps_per_epoch = len(generator)
+    steps_per_epoch = len(generator) * 10
 
     # آموزش مدل
     model.fit(generator.repeat(), epochs=10, steps_per_epoch=steps_per_epoch, verbose=2)
