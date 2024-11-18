@@ -360,7 +360,7 @@ def process_batch(files, target_vulnerability):
         with open(file, encoding="utf8") as f:
             smartContractContent = f.read()
             fragments = PreProcessTools.get_fragments(smartContractContent)
-            vulnerable_lines = getResultVulnarable(file, target_vulnerability)
+            res, vulnerable_lines = getResultVulnarable(file, target_vulnerability)
             vulnerability_status = [1 if (i + 1) in vulnerable_lines else 0 for i in range(len(fragments))]
 
             data_fr = pd.DataFrame({'Vul': vulnerability_status, 'Frag': fragments})
@@ -391,7 +391,7 @@ def tokenize_fragments(combined_df):
         embeddings = [word2vec_model.wv[word] if word in word2vec_model.wv else np.zeros(vector_length) for word in line.split()]
         embeddings = embeddings[:sequence_length] + [np.zeros(vector_length)] * (sequence_length - len(embeddings))
         X_padded.append(embeddings)
-    X = np.array(X_padded, dtype='float16')  # استفاده از float16 برای کاهش مصرف حافظه
+    X = np.array(X_padded, dtype='float32')  # استفاده از float16 برای کاهش مصرف حافظه
     Y = combined_df['Vul'].values
     return X, Y
 
@@ -413,16 +413,16 @@ def train_LSTM():
 if __name__ == "__main__":
 
     # ساخت مسیر پویا
-    log_path = os.path.join(ROOT, "logs", "output_log.txt")
-
-    # اطمینان از وجود پوشه
-    os.makedirs(os.path.dirname(log_path), exist_ok=True)
-
-    # باز کردن فایل
-    log_file = open(log_path, "w")
-    sys.stdout = log_file  # هدایت خروجی به فایل
-
-    print("This message will be saved in the log file.")
+    # log_path = os.path.join(ROOT, "logs", "output_log.txt")
+    #
+    # # اطمینان از وجود پوشه
+    # os.makedirs(os.path.dirname(log_path), exist_ok=True)
+    #
+    # # باز کردن فایل
+    # log_file = open(log_path, "w")
+    # sys.stdout = log_file  # هدایت خروجی به فایل
+    #
+    # print("This message will be saved in the log file.")
 
 
 
@@ -437,4 +437,4 @@ if __name__ == "__main__":
 
 
     # sys.stdout = sys.__stdout__  # بازگرداندن خروجی به حالت اولیه
-    log_file.close()
+    # log_file.close()
