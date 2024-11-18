@@ -433,7 +433,7 @@ def train_LSTM():
     steps_per_epoch = len(generator)
 
     # آموزش مدل
-    model.fit(generator, epochs=10, steps_per_epoch=steps_per_epoch, verbose=2)
+    model.fit(generator.repeat(), epochs=10, steps_per_epoch=steps_per_epoch, verbose=2)
 
     # پیش‌بینی با استفاده از مدل
     X_test, Y_test = load_batches()  # داده‌های تست باید از قبل جدا شوند
