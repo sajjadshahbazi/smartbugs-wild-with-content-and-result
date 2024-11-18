@@ -50,7 +50,7 @@ target_vulnerability_integer_underflow = 'Integer Underflow'  # sum safe smart c
 target_vulner = target_vulnerability_reentrancy
 
 ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-CACHE_DIR = os.path.join(ROOT, 'cachefiles')
+CACHE_DIR = os.path.join(ROOT, 'vectorcollections')
 cache_path = os.path.join(CACHE_DIR, 'tokenized_fragments.pkl')
 vulnerability_fd = open(os.path.join(ROOT, 'metadata', 'vulnerabilities.csv'), 'w', encoding='utf-8')
 
