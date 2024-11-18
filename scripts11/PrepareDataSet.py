@@ -11,6 +11,8 @@ import numpy as np
 import pickle
 import PreProcessTools
 import numpy as np
+import sys
+import io
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, accuracy_score
 from tensorflow.keras.models import Sequential
@@ -412,7 +414,7 @@ def train_LSTM():
     print("Training complete.")
 
 if __name__ == "__main__":
-
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
     # ساخت مسیر پویا
     # log_path = os.path.join(ROOT, "logs", "output_log.txt")
     #
