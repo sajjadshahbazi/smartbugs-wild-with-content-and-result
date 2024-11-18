@@ -19,6 +19,13 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout
 from tensorflow.keras.optimizers import Adam
 
+
+
+
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
+
+
 duration_stat = {}
 count = {}
 output = {}
@@ -64,6 +71,9 @@ PATH = os.path.join(ROOT, 'contracts') # linux
 os.chdir(PATH)
 
 final_df = pd.DataFrame(columns=['X', 'Y'])
+
+
+
 
 def is_sentence_in_text(sentence, text):
     sentence = sentence.lower()
@@ -210,6 +220,7 @@ def getResultVulnarable(contract_name, target_vulnerability):
 
 
 def load_batches():
+    os.makedirs(CACHE_DIR, exist_ok=True)
     X_batches, Y_batches = [], []
     for file in os.listdir(CACHE_DIR):
         with open(os.path.join(CACHE_DIR, file), 'rb') as f:
@@ -314,14 +325,14 @@ def load_batches():
 #         pickle.dump((X, Y), f)
 #     print(f"Batch saved to {batch_file}")
 
-def load_batches():
-    X_batches, Y_batches = [], []
-    for file in os.listdir(CACHE_DIR):
-        with open(os.path.join(CACHE_DIR, file), 'rb') as f:
-            X, Y = pickle.load(f)
-            X_batches.append(X)
-            Y_batches.append(Y)
-    return np.vstack(X_batches), np.hstack(Y_batches)
+# def load_batches():
+#     X_batches, Y_batches = [], []
+#     for file in os.listdir(CACHE_DIR):
+#         with open(os.path.join(CACHE_DIR, file), 'rb') as f:
+#             X, Y = pickle.load(f)
+#             X_batches.append(X)
+#             Y_batches.append(Y)
+#     return np.vstack(X_batches), np.hstack(Y_batches)
 
 # def train_LSTM():
 #     X, Y = load_batches()
@@ -410,11 +421,10 @@ def train_LSTM():
     ])
     model.compile(optimizer=Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
     # model.fit(generator, epochs=10)
-    model.fit(generator, epochs=10, steps_per_epoch=len(generator))
+    model.fit(generator, epochs=10, steps_per_epoch=len(generator), verbose=2)
     print("Training complete.")
 
 if __name__ == "__main__":
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
     # ساخت مسیر پویا
     # log_path = os.path.join(ROOT, "logs", "output_log.txt")
     #
