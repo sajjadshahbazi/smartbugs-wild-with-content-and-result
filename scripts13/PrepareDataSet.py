@@ -1,6 +1,8 @@
 import json
 import re
 import os
+from pathlib import Path
+
 import pandas as pd
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import Sequential
@@ -92,11 +94,13 @@ def save_dataframe_to_cache(df, cache_path):
         pickle.dump(df, f)
 
 def getResultVulnarable(contract_name, target_vulnerability):
+
     total_duration = 0
     res = False
     lines = []
     for tool in tools:
-        path_result = os.path.join(f"{ROOT}results", tool, output_name, contract_name, 'result.json')
+        path_result = os.path.join(f"{ROOT}\\results\\", tool, output_name, contract_name, 'result.json')
+        # path_result = os.path.join(f"{ROOT}results", tool, output_name, contract_name, 'result.json') Linux
         if not os.path.exists(path_result):
             continue
         with open(path_result, 'r', encoding='utf-8') as fd:
@@ -112,7 +116,6 @@ def getResultVulnarable(contract_name, target_vulnerability):
             count[tool] += 1
             duration_stat[tool] += data['duration']
             total_duration += data['duration']
-
             if contract_name not in output:
                 output[contract_name] = {
                     'tools': {},
@@ -164,6 +167,7 @@ def getResultVulnarable(contract_name, target_vulnerability):
                     for vulnerability in analysis:
                         for line in analysis[vulnerability]['violations']:
                             if is_sentence_in_text(target_vulnerability, vulnerability):
+                                print("!!!!!! Find Vulnarability - securify !!!!!")
                                 res = True
                                 lines.extend([line + 1])
 
@@ -216,7 +220,15 @@ def process_batch(files, target_vulnerability):
         with open(file, encoding="utf8") as f:
             smartContractContent = f.read()
             fragments = PreProcessTools.get_fragments(smartContractContent)
-            res, vulnerable_lines = getResultVulnarable(file, target_vulnerability)
+
+            name = Path(file).stem
+
+            res, vulnerable_lines = getResultVulnarable(name, target_vulnerability)
+
+            if not res:
+                print(f"No vulnerability found in contract: {name}. Skipping...")
+                continue  # به قرارداد بعدی بروید
+
             vulnerability_status = [1 if (i + 1) in vulnerable_lines else 0 for i in range(len(fragments))]
 
             data_fr = pd.DataFrame({'Vul': vulnerability_status, 'Frag': fragments})
@@ -261,6 +273,16 @@ def train_LSTM():
     print(f"Shape of Y: {Y.shape}")
     print("Distribution in Y:", np.unique(Y, return_counts=True))
 
+    unique, counts = np.unique(Y, return_counts=True)
+    label_distribution = dict(zip(unique, counts))
+    print("Label Distribution:", label_distribution)
+
+    # نسبت لیبل‌ها
+    total_samples = len(Y)
+    for label, count in label_distribution.items():
+        print(f"Label {label}: {count} samples ({(count / total_samples) * 100:.2f}%)")
+
+
     # تقسیم داده‌ها به آموزش و تست
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
     print("Distribution in Y_test:", np.unique(Y_test, return_counts=True))
@@ -278,6 +300,8 @@ def train_LSTM():
     model.compile(optimizer=Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
 
     # آموزش مدل با داده‌های کامل
+    # class_weights = {0: 1., 1: 20}  # این اعداد به طور مثال هستند و باید آن‌ها را براساس توزیع داده‌ها تنظیم کنید
+    # model.fit(X_train, Y_train, epochs=10, batch_size=32, validation_split=0.1, class_weight=class_weights)
     model.fit(X_train, Y_train, epochs=10, batch_size=32, validation_split=0.1, verbose=2)
 
     # پیش‌بینی روی داده‌های تست
