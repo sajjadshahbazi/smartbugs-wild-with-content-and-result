@@ -62,7 +62,7 @@ cache_path = os.path.join(CACHE_DIR, 'tokenized_fragments.pkl')
 vulnerability_fd = open(os.path.join(ROOT, 'metadata', 'vulnerabilities.csv'), 'w', encoding='utf-8')
 
 # PATH = f"{ROOT}\\contracts\\"  # main data set
-PATH = f"{ROOT}\\contract\\"  # part of main data set
+PATH = f"{ROOT}\\contra\\"  # part of main data set
 # PATH = f"{ROOT}\\contra\\"  # one smart contract
 
 # PATH = os.path.join(ROOT, 'contract') # linux
@@ -228,58 +228,244 @@ def load_batches():
             Y_batches.append(Y)
     return np.vstack(X_batches), np.hstack(Y_batches)
 
+
+import re
+
+import re
+
+
+def extract_functions(code):
+    """
+    استخراج فانکشن‌ها از کد Solidity.
+    این تابع فانکشن‌هایی که با 'function' شروع می‌شوند را شناسایی کرده
+    و آنها را به صورت یک لیست برمی‌گرداند.
+
+    :param code: کد کامل قرارداد به عنوان یک رشته (string).
+    :return: لیستی از فانکشن‌ها که هرکدام به صورت یک رشته هستند.
+    """
+    functions = []
+
+    # الگوی regex برای شناسایی فانکشن‌ها
+    function_pattern = re.compile(
+        r'function\s+\w+\s*\(.*\)\s*(public|private|internal|external)*\s*(view|pure)*\s*(returns\s*\(.*\))?\s*{')
+
+    # جستجو برای تمام فانکشن‌ها
+    matches = function_pattern.finditer(code)
+
+    # پیدا کردن ابتدای هر فانکشن و استخراج آن
+    for match in matches:
+        function_start = match.start()
+        function_end = code.find('}', function_start) + 1
+
+        if function_end != -1:
+            functions.append(code[function_start:function_end])
+
+    return functions
+
+
+
+# تابعی برای توکن‌سازی کد Solidity
+def tokenize_solidity_code(code):
+    # الگوی اصلاح‌شده برای شناسایی علائم خاص از جمله '}'
+    pattern = r'\b(?:function|returns|uint256|internal|constant|assert|return|require|if|else|for|while)\b|[=<>!*&|()+\-;/\}]|\b[a-zA-Z_][a-zA-Z0-9_]*\b'
+
+    # یافتن تمام توکن‌ها با استفاده از الگو
+    tokens = re.findall(pattern, code)
+
+    return tokens
+
+# تابعی برای نرمال‌سازی متغیرها (یعنی تبدیل همه متغیرها به یک برچسب مشابه)
+# def normalize_variables(tokens):
+#     normalized_tokens = []
+#     for token in tokens:
+#         # اگر توکن یک متغیر باشد (که معمولاً با نام‌های متغیرهای غیرکلیدی شروع می‌شود)، آن را نرمال می‌کنیم
+#         if re.match(r'[a-zA-Z_][a-zA-Z0-9_]*', token) and token not in ['function', 'returns', 'internal', 'constant', 'assert', 'return']:
+#             normalized_tokens.append('VAR')  # به جای اسم متغیر، 'VAR' قرار می‌دهیم
+#         else:
+#             normalized_tokens.append(token)
+#     return normalized_tokens
+
+def normalize_variables(tokens):
+    normalized_tokens = []
+    for token in tokens:
+        # اگر توکن یک متغیر باشد (که معمولاً با نام‌های متغیرهای غیرکلیدی شروع می‌شود)، آن را نرمال می‌کنیم
+        if re.match(r'[a-zA-Z_][a-zA-Z0-9_]*', token) and token not in ['function', 'returns', 'internal', 'constant', 'assert', 'return']:
+            normalized_tokens.append('VAR')  # به جای اسم متغیر، 'VAR' قرار می‌دهیم
+        elif token in ['}', '{', '(', ')', '[', ']', '.', ';', ',', '+', '-', '=', '!', '?', ':']:
+            # لیست نمادهای خاص که باید حفظ شوند
+            normalized_tokens.append(token)
+        elif token.strip() == '':  # برای جلوگیری از ذخیره کردن فضاهای خالی
+            continue  # هیچ کاری انجام ندهید اگر توکن خالی است
+        else:
+            normalized_tokens.append(token)
+    return normalized_tokens
+
+def extract_functions_with_bodies(contract_code):
+    """
+    استخراج فانکشن‌ها از کد Solidity به همراه بدنه و شماره خط شروع و پایان.
+    :param contract_code: متن قرارداد به عنوان یک رشته
+    :return: لیستی از دیکشنری‌ها شامل فانکشن، بدنه، خط شروع و پایان
+    """
+    functions = []
+
+    # الگوی regex برای شناسایی تعریف فانکشن‌ها
+    function_pattern = re.compile(
+        r'function\s+\w+\s*\(.*?\)\s*(public|private|internal|external)?\s*(view|pure)?\s*(returns\s*\(.*?\))?\s*{')
+
+    lines = contract_code.splitlines()  # تقسیم کد به خطوط
+    open_brackets = 0
+    in_function = False
+    function_body = []
+    start_line = 0
+
+    for i, line in enumerate(lines):
+        # اگر در فانکشن نیستیم به دنبال شروع فانکشن بگرد
+        if not in_function:
+            match = function_pattern.search(line)
+            if match:
+                in_function = True
+                start_line = i + 1  # ثبت شماره خط شروع
+                function_body = [line]
+                open_brackets = line.count('{') - line.count('}')
+        else:
+            function_body.append(line)
+            open_brackets += line.count('{')
+            open_brackets -= line.count('}')
+
+            # اگر تمام براکت‌ها بسته شد، فانکشن پایان یافته است
+            if open_brackets == 0:
+                end_line = i + 1  # ثبت شماره خط پایان
+                functions.append({
+                    'function_body': '\n'.join(function_body),
+                    'start_line': start_line,
+                    'end_line': end_line,
+                    'label': 0
+                })
+                in_function = False
+
+    return functions
+
+
+# def vectorize_tokens(tokens):
+#     word2vec_model = Word2Vec(sentences=tokens, vector_size=vector_length, window=5, min_count=1, workers=4)
+#     X_padded = []
+#     for token in tokens:
+#         embeddings = [word2vec_model.wv[word] if word in word2vec_model.wv else np.zeros(vector_length) for word in token.split()]
+#         embeddings = embeddings[:sequence_length] + [np.zeros(vector_length)] * (sequence_length - len(embeddings))
+#         X_padded.append(embeddings)
+#     X = np.array(X_padded, dtype='float32')  # استفاده از float16 برای کاهش مصرف حافظه
+#     return X
+
+
+def vectorize_tokens(tokens):
+    """
+    تبدیل یک لیست از توکن‌ها به آرایه‌ای از بردارهای ویژگی.
+
+    :param tokens: لیست تک‌بعدی از توکن‌ها
+    :return: آرایه دو‌بعدی (تعداد توکن‌ها × اندازه بردار)
+    """
+    # ایجاد مدل Word2Vec
+    word2vec_model = Word2Vec(sentences=[tokens], vector_size=vector_length, window=5, min_count=1, workers=4)
+
+    # تبدیل توکن‌ها به بردارهای Word2Vec
+    embeddings = [
+        word2vec_model.wv[word] if word in word2vec_model.wv else np.zeros(vector_length)
+        for word in tokens
+    ]
+
+    # اعمال پدینگ در صورت نیاز
+    embeddings = embeddings[:sequence_length] + [np.zeros(vector_length)] * max(0, sequence_length - len(embeddings))
+
+    # تبدیل به آرایه NumPy
+    return np.array(embeddings, dtype='float32')
+
+
+# def vectorize_tokens(tokens):
+#     print(f"=================== {tokens}")
+#     word2vec_model = Word2Vec(sentences=tokens, vector_size=vector_length, window=5, min_count=1, workers=4)
+#
+#     # ایجاد و بازگشت بردارهای توکن‌ها
+#     X_padded = []
+#     for token in tokens:
+#         embeddings = [word2vec_model.wv[word] if word in word2vec_model.wv else np.zeros(vector_length) for word in
+#                       token]
+#         embeddings = embeddings[:sequence_length] + [np.zeros(vector_length)] * (
+#                     sequence_length - len(embeddings))  # تکمیل با صفر اگر کمتر از sequence_length باشد
+#         X_padded.append(embeddings)
+#
+#     X = np.array(X_padded, dtype='float16')
+#     return X
+
+def label_functions_by_vulnerable_lines(functions, vulnerable_lines):
+    for func in functions:
+        if any(func['start_line'] <= line <= func['end_line'] for line in vulnerable_lines):
+            func['label'] = 1  # اگر خط آسیب‌پذیر در فانکشن باشد، لیبل ۱ می‌شود
+
 # تابع پردازش دسته‌ها و ذخیره در فایل‌های pickle
+# def process_batch(files, target_vulnerability):
+#     dataframes_list = []
+#     for file in files:
+#         with open(file, encoding="utf8") as f:
+#             smartContractContent = f.read()
+#
+#
+#             cleaned_smart_contract = PreProcessTools.clean_smart_contract(smartContractContent)
+#             functions = extract_functions_with_bodies(cleaned_smart_contract)
+#             name = Path(file).stem
+#             res, vulnerable_lines = getResultVulnarable(name, target_vulnerability)
+#
+#             label_functions_by_vulnerable_lines(functions, vulnerable_lines)
+#             for function in functions:
+#                 fragments = PreProcessTools.get_fragments(function['function_body'])
+#                 label = function['label']
+#                 func_vectors = []
+#                 for fragment in fragments:
+#                     if fragment.strip():
+#                         tokens = tokenize_solidity_code(fragment)
+#                         vectors = vectorize_tokens(tokens)
+#                         func_vectors.extend(vectors)
+#
+#                 dataframes_list.append(func_vectors)
+
+
 def process_batch(files, target_vulnerability):
-    dataframes_list = []
+    X, Y = [], []
     for file in files:
         with open(file, encoding="utf8") as f:
             smartContractContent = f.read()
-            fragments = PreProcessTools.get_fragments(smartContractContent)
-            print(f"++++++++++++++++++ {fragments}")
-            name = Path(file).stem
 
+            # استخراج فانکشن‌ها و خطوط آسیب‌پذیر
+            cleaned_smart_contract = PreProcessTools.clean_smart_contract(smartContractContent)
+            functions = extract_functions_with_bodies(cleaned_smart_contract)
+            name = Path(file).stem
             res, vulnerable_lines = getResultVulnarable(name, target_vulnerability)
 
-            # if not res:
-            #     print(f"No vulnerability found in contract: {name}. Skipping...")
-            #     continue  # به قرارداد بعدی بروید
+            # لیبل‌گذاری
+            label_functions_by_vulnerable_lines(functions, vulnerable_lines)
 
-            vulnerability_status = [1 if (i + 1) in vulnerable_lines else 0 for i in range(len(fragments))]
+            # پردازش فانکشن‌ها
+            for function in functions:
+                fragments = PreProcessTools.get_fragments(function['function_body'])
+                label = function['label']
+                func_vectors = []
+                for fragment in fragments:
+                    if fragment.strip():
+                        tokens = tokenize_solidity_code(fragment)
+                        vectors = vectorize_tokens(tokens)
+                        func_vectors.extend(vectors)
 
-            data_fr = pd.DataFrame({'Vul': vulnerability_status, 'Frag': fragments})
-            data_fr = data_fr[~data_fr['Frag'].str.strip().isin(['', '}'])]
-            padding_needed = sequence_length - (len(data_fr) % sequence_length) if (len(data_fr) % sequence_length) != 0 else 0
-            if padding_needed > 0:
-                empty_fragments = [''] * padding_needed
-                empty_labels = [0] * padding_needed
-                padding_df = pd.DataFrame({'Vul': empty_labels, 'Frag': empty_fragments})
-                data_fr = pd.concat([data_fr, padding_df], ignore_index=True)
-
-            dataframes_list.append(data_fr)
-
-    combined_dataf = pd.concat(dataframes_list, ignore_index=True)
-    X, Y = tokenize_fragments(combined_dataf)
-    print(f"DSSSSSSSSSSSSSSSSSSSSSSSSSSS => {X}")
+                if func_vectors:  # اضافه‌کردن به داده‌ها
+                    X.append(func_vectors)
+                    Y.append(label)
+    print(f"===========dede : {X}")
+    # ذخیره داده‌ها
+    X_padded = pad_sequences(X, maxlen=sequence_length, padding='post', dtype='float32')
+    Y = np.array(Y, dtype='int32')
 
     batch_file = os.path.join(CACHE_DIR, f"batch_{len(os.listdir(CACHE_DIR))}.pkl")
     with open(batch_file, 'wb') as f:
-        pickle.dump((X, Y), f)
+        pickle.dump((X_padded, Y), f)
     print(f"Batch saved to {batch_file}")
-
-# تابع تبدیل داده‌ها به بردارهای Word2Vec
-def tokenize_fragments(combined_df):
-    # print(f"==RRRRRRRRRRRRRRRRRR== {combined_df['Frag']}")
-    tokenized_texts = [line.split() for line in combined_df['Frag']]
-    print(f"=================== {tokenized_texts}")
-    word2vec_model = Word2Vec(sentences=tokenized_texts, vector_size=vector_length, window=5, min_count=1, workers=4)
-    X_padded = []
-    for line in combined_df['Frag']:
-        embeddings = [word2vec_model.wv[word] if word in word2vec_model.wv else np.zeros(vector_length) for word in line.split()]
-        embeddings = embeddings[:sequence_length] + [np.zeros(vector_length)] * (sequence_length - len(embeddings))
-        X_padded.append(embeddings)
-    X = np.array(X_padded, dtype='float32')  # استفاده از float16 برای کاهش مصرف حافظه
-    Y = combined_df['Vul'].values
-    return X, Y
 
 
 def train_LSTM():
@@ -333,5 +519,6 @@ if __name__ == "__main__":
         batch_files = files[i:i + batch_size]
         process_batch(batch_files, target_vulner)
 
-    train_LSTM()
+        print(f"==========================KKK : ")
+    # train_LSTM()
 
