@@ -7,6 +7,7 @@ import pandas as pd
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.utils import Sequence
 import sys
+from numba import cuda
 from gensim.models import Word2Vec
 import numpy as np
 import pickle
@@ -21,11 +22,11 @@ from tensorflow.keras.models import Sequential
 # from tensorflow.keras.layers import Conv1D, Bidirectional, LSTM, Dropout, Dense
 from tensorflow.keras.layers import Embedding, Bidirectional, GRU, Dropout, Dense
 from tensorflow.keras.callbacks import EarlyStopping
-
+from ctypes import cdll
 # from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.optimizers import Adam
-
-
+import tensorflow as tf
+from tensorflow.python.platform import build_info as tf_build_info
 
 duration_stat = {}
 count = {}
@@ -464,7 +465,44 @@ def train_LSTM():
 
 
 if __name__ == "__main__":
+    # print(tf.__version__)
+    # gpus = tf.config.list_physical_devices('GPU')
+    # print(f"Available GPUs: {gpus}")
+    #
+    # # بررسی نسخه‌ی CUDA
+    # cuda_version = tf.sysconfig.get_build_info().get('cuda_version', 'Not Found')
+    # print(f"CUDA Version: {cuda_version}")
+    #
+    # print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+    #
+    # print("GPU Available: ", tf.test.is_gpu_available())
+    # print(tf.config.list_physical_devices('GPU'))
+    # print(F"cuda : {tf_build_info.cuda_version}")
+    # print(f"cudnn : {tf_build_info.cudnn_version}")
 
+    print("TensorFlow version:", tf.__version__)
+    print("Is GPU available:", tf.config.list_physical_devices('GPU'))
+
+    gpus = tf.config.list_physical_devices('GPU')
+    print(f"Available GPUs: {gpus}")
+
+    # بررسی نسخه‌ی CUDA
+    cuda_version = tf.sysconfig.get_build_info().get('cuda_version', 'Not Found')
+    print(f"CUDA Version: {cuda_version}")
+
+    # بررسی نسخه‌ی cuDNN
+    cudnn_version = tf.sysconfig.get_build_info().get('cudnn_version', 'Not Found')
+    print(f"cuDNN Version: {cudnn_version}")
+
+    print("Num GPUs Available: ", len(gpus))
+
+    print("TensorFlow version:", tf.__version__)
+    print("Available GPUs:", tf.config.list_physical_devices('GPU'))
+    print("Built with CUDA:", tf.test.is_built_with_cuda())
+    print("CUDA is available:", cuda.is_available())
+    print("Loading cuDNN...")
+    cdll.LoadLibrary("C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.8/bin/cudnn64_8.dll")
+    print(f"tf.debugging.set_log_device_placement(True) = {tf.debugging.set_log_device_placement(True)}")
     files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
     for i in range(0, len(files), batch_size):
         batch_files = files[i:i + batch_size]

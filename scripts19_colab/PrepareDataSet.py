@@ -25,7 +25,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 # from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.optimizers import Adam
 
-
+import tensorflow as tf
 
 duration_stat = {}
 count = {}
@@ -465,11 +465,12 @@ def train_LSTM():
 
 
 if __name__ == "__main__":
+    print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 
-    files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
-    for i in range(0, len(files), batch_size):
-        batch_files = files[i:i + batch_size]
-        process_batch(batch_files, target_vulner)
-
-    train_LSTM()
+    # files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
+    # for i in range(0, len(files), batch_size):
+    #     batch_files = files[i:i + batch_size]
+    #     process_batch(batch_files, target_vulner)
+    #
+    # train_LSTM()
 
