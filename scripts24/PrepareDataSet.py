@@ -18,11 +18,13 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, accuracy_score
 from tensorflow.keras.models import Sequential
 # from tensorflow.keras.layers import Conv1D, Bidirectional, LSTM, Dropout, Dense
-from tensorflow.keras.layers import Embedding, Bidirectional, GRU, Dropout, Dense
+from tensorflow.keras.layers import Embedding, Bidirectional, LSTM, Dropout, Dense
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.optimizers import Adam
 import tensorflow as tf
 from tensorflow.python.platform import build_info as tf_build_info
+from tensorflow.keras.layers import Input
+import matplotlib.pyplot as plt
 
 duration_stat = {}
 count = {}
@@ -494,34 +496,58 @@ def train_LSTM():
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
     print("Distribution in Y_test:", np.unique(Y_test, return_counts=True))
 
-    # تعریف مدل BiGRU
     model = Sequential([
-        Bidirectional(GRU(128, return_sequences=True), input_shape=(X_train.shape[1], X_train.shape[2])),
-        Bidirectional(GRU(64)),  # یک لایه دیگر BiGRU بدون بازگشت توالی
-        Dense(1, activation='sigmoid')  # لایه خروجی برای دسته‌بندی باینری
+        Input(shape=(X_train.shape[1], X_train.shape[2])),
+        Bidirectional(LSTM(128, return_sequences=True)),
+        Bidirectional(LSTM(64)),
+        Dense(1, activation='sigmoid')
     ])
 
     model.compile(
         optimizer=Adam(learning_rate=0.001),
         loss="binary_crossentropy",
-        metrics=['accuracy', 'Precision', 'Recall']
+        metrics=['accuracy']
     )
 
     early_stopping = EarlyStopping(
         monitor='val_loss',  # پایش بر اساس val_loss
-        patience=10,  # اگر val_loss برای 5 epoch متوالی بهبود نیافت، توقف شود
+        patience=10,  # اگر val_loss برای 10 epoch متوالی بهبود نیافت، توقف شود
         restore_best_weights=True  # بهترین وزن‌ها را بازیابی کن
     )
 
-    # آموزش مدل
-    model.fit(
+    # آموزش مدل و ذخیره تاریخچه
+    history = model.fit(
         X_train, Y_train,
         epochs=50,
         batch_size=32,
-        validation_split=0,
+        validation_split=0.2,
         callbacks=[early_stopping],  # اضافه کردن Early Stopping
         verbose=2
     )
+
+    # رسم نمودار دقت و خطا
+    plt.figure(figsize=(10, 6))
+
+    # رسم دقت
+    plt.plot(history.history['accuracy'], label='train acc', color='blue')
+    plt.plot(history.history['val_accuracy'], label='val acc', color='yellow')
+
+    # رسم خطا
+    plt.plot(history.history['loss'], label='train loss', color='red')
+    plt.plot(history.history['val_loss'], label='val loss', color='green')
+
+    plt.title('Model Accuracy and Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy / Loss')
+    plt.legend(loc='best')
+    plt.grid()
+
+
+    output_image_path = "training_plot.png"
+    plt.savefig(output_image_path, dpi=300, bbox_inches='tight')
+    print(f"Plot saved to {output_image_path}")
+
+    plt.show()
 
     # پیش‌بینی روی داده‌های تست
     Y_pred = (model.predict(X_test) > 0.5).astype("int32")
@@ -535,131 +561,139 @@ def train_LSTM():
     print(report)
 
     # ذخیره مدل
-    model.save('final_BiGRU_model.h5')
-    print("Training complete with BiGRU.")
-
-    model.save('final_model_with_focal_loss.h5')
-    print("Training complete with Focal Loss.")
+    model.save('final_LSTM_model.h5')
+    print("Training complete with LSTM.")
 
 
 if __name__ == "__main__":
-    files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
-    print(f"size files {files.__len__()}")
-    for batch_index, i in enumerate(range(0, len(files), batch_size)):
-        batch_files = files[i:i + batch_size]
-        print(f"size batch_files {batch_files.__len__()}")
-        process_batch_with_categorization(batch_files, target_vulner, batch_size, batch_index)
+    # files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
+    # print(f"size files {files.__len__()}")
+    # for batch_index, i in enumerate(range(0, len(files), batch_size)):
+    #     batch_files = files[i:i + batch_size]
+    #     print(f"size batch_files {batch_files.__len__()}")
+    #     process_batch_with_categorization(batch_files, target_vulner, batch_size, batch_index)
 
 
     train_LSTM()
-# 2119/2119 - 67s - 32ms/step - Precision: 0.7520 - Recall: 0.2348 - accuracy: 0.8101 - loss: 0.4412
+
+    # ====================== Training Results ======================
+    # Epoch 1/50
+    # 1695/1695 - 50s - 29ms/step - accuracy: 0.8115 - loss: 0.4437 - val_accuracy: 0.8349 - val_loss: 0.4035
+    # Epoch 2/50
+    # 1695/1695 - 50s - 29ms/step - accuracy: 0.8343 - loss: 0.3958 - val_accuracy: 0.8400 - val_loss: 0.3822
+    # ...
+    # Epoch 34/50
+    # 1695/1695 - 58s - 34ms/step - accuracy: 0.9257 - loss: 0.1857 - val_accuracy: 0.8884 - val_loss: 0.2828
+    # Epoch 35/50
+    # 1695/1695 - 61s - 36ms/step - accuracy: 0.9280 - loss: 0.1819 - val_accuracy: 0.8861 - val_loss: 0.2987
+
+    # ====================== Final Evaluation Results ======================
+    # Accuracy on test set: 88.26%
+    #
+    # Classification Report:
+    #               precision    recall  f1-score   support
+    #
+    #         Safe       0.91      0.94      0.93     13127
+    #   Vulnerable       0.78      0.67      0.72      3822
+    #
+    #     accuracy                           0.88     16949
+    #    macro avg       0.84      0.81      0.82     16949
+    # weighted avg       0.88      0.88      0.88     16949
+
+    # ====================== Notes ======================
+    # - The model achieved high accuracy (88.26%) on the test set.
+    # - Precision for the "Safe" class is very high (91%), indicating the model effectively identifies safe contracts.
+    # - Recall for the "Vulnerable" class is relatively lower (67%), suggesting room for improvement in detecting vulnerable contracts.
+    # - Consider tuning the model or increasing training data to improve recall for the "Vulnerable" class.
+    # ===================================================
+
+# 1211/1211 - 139s - 114ms/step - accuracy: 0.7376 - loss: 0.5306 - val_accuracy: 0.7744 - val_loss: 0.4730
 # Epoch 2/50
-# 2119/2119 - 67s - 32ms/step - Precision: 0.8185 - Recall: 0.3427 - accuracy: 0.8347 - loss: 0.3863
+# 1211/1211 - 145s - 120ms/step - accuracy: 0.7769 - loss: 0.4685 - val_accuracy: 0.7860 - val_loss: 0.4452
 # Epoch 3/50
-# 2119/2119 - 70s - 33ms/step - Precision: 0.7838 - Recall: 0.4112 - accuracy: 0.8418 - loss: 0.3532
+# 1211/1211 - 146s - 120ms/step - accuracy: 0.7854 - loss: 0.4359 - val_accuracy: 0.7987 - val_loss: 0.4205
 # Epoch 4/50
-# 2119/2119 - 70s - 33ms/step - Precision: 0.7718 - Recall: 0.4617 - accuracy: 0.8479 - loss: 0.3323
+# 1211/1211 - 141s - 117ms/step - accuracy: 0.7932 - loss: 0.4184 - val_accuracy: 0.7987 - val_loss: 0.4079
 # Epoch 5/50
-# 2119/2119 - 71s - 34ms/step - Precision: 0.7775 - Recall: 0.5063 - accuracy: 0.8561 - loss: 0.3162
+# 1211/1211 - 144s - 119ms/step - accuracy: 0.8004 - loss: 0.4049 - val_accuracy: 0.7980 - val_loss: 0.4092
 # Epoch 6/50
-# 2119/2119 - 72s - 34ms/step - Precision: 0.7790 - Recall: 0.5310 - accuracy: 0.8604 - loss: 0.3058
+# 1211/1211 - 145s - 120ms/step - accuracy: 0.8040 - loss: 0.3951 - val_accuracy: 0.8040 - val_loss: 0.3899
 # Epoch 7/50
-# 2119/2119 - 72s - 34ms/step - Precision: 0.7778 - Recall: 0.5594 - accuracy: 0.8647 - loss: 0.2955
+# 1211/1211 - 206s - 170ms/step - accuracy: 0.8091 - loss: 0.3877 - val_accuracy: 0.8070 - val_loss: 0.3853
 # Epoch 8/50
-# 2119/2119 - 73s - 35ms/step - Precision: 0.7894 - Recall: 0.5870 - accuracy: 0.8717 - loss: 0.2850
+# 1211/1211 - 178s - 147ms/step - accuracy: 0.8101 - loss: 0.3839 - val_accuracy: 0.8122 - val_loss: 0.3819
 # Epoch 9/50
-# 2119/2119 - 75s - 35ms/step - Precision: 0.7921 - Recall: 0.6037 - accuracy: 0.8750 - loss: 0.2791
+# 1211/1211 - 36s - 30ms/step - accuracy: 0.8168 - loss: 0.3750 - val_accuracy: 0.8118 - val_loss: 0.3762
 # Epoch 10/50
-# 2119/2119 - 73s - 35ms/step - Precision: 0.7962 - Recall: 0.6203 - accuracy: 0.8787 - loss: 0.2717
+# 1211/1211 - 37s - 31ms/step - accuracy: 0.8181 - loss: 0.3680 - val_accuracy: 0.8178 - val_loss: 0.3736
 # Epoch 11/50
-# 2119/2119 - 72s - 34ms/step - Precision: 0.8094 - Recall: 0.6414 - accuracy: 0.8852 - loss: 0.2631
+# 1211/1211 - 56s - 47ms/step - accuracy: 0.8221 - loss: 0.3620 - val_accuracy: 0.8223 - val_loss: 0.3672
 # Epoch 12/50
-# 2119/2119 - 70s - 33ms/step - Precision: 0.8109 - Recall: 0.6586 - accuracy: 0.8885 - loss: 0.2551
+# 1211/1211 - 140s - 115ms/step - accuracy: 0.8239 - loss: 0.3598 - val_accuracy: 0.8213 - val_loss: 0.3650
 # Epoch 13/50
-# 2119/2119 - 67s - 32ms/step - Precision: 0.8148 - Recall: 0.6675 - accuracy: 0.8909 - loss: 0.2505
+# 1211/1211 - 49s - 41ms/step - accuracy: 0.8312 - loss: 0.3483 - val_accuracy: 0.8285 - val_loss: 0.3575
 # Epoch 14/50
-# 2119/2119 - 67s - 32ms/step - Precision: 0.8200 - Recall: 0.6831 - accuracy: 0.8948 - loss: 0.2434
+# 1211/1211 - 36s - 30ms/step - accuracy: 0.8365 - loss: 0.3424 - val_accuracy: 0.8260 - val_loss: 0.3591
 # Epoch 15/50
-# 2119/2119 - 67s - 32ms/step - Precision: 0.8317 - Recall: 0.6947 - accuracy: 0.8995 - loss: 0.2381
+# 1211/1211 - 37s - 30ms/step - accuracy: 0.8411 - loss: 0.3354 - val_accuracy: 0.8272 - val_loss: 0.3566
 # Epoch 16/50
-# 2119/2119 - 69s - 32ms/step - Precision: 0.8345 - Recall: 0.7058 - accuracy: 0.9022 - loss: 0.2324
+# 1211/1211 - 37s - 31ms/step - accuracy: 0.8461 - loss: 0.3284 - val_accuracy: 0.8356 - val_loss: 0.3460
 # Epoch 17/50
-# 2119/2119 - 71s - 34ms/step - Precision: 0.8379 - Recall: 0.7120 - accuracy: 0.9041 - loss: 0.2276
+# 1211/1211 - 38s - 32ms/step - accuracy: 0.8478 - loss: 0.3225 - val_accuracy: 0.8369 - val_loss: 0.3490
 # Epoch 18/50
-# 2119/2119 - 71s - 33ms/step - Precision: 0.8444 - Recall: 0.7216 - accuracy: 0.9073 - loss: 0.2227
+# 1211/1211 - 38s - 32ms/step - accuracy: 0.8550 - loss: 0.3146 - val_accuracy: 0.8336 - val_loss: 0.3440
 # Epoch 19/50
-# 2119/2119 - 70s - 33ms/step - Precision: 0.8460 - Recall: 0.7271 - accuracy: 0.9087 - loss: 0.2189
+# 1211/1211 - 39s - 32ms/step - accuracy: 0.8553 - loss: 0.3110 - val_accuracy: 0.8417 - val_loss: 0.3405
 # Epoch 20/50
-# 2119/2119 - 70s - 33ms/step - Precision: 0.8515 - Recall: 0.7365 - accuracy: 0.9117 - loss: 0.2144
+# 1211/1211 - 39s - 32ms/step - accuracy: 0.8605 - loss: 0.3033 - val_accuracy: 0.8448 - val_loss: 0.3413
 # Epoch 21/50
-# 2119/2119 - 71s - 34ms/step - Precision: 0.8507 - Recall: 0.7395 - accuracy: 0.9120 - loss: 0.2116
+# 1211/1211 - 42s - 34ms/step - accuracy: 0.8625 - loss: 0.2989 - val_accuracy: 0.8435 - val_loss: 0.3309
 # Epoch 22/50
-# 2119/2119 - 73s - 34ms/step - Precision: 0.8608 - Recall: 0.7535 - accuracy: 0.9170 - loss: 0.2053
+# 1211/1211 - 43s - 36ms/step - accuracy: 0.8688 - loss: 0.2910 - val_accuracy: 0.8468 - val_loss: 0.3335
 # Epoch 23/50
-# 2119/2119 - 72s - 34ms/step - Precision: 0.8612 - Recall: 0.7519 - accuracy: 0.9168 - loss: 0.2045
+# 1211/1211 - 42s - 35ms/step - accuracy: 0.8722 - loss: 0.2858 - val_accuracy: 0.8476 - val_loss: 0.3353
 # Epoch 24/50
-# 2119/2119 - 74s - 35ms/step - Precision: 0.8657 - Recall: 0.7577 - accuracy: 0.9189 - loss: 0.1998
+# 1211/1211 - 42s - 35ms/step - accuracy: 0.8750 - loss: 0.2801 - val_accuracy: 0.8525 - val_loss: 0.3287
 # Epoch 25/50
-# 2119/2119 - 74s - 35ms/step - Precision: 0.8694 - Recall: 0.7657 - accuracy: 0.9213 - loss: 0.1960
+# 1211/1211 - 41s - 33ms/step - accuracy: 0.8778 - loss: 0.2738 - val_accuracy: 0.8474 - val_loss: 0.3369
 # Epoch 26/50
-# 2119/2119 - 72s - 34ms/step - Precision: 0.8716 - Recall: 0.7693 - accuracy: 0.9225 - loss: 0.1949
+# 1211/1211 - 41s - 34ms/step - accuracy: 0.8808 - loss: 0.2691 - val_accuracy: 0.8525 - val_loss: 0.3313
 # Epoch 27/50
-# 2119/2119 - 70s - 33ms/step - Precision: 0.8721 - Recall: 0.7701 - accuracy: 0.9227 - loss: 0.1913
+# 1211/1211 - 42s - 35ms/step - accuracy: 0.8840 - loss: 0.2649 - val_accuracy: 0.8547 - val_loss: 0.3283
 # Epoch 28/50
-# 2119/2119 - 71s - 34ms/step - Precision: 0.8751 - Recall: 0.7753 - accuracy: 0.9244 - loss: 0.1896
+# 1211/1211 - 41s - 34ms/step - accuracy: 0.8851 - loss: 0.2618 - val_accuracy: 0.8534 - val_loss: 0.3296
 # Epoch 29/50
-# 2119/2119 - 71s - 34ms/step - Precision: 0.8802 - Recall: 0.7791 - accuracy: 0.9263 - loss: 0.1856
+# 1211/1211 - 40s - 33ms/step - accuracy: 0.8885 - loss: 0.2556 - val_accuracy: 0.8538 - val_loss: 0.3385
 # Epoch 30/50
-# 2119/2119 - 74s - 35ms/step - Precision: 0.8804 - Recall: 0.7807 - accuracy: 0.9267 - loss: 0.1836
+# 1211/1211 - 40s - 33ms/step - accuracy: 0.8913 - loss: 0.2505 - val_accuracy: 0.8531 - val_loss: 0.3370
 # Epoch 31/50
-# 2119/2119 - 73s - 34ms/step - Precision: 0.8842 - Recall: 0.7809 - accuracy: 0.9276 - loss: 0.1824
+# 1211/1211 - 40s - 33ms/step - accuracy: 0.8934 - loss: 0.2476 - val_accuracy: 0.8501 - val_loss: 0.3414
 # Epoch 32/50
-# 2119/2119 - 71s - 34ms/step - Precision: 0.8814 - Recall: 0.7829 - accuracy: 0.9274 - loss: 0.1818
+# 1211/1211 - 40s - 33ms/step - accuracy: 0.8976 - loss: 0.2404 - val_accuracy: 0.8556 - val_loss: 0.3290
 # Epoch 33/50
-# 2119/2119 - 71s - 34ms/step - Precision: 0.8887 - Recall: 0.7886 - accuracy: 0.9301 - loss: 0.1777
+# 1211/1211 - 61s - 51ms/step - accuracy: 0.8969 - loss: 0.2389 - val_accuracy: 0.8504 - val_loss: 0.3449
 # Epoch 34/50
-# 2119/2119 - 73s - 34ms/step - Precision: 0.8892 - Recall: 0.7925 - accuracy: 0.9310 - loss: 0.1765
+# 1211/1211 - 37s - 31ms/step - accuracy: 0.9010 - loss: 0.2317 - val_accuracy: 0.8552 - val_loss: 0.3392
 # Epoch 35/50
-# 2119/2119 - 72s - 34ms/step - Precision: 0.8902 - Recall: 0.7932 - accuracy: 0.9314 - loss: 0.1752
+# 1211/1211 - 39s - 32ms/step - accuracy: 0.9036 - loss: 0.2287 - val_accuracy: 0.8574 - val_loss: 0.3294
 # Epoch 36/50
-# 2119/2119 - 72s - 34ms/step - Precision: 0.8864 - Recall: 0.7953 - accuracy: 0.9309 - loss: 0.1763
+# 1211/1211 - 39s - 32ms/step - accuracy: 0.9038 - loss: 0.2262 - val_accuracy: 0.8635 - val_loss: 0.3330
 # Epoch 37/50
-# 2119/2119 - 71s - 33ms/step - Precision: 0.8908 - Recall: 0.7919 - accuracy: 0.9312 - loss: 0.1754
-# Epoch 38/50
-# 2119/2119 - 72s - 34ms/step - Precision: 0.8945 - Recall: 0.7960 - accuracy: 0.9329 - loss: 0.1719
-# Epoch 39/50
-# 2119/2119 - 72s - 34ms/step - Precision: 0.8967 - Recall: 0.7967 - accuracy: 0.9335 - loss: 0.1696
-# Epoch 40/50
-# 2119/2119 - 68s - 32ms/step - Precision: 0.8948 - Recall: 0.7986 - accuracy: 0.9334 - loss: 0.1687
-# Epoch 41/50
-# 2119/2119 - 68s - 32ms/step - Precision: 0.8988 - Recall: 0.8051 - accuracy: 0.9356 - loss: 0.1681
-# Epoch 42/50
-# 2119/2119 - 132s - 62ms/step - Precision: 0.8957 - Recall: 0.8058 - accuracy: 0.9351 - loss: 0.1664
-# Epoch 43/50
-# 2119/2119 - 109s - 51ms/step - Precision: 0.8996 - Recall: 0.8049 - accuracy: 0.9358 - loss: 0.1665
-# Epoch 44/50
-# 2119/2119 - 65s - 31ms/step - Precision: 0.9025 - Recall: 0.8109 - accuracy: 0.9376 - loss: 0.1627
-# Epoch 45/50
-# 2119/2119 - 67s - 32ms/step - Precision: 0.8998 - Recall: 0.8075 - accuracy: 0.9364 - loss: 0.1634
-# Epoch 46/50
-# 2119/2119 - 176s - 83ms/step - Precision: 0.9022 - Recall: 0.8090 - accuracy: 0.9372 - loss: 0.1614
-# Epoch 47/50
-# 2119/2119 - 115s - 54ms/step - Precision: 0.9025 - Recall: 0.8110 - accuracy: 0.9377 - loss: 0.1614
-# Epoch 48/50
-# 2119/2119 - 186s - 88ms/step - Precision: 0.9045 - Recall: 0.8093 - accuracy: 0.9378 - loss: 0.1615
-# Epoch 49/50
-# 2119/2119 - 159s - 75ms/step - Precision: 0.9058 - Recall: 0.8124 - accuracy: 0.9387 - loss: 0.1586
-# Epoch 50/50
-# 2119/2119 - 88s - 41ms/step - Precision: 0.9013 - Recall: 0.8106 - accuracy: 0.9373 - loss: 0.1618
-# 530/530 ━━━━━━━━━━━━━━━━━━━━ 6s 11ms/step
-# Accuracy: 0.9004661041949378
+# 1211/1211 - 39s - 32ms/step - accuracy: 0.9073 - loss: 0.2194 - val_accuracy: 0.8533 - val_loss: 0.3430
+# Plot saved to training_plot.png
+# 379/379 ━━━━━━━━━━━━━━━━━━━━ 5s 12ms/step
+# Accuracy: 0.8496861579121242
 # Classification Report:
 #               precision    recall  f1-score   support
 #
-#         Safe       0.92      0.96      0.94     13127
-#   Vulnerable       0.83      0.70      0.76      3822
+#         Safe       0.87      0.92      0.89      8218
+#   Vulnerable       0.80      0.71      0.75      3890
 #
-#     accuracy                           0.90     16949
-#    macro avg       0.87      0.83      0.85     16949
-# weighted avg       0.90      0.90      0.90     16949
+#     accuracy                           0.85     12108
+#    macro avg       0.84      0.81      0.82     12108
+# weighted avg       0.85      0.85      0.85     12108
+
+
+
+
 
