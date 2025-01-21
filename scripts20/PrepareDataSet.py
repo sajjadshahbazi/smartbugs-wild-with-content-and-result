@@ -12,7 +12,6 @@ import numpy as np
 import pickle
 import PreProcessTools
 import numpy as np
-import sys
 import io
 from tensorflow.keras import backend as K
 from sklearn.model_selection import train_test_split
@@ -21,11 +20,9 @@ from tensorflow.keras.models import Sequential
 # from tensorflow.keras.layers import Conv1D, Bidirectional, LSTM, Dropout, Dense
 from tensorflow.keras.layers import Embedding, Bidirectional, GRU, Dropout, Dense
 from tensorflow.keras.callbacks import EarlyStopping
-
-# from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.optimizers import Adam
-
 import tensorflow as tf
+from tensorflow.python.platform import build_info as tf_build_info
 
 duration_stat = {}
 count = {}
@@ -35,7 +32,7 @@ vul_count = 0
 labels = []
 fragment_contracts = []
 dataframes_list = []
-batch_size = 2000  # کاهش اندازه دسته به 500 قرارداد
+batch_size = 1000  # کاهش اندازه دسته به 500 قرارداد
 output_name = 'icse20'
 vector_length = 300
 tool_stat = {}
@@ -57,13 +54,12 @@ target_vulnerability_integer_underflow = 'Integer Underflow'  # sum safe smart c
 
 target_vulner = target_vulnerability_reentrancy
 
-# ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-# CACHE_DIR = os.path.join(ROOT, 'vectorcollections')
-ROOT = '/content/smartbugs-wild-with-content-and-result' # Colab
-CACHE_DIR = os.path.join(ROOT, 'vectorcollections') # Colab
+ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+CACHE_DIR = os.path.join(ROOT, 'vectorcollections')
+cache_path = os.path.join(CACHE_DIR, 'tokenized_fragments.pkl')
+vulnerability_fd = open(os.path.join(ROOT, 'metadata', 'vulnerabilities.csv'), 'w', encoding='utf-8')
 
-# PATH = f"{ROOT}\\contracts\\"  # main data set
-PATH = os.path.join(ROOT, 'contracts')  # main data set colaab
+PATH = f"{ROOT}\\contracts\\"  # main data set
 # PATH = f"{ROOT}\\contract\\"  # part of main data set
 # PATH = f"{ROOT}\\contra\\"  # one smart contract
 
@@ -465,12 +461,11 @@ def train_LSTM():
 
 
 if __name__ == "__main__":
-    print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 
-    # files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
-    # for i in range(0, len(files), batch_size):
-    #     batch_files = files[i:i + batch_size]
-    #     process_batch(batch_files, target_vulner)
-    #
-    # train_LSTM()
+    files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
+    for i in range(0, len(files), batch_size):
+        batch_files = files[i:i + batch_size]
+        process_batch(batch_files, target_vulner)
+
+    train_LSTM()
 

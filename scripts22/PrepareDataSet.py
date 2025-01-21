@@ -12,7 +12,6 @@ import numpy as np
 import pickle
 import PreProcessTools
 import numpy as np
-import sys
 import io
 from tensorflow.keras import backend as K
 from sklearn.model_selection import train_test_split
@@ -21,11 +20,9 @@ from tensorflow.keras.models import Sequential
 # from tensorflow.keras.layers import Conv1D, Bidirectional, LSTM, Dropout, Dense
 from tensorflow.keras.layers import Embedding, Bidirectional, GRU, Dropout, Dense
 from tensorflow.keras.callbacks import EarlyStopping
-
-# from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.optimizers import Adam
-
 import tensorflow as tf
+from tensorflow.python.platform import build_info as tf_build_info
 
 duration_stat = {}
 count = {}
@@ -35,7 +32,7 @@ vul_count = 0
 labels = []
 fragment_contracts = []
 dataframes_list = []
-batch_size = 2000  # کاهش اندازه دسته به 500 قرارداد
+batch_size = 1000  # کاهش اندازه دسته به 500 قرارداد
 output_name = 'icse20'
 vector_length = 300
 tool_stat = {}
@@ -57,13 +54,12 @@ target_vulnerability_integer_underflow = 'Integer Underflow'  # sum safe smart c
 
 target_vulner = target_vulnerability_reentrancy
 
-# ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-# CACHE_DIR = os.path.join(ROOT, 'vectorcollections')
-ROOT = '/content/smartbugs-wild-with-content-and-result' # Colab
-CACHE_DIR = os.path.join(ROOT, 'vectorcollections') # Colab
+ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+CACHE_DIR = os.path.join(ROOT, 'vectorcollections')
+cache_path = os.path.join(CACHE_DIR, 'tokenized_fragments.pkl')
+vulnerability_fd = open(os.path.join(ROOT, 'metadata', 'vulnerabilities.csv'), 'w', encoding='utf-8')
 
-# PATH = f"{ROOT}\\contracts\\"  # main data set
-PATH = os.path.join(ROOT, 'contracts')  # main data set colaab
+PATH = f"{ROOT}\\contracts\\"  # main data set
 # PATH = f"{ROOT}\\contract\\"  # part of main data set
 # PATH = f"{ROOT}\\contra\\"  # one smart contract
 
@@ -98,14 +94,36 @@ def is_sentence_in_text(sentence, text):
 
 
 
-def load_batches():
+def load_batches(folder, file_extension=".pkl"):
     X_batches, Y_batches = [], []
-    for file in os.listdir(CACHE_DIR):
-        with open(os.path.join(CACHE_DIR, file), 'rb') as f:
-            X, Y = pickle.load(f)
-            X_batches.append(X)
-            Y_batches.append(Y)
+    for file in os.listdir(folder):
+        if file.endswith(file_extension):  # فیلتر فایل‌های pickle
+            with open(os.path.join(folder, file), 'rb') as f:
+                X, Y = pickle.load(f)
+                X_batches.append(X)
+                Y_batches.append(Y)
     return np.vstack(X_batches), np.hstack(Y_batches)
+
+# def load_batches():
+#     X_batches, Y_batches = [], []
+#     for file in os.listdir(CACHE_DIR):
+#         with open(os.path.join(CACHE_DIR, file), 'rb') as f:
+#             X, Y = pickle.load(f)
+#             X_batches.append(X)
+#             Y_batches.append(Y)
+#     return np.vstack(X_batches), np.hstack(Y_batches)
+#
+#
+# def load_batches():
+#     os.makedirs(CACHE_DIR, exist_ok=True)
+#     X_batches, Y_batches = [], []
+#     for file in os.listdir(CACHE_DIR):
+#         with open(os.path.join(CACHE_DIR, file), 'rb') as f:
+#             X, Y = pickle.load(f)
+#             X_batches.append(X)
+#             Y_batches.append(Y)
+#     return np.vstack(X_batches), np.hstack(Y_batches)
+
 
 def getResultVulnarable(contract_name, target_vulnerability):
 
@@ -181,7 +199,6 @@ def getResultVulnarable(contract_name, target_vulnerability):
                     for vulnerability in analysis:
                         for line in analysis[vulnerability]['violations']:
                             if is_sentence_in_text(target_vulnerability, vulnerability):
-                                print("!!!!!! Find Vulnarability - securify !!!!!")
                                 res = True
                                 lines.extend([line + 1])
 
@@ -217,15 +234,47 @@ def getResultVulnarable(contract_name, target_vulnerability):
     return res, lines
 
 
-def load_batches():
-    os.makedirs(CACHE_DIR, exist_ok=True)
-    X_batches, Y_batches = [], []
-    for file in os.listdir(CACHE_DIR):
-        with open(os.path.join(CACHE_DIR, file), 'rb') as f:
-            X, Y = pickle.load(f)
-            X_batches.append(X)
-            Y_batches.append(Y)
-    return np.vstack(X_batches), np.hstack(Y_batches)
+
+SENSITIVE_OPERATORS_REETRANCY = ['call', 'delegatecall', 'send', 'transfer', 'selfdestruct']
+
+def contains_sensitive_operator(function_body):
+    """
+    بررسی می‌کند که آیا فانکشن شامل عملگرهای حساس است یا خیر.
+    """
+    for operator in SENSITIVE_OPERATORS_REETRANCY:
+        if operator in function_body:
+            return True
+    return False
+
+
+def save_to_file(data, file_prefix, cache_dir, batch_size):
+    os.makedirs(cache_dir, exist_ok=True)
+    for i in range(0, len(data), batch_size):
+        batch = data[i:i + batch_size]
+        filename = f"{file_prefix}_batch_{i // batch_size}.pkl"
+        filepath = os.path.join(cache_dir, filename)
+        with open(filepath, 'wb') as f:
+            pickle.dump(batch, f)
+        print(f"Saved batch to {filepath}")
+
+
+# def save_to_file(data, file_prefix, cache_dir, batch_size):
+#     """
+#     ذخیره فایل‌های دسته‌بندی شده در یک مسیر (CACHE_DIR) با نام‌گذاری مناسب.
+#     :param data: داده‌هایی که باید ذخیره شوند (لیستی از نمونه‌ها).
+#     :param file_prefix: پیشوند فایل (مثلاً 'vulnerable', 'sensitive_negative').
+#     :param cache_dir: مسیر پوشه اصلی ذخیره (CACHE_DIR).
+#     :param batch_size: تعداد نمونه‌ها در هر فایل.
+#     """
+#     os.makedirs(cache_dir, exist_ok=True)  # اطمینان از وجود پوشه CACHE_DIR
+#
+#     # ذخیره داده‌ها به صورت فایل‌های جداگانه در CACHE_DIR
+#     for i in range(0, len(data), batch_size):
+#         batch = data[i:i + batch_size]
+#         filename = f"{cache_dir}/{file_prefix}_batch_{i // batch_size}.pkl"  # نام‌گذاری دسته‌بندی‌شده
+#         with open(filename, 'wb') as f:
+#             pickle.dump(batch, f)
+#         print(f"Saved batch to {filename}")
 
 
 def extract_functions(code):
@@ -358,53 +407,62 @@ def label_functions_by_vulnerable_lines(functions, vulnerable_lines):
 
 
 
-def process_batch(files, target_vulnerability):
-    X, Y = [], []
-    max_function_length = 50  # تعداد گام‌های زمانی (طول فانکشن)
-    for file in files:
+def process_batch_with_categorization(files, target_vulnerability, batch_size):
+    """
+    پردازش دسته‌ها و دسته‌بندی توابع به سه گروه:
+    1. شامل عملگرهای حساس با لیبل 0 (لیبل -1 می‌گیرند).
+    2. واقعاً آسیب‌پذیر با لیبل 1.
+    3. سایر توابع.
+    """
+    sensitive_negative = []
+    vulnerable = []
+    others = []
+    max_function_length = 50
+
+    sc_files = [f for f in files if f.endswith(".sol")]
+    print(f"cont {sc_files.__len__()}")
+    for file in sc_files:
+        # print(f"cont {file}")
         with open(file, encoding="utf8") as f:
-            smartContractContent = f.read()
+            contract_content = f.read()
 
             # استخراج فانکشن‌ها و خطوط آسیب‌پذیر
-            cleaned_smart_contract = PreProcessTools.clean_smart_contract(smartContractContent)
-            functions = extract_functions_with_bodies(cleaned_smart_contract)
+            functions = extract_functions_with_bodies(contract_content)
             name = Path(file).stem
             res, vulnerable_lines = getResultVulnarable(name, target_vulnerability)
 
             # لیبل‌گذاری
             label_functions_by_vulnerable_lines(functions, vulnerable_lines)
-
-            # پردازش فانکشن‌ها
-            for function in functions:
-                fragments = PreProcessTools.get_fragments(function['function_body'])
-                label = function['label']
+            for func in functions:
+                fragments = PreProcessTools.get_fragments(func['function_body'])
+                label = func['label']
                 func_vectors = []
+
                 for fragment in fragments:
                     if fragment.strip():
                         tokens = tokenize_solidity_code(fragment)
-
-                        if tokens:  # بررسی کنید که آیا توکن‌ها خالی هستند یا خیر
+                        if tokens:
                             vectors = vectorize_tokens(tokens)
                             func_vectors.extend(vectors)
-
-                if func_vectors:  # اضافه‌کردن به داده‌ها
-                    # پد کردن فانکشن‌ها به طول ثابت
+                if func_vectors:
                     padded_function = pad_sequences([func_vectors], maxlen=max_function_length, padding='post', dtype='float32')[0]
-                    X.append(padded_function)
-                    Y.append(label)
-
-    X = np.array(X, dtype='float32')
-    Y = np.array(Y, dtype='int32')
-
+                    # دسته‌بندی توابع
+                    if contains_sensitive_operator(func['function_body']):
+                        if label == 0:
+                            sensitive_negative.append((padded_function, -1))
+                        else:
+                            vulnerable.append((padded_function, 1))
+                    else:
+                        others.append((padded_function, label))
     # ذخیره داده‌ها
-    batch_file = os.path.join(CACHE_DIR, f"batch_{len(os.listdir(CACHE_DIR))}.pkl")
-    with open(batch_file, 'wb') as f:
-        pickle.dump((X, Y), f)
-    print(f"Batch saved to {batch_file}")
+    save_to_file(sensitive_negative, "sensitive_negative", CACHE_DIR, batch_size)
+    save_to_file(vulnerable, "vulnerable", CACHE_DIR, batch_size)
+    save_to_file(others, "others", CACHE_DIR, batch_size)
+
 
 def train_LSTM():
     # بارگذاری داده‌ها
-    X, Y = load_batches()
+    X, Y = load_batches(CACHE_DIR, file_extension=".pkl")
     print(f"Shape of X: {X.shape}")  # باید (samples, max_function_length, vector_length) باشد
     print(f"Shape of Y: {Y.shape}")  # باید (samples,) باشد
     print("Distribution in Y:", np.unique(Y, return_counts=True))
@@ -416,22 +474,27 @@ def train_LSTM():
     # تعریف مدل BiGRU
     model = Sequential([
         Bidirectional(GRU(128, return_sequences=True), input_shape=(X_train.shape[1], X_train.shape[2])),
-        Dropout(0.3),  # اضافه کردن Dropout برای جلوگیری از Overfitting
+        # Dropout(0.3),  # اضافه کردن Dropout برای جلوگیری از Overfitting
         Bidirectional(GRU(64)),  # یک لایه دیگر BiGRU بدون بازگشت توالی
-        Dropout(0.5),  # Dropout بیشتر برای بهبود تعمیم‌پذیری
+        # Dropout(0.5),  # Dropout بیشتر برای بهبود تعمیم‌پذیری
         Dense(1, activation='sigmoid')  # لایه خروجی برای دسته‌بندی باینری
     ])
 
     # کامپایل مدل
+    # model.compile(
+    #     optimizer=Adam(learning_rate=0.001),
+    #     loss=focal_loss(alpha=0.75, gamma=2.0),
+    #     metrics=['accuracy', 'Precision', 'Recall']
+    # )
     model.compile(
         optimizer=Adam(learning_rate=0.001),
-        loss=focal_loss(alpha=0.75, gamma=2.0),
+        loss="binary_crossentropy",
         metrics=['accuracy', 'Precision', 'Recall']
     )
 
     early_stopping = EarlyStopping(
         monitor='val_loss',  # پایش بر اساس val_loss
-        patience=5,  # اگر val_loss برای 5 epoch متوالی بهبود نیافت، توقف شود
+        patience=10,  # اگر val_loss برای 5 epoch متوالی بهبود نیافت، توقف شود
         restore_best_weights=True  # بهترین وزن‌ها را بازیابی کن
     )
 
@@ -440,10 +503,18 @@ def train_LSTM():
         X_train, Y_train,
         epochs=50,
         batch_size=32,
-        validation_split=0.1,
+        validation_split=0,
         callbacks=[early_stopping],  # اضافه کردن Early Stopping
         verbose=2
     )
+    # model.fit(
+    #     X_train, Y_train,
+    #     epochs=50,
+    #     batch_size=32,
+    #     validation_split=0.1,
+    #     callbacks=[early_stopping],  # اضافه کردن Early Stopping
+    #     verbose=2
+    # )
 
     # پیش‌بینی روی داده‌های تست
     Y_pred = (model.predict(X_test) > 0.5).astype("int32")
@@ -465,12 +536,12 @@ def train_LSTM():
 
 
 if __name__ == "__main__":
-    print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+    files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
+    print(f"size files {files.__len__()}")
+    for i in range(0, len(files), batch_size):
+        batch_files = files[i:i + batch_size]
+        print(f"size batch_files {batch_files.__len__()}")
+        process_batch_with_categorization(batch_files, target_vulner, batch_size)
 
-    # files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
-    # for i in range(0, len(files), batch_size):
-    #     batch_files = files[i:i + batch_size]
-    #     process_batch(batch_files, target_vulner)
-    #
     # train_LSTM()
 

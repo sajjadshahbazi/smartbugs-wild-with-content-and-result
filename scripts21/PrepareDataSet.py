@@ -12,7 +12,6 @@ import numpy as np
 import pickle
 import PreProcessTools
 import numpy as np
-import sys
 import io
 from tensorflow.keras import backend as K
 from sklearn.model_selection import train_test_split
@@ -21,11 +20,9 @@ from tensorflow.keras.models import Sequential
 # from tensorflow.keras.layers import Conv1D, Bidirectional, LSTM, Dropout, Dense
 from tensorflow.keras.layers import Embedding, Bidirectional, GRU, Dropout, Dense
 from tensorflow.keras.callbacks import EarlyStopping
-
-# from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.optimizers import Adam
-
 import tensorflow as tf
+from tensorflow.python.platform import build_info as tf_build_info
 
 duration_stat = {}
 count = {}
@@ -57,13 +54,12 @@ target_vulnerability_integer_underflow = 'Integer Underflow'  # sum safe smart c
 
 target_vulner = target_vulnerability_reentrancy
 
-# ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-# CACHE_DIR = os.path.join(ROOT, 'vectorcollections')
-ROOT = '/content/smartbugs-wild-with-content-and-result' # Colab
-CACHE_DIR = os.path.join(ROOT, 'vectorcollections') # Colab
+ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+CACHE_DIR = os.path.join(ROOT, 'vectorcollections')
+cache_path = os.path.join(CACHE_DIR, 'tokenized_fragments.pkl')
+vulnerability_fd = open(os.path.join(ROOT, 'metadata', 'vulnerabilities.csv'), 'w', encoding='utf-8')
 
-# PATH = f"{ROOT}\\contracts\\"  # main data set
-PATH = os.path.join(ROOT, 'contracts')  # main data set colaab
+PATH = f"{ROOT}\\contracts\\"  # main data set
 # PATH = f"{ROOT}\\contract\\"  # part of main data set
 # PATH = f"{ROOT}\\contra\\"  # one smart contract
 
@@ -416,22 +412,27 @@ def train_LSTM():
     # تعریف مدل BiGRU
     model = Sequential([
         Bidirectional(GRU(128, return_sequences=True), input_shape=(X_train.shape[1], X_train.shape[2])),
-        Dropout(0.3),  # اضافه کردن Dropout برای جلوگیری از Overfitting
+        # Dropout(0.3),  # اضافه کردن Dropout برای جلوگیری از Overfitting
         Bidirectional(GRU(64)),  # یک لایه دیگر BiGRU بدون بازگشت توالی
-        Dropout(0.5),  # Dropout بیشتر برای بهبود تعمیم‌پذیری
+        # Dropout(0.5),  # Dropout بیشتر برای بهبود تعمیم‌پذیری
         Dense(1, activation='sigmoid')  # لایه خروجی برای دسته‌بندی باینری
     ])
 
     # کامپایل مدل
+    # model.compile(
+    #     optimizer=Adam(learning_rate=0.001),
+    #     loss=focal_loss(alpha=0.75, gamma=2.0),
+    #     metrics=['accuracy', 'Precision', 'Recall']
+    # )
     model.compile(
         optimizer=Adam(learning_rate=0.001),
-        loss=focal_loss(alpha=0.75, gamma=2.0),
+        loss="binary_crossentropy",
         metrics=['accuracy', 'Precision', 'Recall']
     )
 
     early_stopping = EarlyStopping(
         monitor='val_loss',  # پایش بر اساس val_loss
-        patience=5,  # اگر val_loss برای 5 epoch متوالی بهبود نیافت، توقف شود
+        patience=10,  # اگر val_loss برای 5 epoch متوالی بهبود نیافت، توقف شود
         restore_best_weights=True  # بهترین وزن‌ها را بازیابی کن
     )
 
@@ -440,10 +441,18 @@ def train_LSTM():
         X_train, Y_train,
         epochs=50,
         batch_size=32,
-        validation_split=0.1,
+        validation_split=0,
         callbacks=[early_stopping],  # اضافه کردن Early Stopping
         verbose=2
     )
+    # model.fit(
+    #     X_train, Y_train,
+    #     epochs=50,
+    #     batch_size=32,
+    #     validation_split=0.1,
+    #     callbacks=[early_stopping],  # اضافه کردن Early Stopping
+    #     verbose=2
+    # )
 
     # پیش‌بینی روی داده‌های تست
     Y_pred = (model.predict(X_test) > 0.5).astype("int32")
@@ -465,12 +474,11 @@ def train_LSTM():
 
 
 if __name__ == "__main__":
-    print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 
-    # files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
-    # for i in range(0, len(files), batch_size):
-    #     batch_files = files[i:i + batch_size]
-    #     process_batch(batch_files, target_vulner)
-    #
-    # train_LSTM()
+    files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
+    for i in range(0, len(files), batch_size):
+        batch_files = files[i:i + batch_size]
+        process_batch(batch_files, target_vulner)
+
+    train_LSTM()
 
