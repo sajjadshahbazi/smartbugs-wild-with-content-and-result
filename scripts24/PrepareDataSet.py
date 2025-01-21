@@ -566,46 +566,15 @@ def train_LSTM():
 
 
 if __name__ == "__main__":
-    # files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
-    # print(f"size files {files.__len__()}")
-    # for batch_index, i in enumerate(range(0, len(files), batch_size)):
-    #     batch_files = files[i:i + batch_size]
-    #     print(f"size batch_files {batch_files.__len__()}")
-    #     process_batch_with_categorization(batch_files, target_vulner, batch_size, batch_index)
+    files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
+    print(f"size files {files.__len__()}")
+    for batch_index, i in enumerate(range(0, len(files), batch_size)):
+        batch_files = files[i:i + batch_size]
+        print(f"size batch_files {batch_files.__len__()}")
+        process_batch_with_categorization(batch_files, target_vulner, batch_size, batch_index)
 
 
     train_LSTM()
-
-    # ====================== Training Results ======================
-    # Epoch 1/50
-    # 1695/1695 - 50s - 29ms/step - accuracy: 0.8115 - loss: 0.4437 - val_accuracy: 0.8349 - val_loss: 0.4035
-    # Epoch 2/50
-    # 1695/1695 - 50s - 29ms/step - accuracy: 0.8343 - loss: 0.3958 - val_accuracy: 0.8400 - val_loss: 0.3822
-    # ...
-    # Epoch 34/50
-    # 1695/1695 - 58s - 34ms/step - accuracy: 0.9257 - loss: 0.1857 - val_accuracy: 0.8884 - val_loss: 0.2828
-    # Epoch 35/50
-    # 1695/1695 - 61s - 36ms/step - accuracy: 0.9280 - loss: 0.1819 - val_accuracy: 0.8861 - val_loss: 0.2987
-
-    # ====================== Final Evaluation Results ======================
-    # Accuracy on test set: 88.26%
-    #
-    # Classification Report:
-    #               precision    recall  f1-score   support
-    #
-    #         Safe       0.91      0.94      0.93     13127
-    #   Vulnerable       0.78      0.67      0.72      3822
-    #
-    #     accuracy                           0.88     16949
-    #    macro avg       0.84      0.81      0.82     16949
-    # weighted avg       0.88      0.88      0.88     16949
-
-    # ====================== Notes ======================
-    # - The model achieved high accuracy (88.26%) on the test set.
-    # - Precision for the "Safe" class is very high (91%), indicating the model effectively identifies safe contracts.
-    # - Recall for the "Vulnerable" class is relatively lower (67%), suggesting room for improvement in detecting vulnerable contracts.
-    # - Consider tuning the model or increasing training data to improve recall for the "Vulnerable" class.
-    # ===================================================
 
 # 1211/1211 - 139s - 114ms/step - accuracy: 0.7376 - loss: 0.5306 - val_accuracy: 0.7744 - val_loss: 0.4730
 # Epoch 2/50
@@ -692,8 +661,3 @@ if __name__ == "__main__":
 #     accuracy                           0.85     12108
 #    macro avg       0.84      0.81      0.82     12108
 # weighted avg       0.85      0.85      0.85     12108
-
-
-
-
-
