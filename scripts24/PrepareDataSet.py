@@ -543,7 +543,7 @@ def train_LSTM():
     plt.grid()
 
 
-    output_image_path = "training_plot.png"
+    output_image_path = "training_plot_lstm.png"
     plt.savefig(output_image_path, dpi=300, bbox_inches='tight')
     print(f"Plot saved to {output_image_path}")
 
@@ -649,7 +649,7 @@ if __name__ == "__main__":
 # 1211/1211 - 39s - 32ms/step - accuracy: 0.9038 - loss: 0.2262 - val_accuracy: 0.8635 - val_loss: 0.3330
 # Epoch 37/50
 # 1211/1211 - 39s - 32ms/step - accuracy: 0.9073 - loss: 0.2194 - val_accuracy: 0.8533 - val_loss: 0.3430
-# Plot saved to training_plot.png
+# Plot saved to training_plot_lstm.png
 # 379/379 ━━━━━━━━━━━━━━━━━━━━ 5s 12ms/step
 # Accuracy: 0.8496861579121242
 # Classification Report:
