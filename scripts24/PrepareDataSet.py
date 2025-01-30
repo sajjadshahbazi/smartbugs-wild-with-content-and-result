@@ -98,6 +98,7 @@ def is_sentence_in_text(sentence, text):
 
 def load_batches(folder, file_extension=".pkl"):
     X_batches, Y_batches = [], []
+    print(f"========== {folder}")
     for file in os.listdir(folder):
         if file.endswith(file_extension):
             with open(os.path.join(folder, file), 'rb') as f:
@@ -566,12 +567,12 @@ def train_LSTM():
 
 
 if __name__ == "__main__":
-    files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
-    print(f"size files {files.__len__()}")
-    for batch_index, i in enumerate(range(0, len(files), batch_size)):
-        batch_files = files[i:i + batch_size]
-        print(f"size batch_files {batch_files.__len__()}")
-        process_batch_with_categorization(batch_files, target_vulner, batch_size, batch_index)
+    # files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
+    # print(f"size files {files.__len__()}")
+    # for batch_index, i in enumerate(range(0, len(files), batch_size)):
+    #     batch_files = files[i:i + batch_size]
+    #     print(f"size batch_files {batch_files.__len__()}")
+    #     process_batch_with_categorization(batch_files, target_vulner, batch_size, batch_index)
 
 
     train_LSTM()
