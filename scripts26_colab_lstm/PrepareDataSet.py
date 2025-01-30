@@ -56,8 +56,12 @@ target_vulnerability_integer_underflow = 'Integer Underflow'  # sum safe smart c
 
 target_vulner = target_vulnerability_reentrancy
 
-ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-CACHE_DIR = os.path.join(ROOT, 'vectorcollections')
+# ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+# CACHE_DIR = os.path.join(ROOT, 'vectorcollections')
+
+ROOT = '/content/smartbugs-wild-with-content-and-result' # Linux
+CACHE_DIR = os.path.join(ROOT, 'vectorcollections') # Linux
+
 cache_path = os.path.join(CACHE_DIR, 'tokenized_fragments.pkl')
 vulnerability_fd = open(os.path.join(ROOT, 'metadata', 'vulnerabilities.csv'), 'w', encoding='utf-8')
 
@@ -112,8 +116,8 @@ def getResultVulnarable(contract_name, target_vulnerability):
     res = False
     lines = []
     for tool in tools:
-        path_result = os.path.join(f"{ROOT}\\results\\", tool, output_name, contract_name, 'result.json')
-        # path_result = os.path.join(f"{ROOT}results", tool, output_name, contract_name, 'result.json') Linux
+        # path_result = os.path.join(f"{ROOT}\\results\\", tool, output_name, contract_name, 'result.json')
+        path_result = os.path.join(f"{ROOT}results", tool, output_name, contract_name, 'result.json') # Linux
         if not os.path.exists(path_result):
             continue
         with open(path_result, 'r', encoding='utf-8') as fd:
