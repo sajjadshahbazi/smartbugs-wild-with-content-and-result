@@ -639,35 +639,82 @@ if __name__ == "__main__":
 
 
     train_unet_lstm()
-# 1211/1211 - 609s - 503ms/step - accuracy: 0.6970 - loss: 0.5702 - val_accuracy: 0.7184 - val_loss: 0.5403
+# Epoch 1/50
+# I0000 00:00:1738232193.796868    6361 cuda_dnn.cc:529] Loaded cuDNN version 90300
+# 1211/1211 - 56s - 46ms/step - accuracy: 0.6884 - loss: 0.6208 - val_accuracy: 0.6814 - val_loss: 0.6196
 # Epoch 2/50
-# 1211/1211 - 597s - 493ms/step - accuracy: 0.7174 - loss: 0.5405 - val_accuracy: 0.7060 - val_loss: 0.5354
+# 1211/1211 - 45s - 37ms/step - accuracy: 0.7127 - loss: 0.5654 - val_accuracy: 0.7270 - val_loss: 0.5297
 # Epoch 3/50
-# 1211/1211 - 596s - 492ms/step - accuracy: 0.7547 - loss: 0.4953 - val_accuracy: 0.7650 - val_loss: 0.4614
+# 1211/1211 - 45s - 37ms/step - accuracy: 0.7193 - loss: 0.5404 - val_accuracy: 0.6814 - val_loss: 0.5892
 # Epoch 4/50
-# 1211/1211 - 602s - 497ms/step - accuracy: 0.7695 - loss: 0.4552 - val_accuracy: 0.7874 - val_loss: 0.4305
+# 1211/1211 - 45s - 37ms/step - accuracy: 0.7225 - loss: 0.5358 - val_accuracy: 0.7220 - val_loss: 0.5218
 # Epoch 5/50
-# 1211/1211 - 601s - 496ms/step - accuracy: 0.7836 - loss: 0.4291 - val_accuracy: 0.7888 - val_loss: 0.4198
+# 1211/1211 - 45s - 37ms/step - accuracy: 0.7289 - loss: 0.5170 - val_accuracy: 0.7220 - val_loss: 0.5086
 # Epoch 6/50
-# 1211/1211 - 584s - 482ms/step - accuracy: 0.7870 - loss: 0.4154 - val_accuracy: 0.7913 - val_loss: 0.4035
+# 1211/1211 - 45s - 37ms/step - accuracy: 0.7616 - loss: 0.4884 - val_accuracy: 0.7673 - val_loss: 0.4702
 # Epoch 7/50
-# 1211/1211 - 1386s - 1s/step - accuracy: 0.7972 - loss: 0.4031 - val_accuracy: 0.7886 - val_loss: 0.4169
+# 1211/1211 - 45s - 37ms/step - accuracy: 0.7796 - loss: 0.4530 - val_accuracy: 0.7750 - val_loss: 0.4469
 # Epoch 8/50
-# 1211/1211 - 2181s - 2s/step - accuracy: 0.8009 - loss: 0.3936 - val_accuracy: 0.7991 - val_loss: 0.4049
+# 1211/1211 - 45s - 37ms/step - accuracy: 0.7868 - loss: 0.4336 - val_accuracy: 0.7907 - val_loss: 0.4243
 # Epoch 9/50
-# 1211/1211 - 2383s - 2s/step - accuracy: 0.8095 - loss: 0.3838 - val_accuracy: 0.8081 - val_loss: 0.3786
+# 1211/1211 - 44s - 37ms/step - accuracy: 0.7935 - loss: 0.4198 - val_accuracy: 0.7985 - val_loss: 0.4165
 # Epoch 10/50
-# 1211/1211 - 1034s - 854ms/step - accuracy: 0.8141 - loss: 0.3747 - val_accuracy: 0.8046 - val_loss: 0.3834
+# 1211/1211 - 44s - 37ms/step - accuracy: 0.8002 - loss: 0.4085 - val_accuracy: 0.8005 - val_loss: 0.4106
 # Epoch 11/50
-# 1211/1211 - 22856s - 19s/step - accuracy: 0.8178 - loss: 0.3664 - val_accuracy: 0.8126 - val_loss: 0.3679
+# 1211/1211 - 45s - 37ms/step - accuracy: 0.8043 - loss: 0.3994 - val_accuracy: 0.7991 - val_loss: 0.4088
 # Epoch 12/50
-# 1211/1211 - 567s - 468ms/step - accuracy: 0.8205 - loss: 0.3611 - val_accuracy: 0.8168 - val_loss: 0.3666
+# 1211/1211 - 45s - 37ms/step - accuracy: 0.8108 - loss: 0.3920 - val_accuracy: 0.8098 - val_loss: 0.4012
 # Epoch 13/50
-# 1211/1211 - 570s - 470ms/step - accuracy: 0.8241 - loss: 0.3550 - val_accuracy: 0.8184 - val_loss: 0.3655
+# 1211/1211 - 45s - 37ms/step - accuracy: 0.8132 - loss: 0.3860 - val_accuracy: 0.8031 - val_loss: 0.4023
 # Epoch 14/50
-# 1211/1211 - 578s - 477ms/step - accuracy: 0.8298 - loss: 0.3485 - val_accuracy: 0.8097 - val_loss: 0.3704
+# 1211/1211 - 44s - 37ms/step - accuracy: 0.8168 - loss: 0.3816 - val_accuracy: 0.8098 - val_loss: 0.3990
 # Epoch 15/50
-# 1211/1211 - 575s - 475ms/step - accuracy: 0.8316 - loss: 0.3423 - val_accuracy: 0.8100 - val_loss: 0.3747
+# 1211/1211 - 45s - 37ms/step - accuracy: 0.8191 - loss: 0.3771 - val_accuracy: 0.8126 - val_loss: 0.3927
 # Epoch 16/50
-# 1211/1211 - 573s - 474ms/step - accuracy: 0.8368 - loss: 0.3367 - val_accuracy: 0.8227 - val_loss: 0.3532
+# 1211/1211 - 44s - 37ms/step - accuracy: 0.8241 - loss: 0.3727 - val_accuracy: 0.8111 - val_loss: 0.3926
 # Epoch 17/50
+# 1211/1211 - 44s - 37ms/step - accuracy: 0.8246 - loss: 0.3693 - val_accuracy: 0.8126 - val_loss: 0.3995
+# Epoch 18/50
+# 1211/1211 - 44s - 37ms/step - accuracy: 0.8279 - loss: 0.3652 - val_accuracy: 0.8008 - val_loss: 0.3985
+# Epoch 19/50
+# 1211/1211 - 44s - 37ms/step - accuracy: 0.8287 - loss: 0.3622 - val_accuracy: 0.8199 - val_loss: 0.3871
+# Epoch 20/50
+# 1211/1211 - 44s - 37ms/step - accuracy: 0.8315 - loss: 0.3575 - val_accuracy: 0.8159 - val_loss: 0.3851
+# Epoch 21/50
+# 1211/1211 - 44s - 37ms/step - accuracy: 0.8344 - loss: 0.3548 - val_accuracy: 0.8136 - val_loss: 0.4066
+# Epoch 22/50
+# 1211/1211 - 44s - 36ms/step - accuracy: 0.8356 - loss: 0.3521 - val_accuracy: 0.8156 - val_loss: 0.3871
+# Epoch 23/50
+# 1211/1211 - 44s - 37ms/step - accuracy: 0.8375 - loss: 0.3497 - val_accuracy: 0.8167 - val_loss: 0.3848
+# Epoch 24/50
+# 1211/1211 - 44s - 37ms/step - accuracy: 0.8402 - loss: 0.3476 - val_accuracy: 0.8192 - val_loss: 0.3892
+# Epoch 25/50
+# 1211/1211 - 44s - 37ms/step - accuracy: 0.8401 - loss: 0.3452 - val_accuracy: 0.8171 - val_loss: 0.3907
+# Epoch 26/50
+# 1211/1211 - 44s - 37ms/step - accuracy: 0.8414 - loss: 0.3425 - val_accuracy: 0.8237 - val_loss: 0.3848
+# Epoch 27/50
+# 1211/1211 - 45s - 37ms/step - accuracy: 0.8427 - loss: 0.3403 - val_accuracy: 0.8219 - val_loss: 0.3857
+# Epoch 28/50
+# 1211/1211 - 44s - 37ms/step - accuracy: 0.8438 - loss: 0.3382 - val_accuracy: 0.8185 - val_loss: 0.3886
+# Epoch 29/50
+# 1211/1211 - 44s - 37ms/step - accuracy: 0.8439 - loss: 0.3369 - val_accuracy: 0.8193 - val_loss: 0.3981
+# Epoch 30/50
+# 1211/1211 - 44s - 37ms/step - accuracy: 0.8455 - loss: 0.3357 - val_accuracy: 0.8233 - val_loss: 0.3858
+# Epoch 31/50
+# 1211/1211 - 45s - 37ms/step - accuracy: 0.8474 - loss: 0.3327 - val_accuracy: 0.8242 - val_loss: 0.3882
+# Epoch 32/50
+# 1211/1211 - 45s - 37ms/step - accuracy: 0.8489 - loss: 0.3322 - val_accuracy: 0.8256 - val_loss: 0.3884
+# Epoch 33/50
+# 1211/1211 - 44s - 37ms/step - accuracy: 0.8496 - loss: 0.3311 - val_accuracy: 0.8204 - val_loss: 0.3932
+# Figure(1000x600)
+# 379/379 ━━━━━━━━━━━━━━━━━━━━ 6s 14ms/step
+# Accuracy: 0.821192599933928
+# Classification Report:
+#               precision    recall  f1-score   support
+#
+#         Safe       0.85      0.90      0.87      8300
+#   Vulnerable       0.75      0.64      0.69      3808
+#
+#     accuracy                           0.82     12108
+#    macro avg       0.80      0.77      0.78     12108
+# weighted avg       0.82      0.82      0.82     12108
