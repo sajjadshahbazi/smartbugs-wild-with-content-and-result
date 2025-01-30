@@ -69,7 +69,7 @@ vulnerability_fd = open(os.path.join(ROOT, 'metadata', 'vulnerabilities.csv'), '
 # PATH = f"{ROOT}\\contract\\"  # part of main data set
 # PATH = f"{ROOT}\\contra\\"  # one smart contract
 
-PATH = os.path.join(ROOT, 'contract') # linux
+PATH = os.path.join(ROOT, 'contracts') # linux
 os.chdir(PATH)
 
 final_df = pd.DataFrame(columns=['X', 'Y'])
