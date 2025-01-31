@@ -424,7 +424,6 @@ def prepare_data_for_unet(X, target_shape=(50, 300)):
 
     return X
 
-
 def build_unet(input_shape):
     """ U-Net بهینه‌شده با BatchNormalization و تست خروجی """
     inputs = Input(input_shape)
