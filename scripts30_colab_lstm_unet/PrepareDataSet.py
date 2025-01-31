@@ -424,6 +424,7 @@ def prepare_data_for_unet(X, target_shape=(50, 300)):
 
     return X
 
+
 def build_unet(input_shape):
     """ نسخه بهینه‌شده U-Net برای داده‌های (50, 300, 1) """
 
@@ -449,14 +450,14 @@ def build_unet(input_shape):
 
     # **Decoder**
     up1 = UpSampling2D((2, 2))(conv3)
-    up1 = Cropping2D(((0, 1), (0, 0)))(up1)  # حذف یک ردیف برای هماهنگی با conv2
+    up1 = Cropping2D(((1, 0), (0, 0)))(up1)  # حذف یک ردیف اضافی برای هماهنگی با conv2
     concat1 = concatenate([conv2, up1])
     conv4 = Conv2D(128, (7, 7), padding='same')(concat1)
     conv4 = BatchNormalization()(conv4)
     conv4 = LeakyReLU(alpha=0.1)(conv4)
 
     up2 = UpSampling2D((2, 2))(conv4)
-    up2 = Cropping2D(((0, 1), (0, 0)))(up2)  # حذف یک ردیف برای هماهنگی با conv1
+    up2 = Cropping2D(((1, 0), (0, 0)))(up2)  # حذف یک ردیف اضافی برای هماهنگی با conv1
     concat2 = concatenate([conv1, up2])
     conv5 = Conv2D(64, (5, 5), padding='same')(concat2)
     conv5 = BatchNormalization()(conv5)
@@ -465,6 +466,7 @@ def build_unet(input_shape):
     outputs = Conv2D(1, (1, 1), activation='sigmoid')(conv5)
 
     return Model(inputs, outputs)
+
 
 
 
