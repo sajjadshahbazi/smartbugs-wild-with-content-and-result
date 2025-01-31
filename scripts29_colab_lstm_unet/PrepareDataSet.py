@@ -24,7 +24,7 @@ from tensorflow.keras.optimizers import Adam
 import tensorflow as tf
 from tensorflow.python.platform import build_info as tf_build_info
 from tensorflow.keras.layers import Input
-from tensorflow.keras.layers import Conv2D, Cropping2D, MaxPooling2D, UpSampling2D, concatenate, Flatten, Dense, Bidirectional, LSTM, Input, Reshape
+from tensorflow.keras.layers import Conv2D, Cropping2D, MaxPooling2D, UpSampling2D, concatenate, Flatten, Dense, Bidirectional, LSTM, Input, Reshape, BatchNormalization, Reshape
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
@@ -401,38 +401,21 @@ def prepare_data_for_unet(X):
     """ تبدیل داده‌های ورودی سه‌بعدی به فرمت مناسب برای U-Net """
     return np.expand_dims(X, axis=-1)  # تبدیل به (samples, sequence_length, vector_length, 1)
 
-# def build_unet(input_shape):
-#     """ ساختار U-Net """
-#     inputs = Input(input_shape)
-#     conv1 = Conv2D(64, (3, 3), activation='relu', padding='same')(inputs)
-#     pool1 = MaxPooling2D((2, 2), padding='same')(conv1)
-#     conv2 = Conv2D(128, (3, 3), activation='relu', padding='same')(pool1)
-#     pool2 = MaxPooling2D((2, 2), padding='same')(conv2)
-#     conv3 = Conv2D(256, (3, 3), activation='relu', padding='same')(pool2)
-#     up1 = UpSampling2D((2, 2))(conv3)
-#     concat1 = concatenate([conv2, up1])
-#     conv4 = Conv2D(128, (3, 3), activation='relu', padding='same')(concat1)
-#     up2 = UpSampling2D((2, 2))(conv4)
-#     concat2 = concatenate([conv1, up2])
-#     conv5 = Conv2D(64, (3, 3), activation='relu', padding='same')(concat2)
-#     outputs = Conv2D(1, (1, 1), activation='sigmoid')(conv5)
-#     return Model(inputs, outputs)
-
 def build_unet(input_shape):
-    """ ساختار U-Net بهینه‌شده برای داده‌های (50, 300, 1) """
+    """ U-Net بهینه‌شده با BatchNormalization و تست خروجی """
     inputs = Input(input_shape)
 
-    # Encoder
     conv1 = Conv2D(64, (3, 5), activation='relu', padding='same')(inputs)
-    pool1 = MaxPooling2D((1, 2), padding='same')(conv1)  # کاهش عرض، حفظ ارتفاع
+    conv1 = BatchNormalization()(conv1)
+    pool1 = MaxPooling2D((1, 2), padding='same')(conv1)
 
     conv2 = Conv2D(128, (3, 7), activation='relu', padding='same')(pool1)
-    pool2 = MaxPooling2D((1, 2), padding='same')(conv2)  # کاهش بیشتر عرض
+    conv2 = BatchNormalization()(conv2)
+    pool2 = MaxPooling2D((1, 2), padding='same')(conv2)
 
     conv3 = Conv2D(256, (3, 7), activation='relu', padding='same')(pool2)
 
-    # Decoder
-    up1 = UpSampling2D((1, 2))(conv3)  # بازیابی عرض
+    up1 = UpSampling2D((1, 2))(conv3)
     concat1 = concatenate([conv2, up1])
     conv4 = Conv2D(128, (3, 7), activation='relu', padding='same')(concat1)
 
@@ -444,34 +427,56 @@ def build_unet(input_shape):
 
     return Model(inputs, outputs)
 
-
 def build_unet_lstm(input_shape_unet, input_shape_lstm):
-    """ ترکیب U-Net و LSTM """
+    """ ترکیب U-Net و LSTM با تست خروجی U-Net """
     unet_model = build_unet(input_shape_unet)
+
+    # **✅ تست ۱: بررسی خروجی U-Net**
+    sample_output = unet_model.predict(np.random.rand(5, 50, 300, 1))  # تست روی داده تصادفی
+    print("\n🔍 **تست خروجی U-Net:**")
+    print("🔹 شکل خروجی:", sample_output.shape)
+    print("🔹 مقدار بیشینه:", np.max(sample_output))
+    print("🔹 مقدار کمینه:", np.min(sample_output))
+    print("🔹 مقدار میانگین:", np.mean(sample_output))
+
+    # تبدیل خروجی U-Net به فرمت مناسب برای LSTM
     lstm_input = Reshape((50, 300))(unet_model.output)
+
     lstm_layer = Bidirectional(LSTM(128, return_sequences=True))(lstm_input)
     lstm_layer = Bidirectional(LSTM(64))(lstm_layer)
+
     dense1 = Dense(128, activation='relu')(lstm_layer)
     dense2 = Dense(64, activation='relu')(dense1)
     outputs = Dense(1, activation='sigmoid')(dense2)
+
     return Model(inputs=[unet_model.input], outputs=outputs)
 
 def train_unet_lstm():
     X, Y = load_batches(CACHE_DIR, file_extension=".pkl")
-    X_unet = prepare_data_for_unet(X)
+
+    # **✅ تست ۲: بررسی `NaN` و مقدار ثابت در داده‌ها**
+    print("\n🔍 **تست NaN و مقدار ثابت در داده‌ها:**")
+    print("🔹 تعداد NaN در X:", np.isnan(X).sum())
+    print("🔹 مقادیر منحصربه‌فرد در X:", np.unique(X))
+
+    X_unet = prepare_data_for_unet(X, target_shape=(50, 300))
+
     X_train_lstm, X_test_lstm, X_train_unet, X_test_unet, Y_train, Y_test = train_test_split(
         X, X_unet, Y, test_size=0.2, random_state=42
     )
+
     model = build_unet_lstm((50, 300, 1), (X.shape[1], X.shape[2]))
     model.compile(
         optimizer=Adam(learning_rate=0.001),
         loss="binary_crossentropy",
         metrics=['accuracy']
     )
+
     history = model.fit(
         [X_train_unet], Y_train,
         epochs=50, batch_size=32, validation_split=0.2, verbose=2
     )
+
     plt.figure(figsize=(10, 6))
     plt.plot(history.history['accuracy'], label='Train Accuracy', color='blue')
     plt.plot(history.history['val_accuracy'], label='Validation Accuracy', color='orange')
@@ -484,14 +489,26 @@ def train_unet_lstm():
     plt.grid()
     plt.savefig("training_plot_unet_lstm.png", dpi=300, bbox_inches='tight')
     plt.show()
+
+    # **✅ تست ۳: بررسی تغییرات `accuracy` و `loss` در طول زمان**
+    print("\n🔍 **تست تغییرات در `accuracy` و `loss`**")
+    print("🔹 دقت نهایی:", history.history['accuracy'][-1])
+    print("🔹 دقت اعتبارسنجی نهایی:", history.history['val_accuracy'][-1])
+    print("🔹 خطای نهایی:", history.history['loss'][-1])
+    print("🔹 خطای اعتبارسنجی نهایی:", history.history['val_loss'][-1])
+
+    # **✅ تست ۴: بررسی خروجی نهایی مدل**
     Y_pred = (model.predict([X_test_unet]) > 0.5).astype("int32")
     accuracy = accuracy_score(Y_test, Y_pred)
     report = classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable'], labels=[0, 1])
-    print(f"Accuracy: {accuracy}")
-    print("Classification Report:")
+
+    print("\n🔍 **تست خروجی نهایی مدل:**")
+    print(f"🔹 دقت نهایی مدل: {accuracy}")
+    print("🔹 گزارش دسته‌بندی:")
     print(report)
+
     model.save('final_unet_lstm_model.h5')
-    print("Model training completed and saved.")
+    print("\n✅ **مدل با موفقیت ذخیره شد!**")
 
 
 
@@ -507,124 +524,9 @@ if __name__ == "__main__":
 
     train_unet_lstm()
 
-# Epoch 1/50
-# I0000 00:00:1738272790.343682   72199 cuda_dnn.cc:529] Loaded cuDNN version 90300
-# 1211/1211 - 284s - 235ms/step - accuracy: 0.6849 - loss: 0.6247 - val_accuracy: 0.6814 - val_loss: 0.6281
-# Epoch 2/50
-# 1211/1211 - 264s - 218ms/step - accuracy: 0.6850 - loss: 0.6239 - val_accuracy: 0.6814 - val_loss: 0.6258
-# Epoch 3/50
-# 1211/1211 - 261s - 215ms/step - accuracy: 0.6850 - loss: 0.6237 - val_accuracy: 0.6814 - val_loss: 0.6266
-# Epoch 4/50
-# 1211/1211 - 256s - 212ms/step - accuracy: 0.6850 - loss: 0.6235 - val_accuracy: 0.6814 - val_loss: 0.6280
-# Epoch 5/50
-# 1211/1211 - 255s - 211ms/step - accuracy: 0.6850 - loss: 0.6237 - val_accuracy: 0.6814 - val_loss: 0.6259
-# Epoch 6/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6236 - val_accuracy: 0.6814 - val_loss: 0.6266
-# Epoch 7/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6271
-# Epoch 8/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6235 - val_accuracy: 0.6814 - val_loss: 0.6265
-# Epoch 9/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6234 - val_accuracy: 0.6814 - val_loss: 0.6258
-# Epoch 10/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6235 - val_accuracy: 0.6814 - val_loss: 0.6258
-# Epoch 11/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6234 - val_accuracy: 0.6814 - val_loss: 0.6272
-# Epoch 12/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6234 - val_accuracy: 0.6814 - val_loss: 0.6271
-# Epoch 13/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6234 - val_accuracy: 0.6814 - val_loss: 0.6262
-# Epoch 14/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6235 - val_accuracy: 0.6814 - val_loss: 0.6258
-# Epoch 15/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6233 - val_accuracy: 0.6814 - val_loss: 0.6260
-# Epoch 16/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6234 - val_accuracy: 0.6814 - val_loss: 0.6259
-# Epoch 17/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6234 - val_accuracy: 0.6814 - val_loss: 0.6258
-# Epoch 18/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6234 - val_accuracy: 0.6814 - val_loss: 0.6258
-# Epoch 19/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6233 - val_accuracy: 0.6814 - val_loss: 0.6258
-# Epoch 20/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6233 - val_accuracy: 0.6814 - val_loss: 0.6259
-# Epoch 21/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6233 - val_accuracy: 0.6814 - val_loss: 0.6262
-# Epoch 22/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6260
-# Epoch 23/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6233 - val_accuracy: 0.6814 - val_loss: 0.6258
-# Epoch 24/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6233 - val_accuracy: 0.6814 - val_loss: 0.6258
-# Epoch 25/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6260
-# Epoch 26/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6258
-# Epoch 27/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6233 - val_accuracy: 0.6814 - val_loss: 0.6263
-# Epoch 28/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6233 - val_accuracy: 0.6814 - val_loss: 0.6265
-# Epoch 29/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6259
-# Epoch 30/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6259
-# Epoch 31/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6233 - val_accuracy: 0.6814 - val_loss: 0.6258
-# Epoch 32/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6233 - val_accuracy: 0.6814 - val_loss: 0.6259
-# Epoch 33/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6259
-# Epoch 34/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6266
-# Epoch 35/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6259
-# Epoch 36/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6259
-# Epoch 37/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6258
-# Epoch 38/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6258
-# Epoch 39/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6270
-# Epoch 40/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6258
-# Epoch 41/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6231 - val_accuracy: 0.6814 - val_loss: 0.6268
-# Epoch 42/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6259
-# Epoch 43/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6258
-# Epoch 44/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6233 - val_accuracy: 0.6814 - val_loss: 0.6258
-# Epoch 45/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6260
-# Epoch 46/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6258
-# Epoch 47/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6259
-# Epoch 48/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6258
-# Epoch 49/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6258
-# Epoch 50/50
-# 1211/1211 - 253s - 209ms/step - accuracy: 0.6850 - loss: 0.6232 - val_accuracy: 0.6814 - val_loss: 0.6259
-# Figure(1000x600)
-# 379/379 ━━━━━━━━━━━━━━━━━━━━ 29s 76ms/step
-# /usr/local/lib/python3.11/dist-packages/sklearn/metrics/_classification.py:1565: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
-#   _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
-# /usr/local/lib/python3.11/dist-packages/sklearn/metrics/_classification.py:1565: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
-#   _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
-# /usr/local/lib/python3.11/dist-packages/sklearn/metrics/_classification.py:1565: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
-#   _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
-# Accuracy: 0.6854971919392138
-# Classification Report:
-#               precision    recall  f1-score   support
-#
-#         Safe       0.69      1.00      0.81      8300
-#   Vulnerable       0.00      0.00      0.00      3808
-#
-#     accuracy                           0.69     12108
-#    macro avg       0.34      0.50      0.41     12108
-# weighted avg       0.47      0.69      0.56     12108
+
+
+
+
 
 
