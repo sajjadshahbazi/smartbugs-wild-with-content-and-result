@@ -435,12 +435,12 @@ def prepare_data_for_unet(X, target_shape=(50, 300)):
 
 def build_unet(input_shape):
     """
-    ساختار U-Net برای داده‌های مستطیلی (50, 300, 1)
+    ساختار U-Net برای ورودی با ابعاد (50, 300, 1)
+    و بررسی دقیق ابعاد برای جلوگیری از خطاهای concatenate
     """
-
     inputs = Input(input_shape)
 
-    # **Encoder**
+    # --- 👇 مرحله Encoder ---
     conv1 = Conv2D(64, (3, 5), activation='relu', padding='same')(inputs)
     pool1 = MaxPooling2D((2, 2), padding='same')(conv1)
 
@@ -449,23 +449,40 @@ def build_unet(input_shape):
 
     conv3 = Conv2D(256, (3, 5), activation='relu', padding='same')(pool2)
 
-    # **Decoder**
+    # --- 👇 مرحله Decoder ---
     up1 = UpSampling2D((2, 2))(conv3)
-    up1 = Cropping2D(((0, 1), (0, 1)))(up1)  # تنظیم ابعاد دقیقاً برابر با conv2
+
+    # 🔍 بررسی ابعاد قبل از concatenate
+    print(f"🔹 Shape of conv2: {conv2.shape}")
+    print(f"🔹 Shape of up1: {up1.shape}")
+
+    # 🚀 حل مشکل ابعاد در concatenate
+    if up1.shape[1] != conv2.shape[1]:  # اگر ابعاد در ارتفاع تطابق نداشت
+        up1 = Cropping2D(((1, 0), (0, 0)))(up1)
+    if up1.shape[2] != conv2.shape[2]:  # اگر ابعاد در عرض تطابق نداشت
+        up1 = Cropping2D(((0, 0), (1, 0)))(up1)
+
     concat1 = concatenate([conv2, up1])
 
     conv4 = Conv2D(128, (3, 5), activation='relu', padding='same')(concat1)
-
     up2 = UpSampling2D((2, 2))(conv4)
-    up2 = Cropping2D(((0, 1), (0, 1)))(up2)  # تنظیم ابعاد دقیقاً برابر با conv1
+
+    # 🔍 بررسی ابعاد قبل از concatenate دوم
+    print(f"🔹 Shape of conv1: {conv1.shape}")
+    print(f"🔹 Shape of up2: {up2.shape}")
+
+    # 🚀 حل مشکل ابعاد در concatenate دوم
+    if up2.shape[1] != conv1.shape[1]:  # اگر ابعاد در ارتفاع تطابق نداشت
+        up2 = Cropping2D(((1, 0), (0, 0)))(up2)
+    if up2.shape[2] != conv1.shape[2]:  # اگر ابعاد در عرض تطابق نداشت
+        up2 = Cropping2D(((0, 0), (1, 0)))(up2)
+
     concat2 = concatenate([conv1, up2])
 
     conv5 = Conv2D(64, (3, 5), activation='relu', padding='same')(concat2)
-
     outputs = Conv2D(1, (1, 1), activation='sigmoid')(conv5)
 
     return Model(inputs, outputs)
-
 
 
 
