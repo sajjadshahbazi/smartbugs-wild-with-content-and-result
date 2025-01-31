@@ -397,9 +397,33 @@ def process_batch_with_categorization(files, target_vulnerability, batch_size, b
 
 
 
-def prepare_data_for_unet(X):
-    """ تبدیل داده‌های ورودی سه‌بعدی به فرمت مناسب برای U-Net """
-    return np.expand_dims(X, axis=-1)  # تبدیل به (samples, sequence_length, vector_length, 1)
+# def prepare_data_for_unet(X):
+#     """ تبدیل داده‌های ورودی سه‌بعدی به فرمت مناسب برای U-Net """
+#     return np.expand_dims(X, axis=-1)  # تبدیل به (samples, sequence_length, vector_length, 1)
+
+
+def prepare_data_for_unet(X, target_shape=(50, 300)):
+    """
+    تبدیل داده‌های ورودی سه‌بعدی به فرمت مناسب برای U-Net
+
+    :param X: آرایه ورودی با شکل (samples, sequence_length, vector_length)
+    :param target_shape: ابعاد نهایی که باید به U-Net داده شود (باید هم‌اندازه با ورودی اصلی باشد)
+    :return: آرایه‌ای با ابعاد (samples, 50, 300, 1) برای استفاده در U-Net
+    """
+    if X.shape[1:] != target_shape:
+        raise ValueError(f"❌ ابعاد داده ورودی با {target_shape} سازگار نیست! شکل فعلی: {X.shape}")
+
+    # ✅ اضافه کردن یک بعد کانال برای سازگاری با U-Net
+    X = np.expand_dims(X, axis=-1)  # تبدیل به (samples, sequence_length, vector_length, 1)
+
+    print("\n🔍 **بررسی داده‌های تبدیل‌شده برای U-Net:**")
+    print("🔹 شکل نهایی X برای U-Net:", X.shape)
+    print("🔹 بیشینه مقدار X:", np.max(X))
+    print("🔹 کمینه مقدار X:", np.min(X))
+    print("🔹 میانگین مقدار X:", np.mean(X))
+
+    return X
+
 
 def build_unet(input_shape):
     """ U-Net بهینه‌شده با BatchNormalization و تست خروجی """
