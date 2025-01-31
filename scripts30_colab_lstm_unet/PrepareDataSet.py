@@ -402,66 +402,65 @@ def process_batch_with_categorization(files, target_vulnerability, batch_size, b
 #     return np.expand_dims(X, axis=-1)  # تبدیل به (samples, sequence_length, vector_length, 1)
 
 
+# def prepare_data_for_unet(X, target_shape=(50, 300)):
+#     """
+#     تبدیل داده‌های ورودی سه‌بعدی به فرمت مناسب برای U-Net
+#
+#     :param X: آرایه ورودی با شکل (samples, sequence_length, vector_length)
+#     :param target_shape: ابعاد نهایی که باید به U-Net داده شود (باید هم‌اندازه با ورودی اصلی باشد)
+#     :return: آرایه‌ای با ابعاد (samples, 50, 300, 1) برای استفاده در U-Net
+#     """
+#     if X.shape[1:] != target_shape:
+#         raise ValueError(f"❌ ابعاد داده ورودی با {target_shape} سازگار نیست! شکل فعلی: {X.shape}")
+#
+#     # ✅ اضافه کردن یک بعد کانال برای سازگاری با U-Net
+#     X = np.expand_dims(X, axis=-1)  # تبدیل به (samples, sequence_length, vector_length, 1)
+#
+#     print("\n🔍 **بررسی داده‌های تبدیل‌شده برای U-Net:**")
+#     print("🔹 شکل نهایی X برای U-Net:", X.shape)
+#     print("🔹 بیشینه مقدار X:", np.max(X))
+#     print("🔹 کمینه مقدار X:", np.min(X))
+#     print("🔹 میانگین مقدار X:", np.mean(X))
+#
+#     return X
+
 def prepare_data_for_unet(X, target_shape=(50, 300)):
     """
     تبدیل داده‌های ورودی سه‌بعدی به فرمت مناسب برای U-Net
-
-    :param X: آرایه ورودی با شکل (samples, sequence_length, vector_length)
-    :param target_shape: ابعاد نهایی که باید به U-Net داده شود (باید هم‌اندازه با ورودی اصلی باشد)
-    :return: آرایه‌ای با ابعاد (samples, 50, 300, 1) برای استفاده در U-Net
+    ورودی: X به شکل (samples, sequence_length, vector_length)
+    خروجی: X به شکل (samples, 50, 300, 1) برای ورودی U-Net
     """
-    if X.shape[1:] != target_shape:
-        raise ValueError(f"❌ ابعاد داده ورودی با {target_shape} سازگار نیست! شکل فعلی: {X.shape}")
-
-    # ✅ اضافه کردن یک بعد کانال برای سازگاری با U-Net
-    X = np.expand_dims(X, axis=-1)  # تبدیل به (samples, sequence_length, vector_length, 1)
-
-    print("\n🔍 **بررسی داده‌های تبدیل‌شده برای U-Net:**")
-    print("🔹 شکل نهایی X برای U-Net:", X.shape)
-    print("🔹 بیشینه مقدار X:", np.max(X))
-    print("🔹 کمینه مقدار X:", np.min(X))
-    print("🔹 میانگین مقدار X:", np.mean(X))
-
-    return X
+    return np.expand_dims(X, axis=-1)  # تبدیل به (samples, sequence_length, vector_length, 1)
 
 
 def build_unet(input_shape):
-    """ نسخه بهینه‌شده U-Net برای داده‌های (50, 300, 1) """
+    """
+    ساختار U-Net برای داده‌های مستطیلی (50, 300, 1)
+    """
 
     inputs = Input(input_shape)
 
     # **Encoder**
-    conv1 = Conv2D(64, (5, 5), padding='same')(inputs)
-    conv1 = BatchNormalization()(conv1)
-    conv1 = LeakyReLU(alpha=0.1)(conv1)
+    conv1 = Conv2D(64, (3, 5), activation='relu', padding='same')(inputs)
     pool1 = MaxPooling2D((2, 2), padding='same')(conv1)
-    pool1 = Dropout(0.3)(pool1)
 
-    conv2 = Conv2D(128, (7, 7), padding='same')(pool1)
-    conv2 = BatchNormalization()(conv2)
-    conv2 = LeakyReLU(alpha=0.1)(conv2)
+    conv2 = Conv2D(128, (3, 5), activation='relu', padding='same')(pool1)
     pool2 = MaxPooling2D((2, 2), padding='same')(conv2)
-    pool2 = Dropout(0.3)(pool2)
 
-    # **Bottleneck**
-    conv3 = Conv2D(256, (7, 7), padding='same')(pool2)
-    conv3 = BatchNormalization()(conv3)
-    conv3 = LeakyReLU(alpha=0.1)(conv3)
+    conv3 = Conv2D(256, (3, 5), activation='relu', padding='same')(pool2)
 
     # **Decoder**
     up1 = UpSampling2D((2, 2))(conv3)
-    up1 = Cropping2D(((1, 0), (0, 0)))(up1)  # حذف یک ردیف اضافی برای هماهنگی با conv2
+    up1 = Cropping2D(((0, 1), (0, 1)))(up1)  # تنظیم ابعاد
     concat1 = concatenate([conv2, up1])
-    conv4 = Conv2D(128, (7, 7), padding='same')(concat1)
-    conv4 = BatchNormalization()(conv4)
-    conv4 = LeakyReLU(alpha=0.1)(conv4)
+
+    conv4 = Conv2D(128, (3, 5), activation='relu', padding='same')(concat1)
 
     up2 = UpSampling2D((2, 2))(conv4)
-    up2 = Cropping2D(((1, 0), (0, 0)))(up2)  # حذف یک ردیف اضافی برای هماهنگی با conv1
+    up2 = Cropping2D(((0, 1), (0, 1)))(up2)  # تنظیم ابعاد
     concat2 = concatenate([conv1, up2])
-    conv5 = Conv2D(64, (5, 5), padding='same')(concat2)
-    conv5 = BatchNormalization()(conv5)
-    conv5 = LeakyReLU(alpha=0.1)(conv5)
+
+    conv5 = Conv2D(64, (3, 5), activation='relu', padding='same')(concat2)
 
     outputs = Conv2D(1, (1, 1), activation='sigmoid')(conv5)
 
@@ -471,23 +470,20 @@ def build_unet(input_shape):
 
 
 def build_unet_lstm(input_shape_unet, input_shape_lstm):
-    """ ترکیب U-Net و LSTM با تست خروجی U-Net """
+    """
+    ترکیب U-Net و LSTM
+    """
+    # **U-Net Model**
     unet_model = build_unet(input_shape_unet)
 
-    # **✅ تست ۱: بررسی خروجی U-Net**
-    sample_output = unet_model.predict(np.random.rand(5, 50, 300, 1))  # تست روی داده تصادفی
-    print("\n🔍 **تست خروجی U-Net:**")
-    print("🔹 شکل خروجی:", sample_output.shape)
-    print("🔹 مقدار بیشینه:", np.max(sample_output))
-    print("🔹 مقدار کمینه:", np.min(sample_output))
-    print("🔹 مقدار میانگین:", np.mean(sample_output))
+    # **تبدیل خروجی U-Net به فرمت مناسب برای LSTM**
+    lstm_input = Reshape((50, 300))(unet_model.output)  # حفظ ساختار داده بدون Flatten
 
-    # تبدیل خروجی U-Net به فرمت مناسب برای LSTM
-    lstm_input = Reshape((50, 300))(unet_model.output)
-
+    # **LSTM Layers**
     lstm_layer = Bidirectional(LSTM(128, return_sequences=True))(lstm_input)
     lstm_layer = Bidirectional(LSTM(64))(lstm_layer)
 
+    # **Fully Connected Layers**
     dense1 = Dense(128, activation='relu')(lstm_layer)
     dense2 = Dense(64, activation='relu')(dense1)
     outputs = Dense(1, activation='sigmoid')(dense2)
@@ -495,31 +491,33 @@ def build_unet_lstm(input_shape_unet, input_shape_lstm):
     return Model(inputs=[unet_model.input], outputs=outputs)
 
 def train_unet_lstm():
+    # **بارگذاری داده‌ها**
     X, Y = load_batches(CACHE_DIR, file_extension=".pkl")
 
-    # **✅ تست ۲: بررسی `NaN` و مقدار ثابت در داده‌ها**
-    print("\n🔍 **تست NaN و مقدار ثابت در داده‌ها:**")
-    print("🔹 تعداد NaN در X:", np.isnan(X).sum())
-    print("🔹 مقادیر منحصربه‌فرد در X:", np.unique(X))
-
+    # **تبدیل داده‌ها برای U-Net**
     X_unet = prepare_data_for_unet(X, target_shape=(50, 300))
 
+    # **تقسیم داده‌ها**
     X_train_lstm, X_test_lstm, X_train_unet, X_test_unet, Y_train, Y_test = train_test_split(
         X, X_unet, Y, test_size=0.2, random_state=42
     )
 
+    # **ساخت مدل**
     model = build_unet_lstm((50, 300, 1), (X.shape[1], X.shape[2]))
+
     model.compile(
         optimizer=Adam(learning_rate=0.001),
         loss="binary_crossentropy",
         metrics=['accuracy']
     )
 
+    # **آموزش مدل**
     history = model.fit(
         [X_train_unet], Y_train,
         epochs=50, batch_size=32, validation_split=0.2, verbose=2
     )
 
+    # **نمایش نمودار آموزش**
     plt.figure(figsize=(10, 6))
     plt.plot(history.history['accuracy'], label='Train Accuracy', color='blue')
     plt.plot(history.history['val_accuracy'], label='Validation Accuracy', color='orange')
@@ -533,25 +531,18 @@ def train_unet_lstm():
     plt.savefig("training_plot_unet_lstm.png", dpi=300, bbox_inches='tight')
     plt.show()
 
-    # **✅ تست ۳: بررسی تغییرات `accuracy` و `loss` در طول زمان**
-    print("\n🔍 **تست تغییرات در `accuracy` و `loss`**")
-    print("🔹 دقت نهایی:", history.history['accuracy'][-1])
-    print("🔹 دقت اعتبارسنجی نهایی:", history.history['val_accuracy'][-1])
-    print("🔹 خطای نهایی:", history.history['loss'][-1])
-    print("🔹 خطای اعتبارسنجی نهایی:", history.history['val_loss'][-1])
-
-    # **✅ تست ۴: بررسی خروجی نهایی مدل**
+    # **ارزیابی مدل**
     Y_pred = (model.predict([X_test_unet]) > 0.5).astype("int32")
     accuracy = accuracy_score(Y_test, Y_pred)
     report = classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable'], labels=[0, 1])
 
-    print("\n🔍 **تست خروجی نهایی مدل:**")
-    print(f"🔹 دقت نهایی مدل: {accuracy}")
-    print("🔹 گزارش دسته‌بندی:")
+    print(f"Accuracy: {accuracy}")
+    print("Classification Report:")
     print(report)
 
+    # **ذخیره مدل**
     model.save('final_unet_lstm_model.h5')
-    print("\n✅ **مدل با موفقیت ذخیره شد!**")
+    print("Model training completed and saved.")
 
 
 
