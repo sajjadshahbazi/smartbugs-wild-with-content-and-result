@@ -451,13 +451,13 @@ def build_unet(input_shape):
 
     # **Decoder**
     up1 = UpSampling2D((2, 2))(conv3)
-    up1 = Cropping2D(((0, 1), (0, 1)))(up1)  # تنظیم ابعاد
+    up1 = Cropping2D(((0, 1), (0, 1)))(up1)  # تنظیم ابعاد دقیقاً برابر با conv2
     concat1 = concatenate([conv2, up1])
 
     conv4 = Conv2D(128, (3, 5), activation='relu', padding='same')(concat1)
 
     up2 = UpSampling2D((2, 2))(conv4)
-    up2 = Cropping2D(((0, 1), (0, 1)))(up2)  # تنظیم ابعاد
+    up2 = Cropping2D(((0, 1), (0, 1)))(up2)  # تنظیم ابعاد دقیقاً برابر با conv1
     concat2 = concatenate([conv1, up2])
 
     conv5 = Conv2D(64, (3, 5), activation='relu', padding='same')(concat2)
