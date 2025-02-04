@@ -26,6 +26,7 @@ from tensorflow.python.platform import build_info as tf_build_info
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Conv2D, LeakyReLU, Cropping2D, MaxPooling2D, UpSampling2D, concatenate, Flatten, Dense, Bidirectional, LSTM, Input, Reshape, BatchNormalization, Reshape
 from tensorflow.keras.models import Model
+from tensorflow.keras import layers, models
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
 import matplotlib.pyplot as plt
@@ -486,70 +487,70 @@ def build_unet(input_shape):
 
 
 
-def build_unet_lstm(input_shape_unet, input_shape_lstm):
-    """
-    ترکیب U-Net و LSTM
-    """
-    # **U-Net Model**
-    unet_model = build_unet(input_shape_unet)
+def lstm_unet_model(input_shape):
+    inputs = tf.keras.Input(shape=input_shape)
 
-    # **تبدیل خروجی U-Net به فرمت مناسب برای LSTM**
-    lstm_input = Reshape((50, 300))(unet_model.output)  # حفظ ساختار داده بدون Flatten
+    # 📌 مرحله LSTM (پردازش توالی‌ها)
+    lstm = layers.Bidirectional(layers.LSTM(128, return_sequences=True))(inputs)
+    lstm = layers.Bidirectional(layers.LSTM(64, return_sequences=True))(lstm)
 
-    # **LSTM Layers**
-    lstm_layer = Bidirectional(LSTM(128, return_sequences=True))(lstm_input)
-    lstm_layer = Bidirectional(LSTM(64))(lstm_layer)
+    # 📌 مسیر نزولی U-Net (Encoder)
+    conv1 = layers.Conv1D(64, 3, activation='relu', padding='same')(lstm)
+    conv1 = layers.Conv1D(64, 3, activation='relu', padding='same')(conv1)
+    pool1 = layers.MaxPooling1D(2)(conv1)
 
-    # **Fully Connected Layers**
-    dense1 = Dense(128, activation='relu')(lstm_layer)
-    dense2 = Dense(64, activation='relu')(dense1)
-    outputs = Dense(1, activation='sigmoid')(dense2)
+    conv2 = layers.Conv1D(128, 3, activation='relu', padding='same')(pool1)
+    conv2 = layers.Conv1D(128, 3, activation='relu', padding='same')(conv2)
+    pool2 = layers.MaxPooling1D(2)(conv2)
 
-    return Model(inputs=[unet_model.input], outputs=outputs)
+    # 📌 Bottleneck
+    conv3 = layers.Conv1D(256, 3, activation='relu', padding='same')(pool2)
+    conv3 = layers.Conv1D(256, 3, activation='relu', padding='same')(conv3)
+
+    # 📌 مسیر صعودی U-Net (Decoder)
+    up1 = layers.UpSampling1D(2)(conv3)
+    up1 = layers.Conv1D(128, 3, activation='relu', padding='same')(up1)
+    concat1 = layers.concatenate([up1, conv2])
+
+    up2 = layers.UpSampling1D(2)(concat1)
+    up2 = layers.Conv1D(64, 3, activation='relu', padding='same')(up2)
+    concat2 = layers.concatenate([up2, conv1])
+
+    outputs = layers.Conv1D(1, 1, activation='sigmoid')(concat2)  # خروجی احتمال آسیب‌پذیری
+
+    model = models.Model(inputs, outputs)
+    return model
+
 
 def train_unet_lstm():
-    # **بارگذاری داده‌ها**
     X, Y = load_batches(CACHE_DIR, file_extension=".pkl")
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
 
-    # **تبدیل داده‌ها برای U-Net**
-    X_unet = prepare_data_for_unet(X, target_shape=(50, 300))
+    # 📌 مدل LSTM + U-Net را تعریف و کامپایل کن
+    input_shape = (X_train.shape[1], X_train.shape[2])  # (sequence_length, vector_length)
+    model = lstm_unet_model(input_shape)
+    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
-    # **تقسیم داده‌ها**
-    X_train_lstm, X_test_lstm, X_train_unet, X_test_unet, Y_train, Y_test = train_test_split(
-        X, X_unet, Y, test_size=0.2, random_state=42
-    )
+    # 📌 آموزش مدل
+    early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
 
-    # **ساخت مدل**
-    model = build_unet_lstm((50, 300, 1), (X.shape[1], X.shape[2]))
-
-    model.compile(
-        optimizer=Adam(learning_rate=0.001),
-        loss="binary_crossentropy",
-        metrics=['accuracy']
-    )
-
-    # **آموزش مدل**
     history = model.fit(
-        [X_train_unet], Y_train,
-        epochs=50, batch_size=32, validation_split=0.2, verbose=2
+        X_train, Y_train,
+        epochs=50, batch_size=32,
+        validation_split=0.2,
+        callbacks=[early_stopping],  # Early Stopping برای جلوگیری از overfitting
+        verbose=2
     )
 
-    # **نمایش نمودار آموزش**
-    plt.figure(figsize=(10, 6))
-    plt.plot(history.history['accuracy'], label='Train Accuracy', color='blue')
-    plt.plot(history.history['val_accuracy'], label='Validation Accuracy', color='orange')
-    plt.plot(history.history['loss'], label='Train Loss', color='red')
-    plt.plot(history.history['val_loss'], label='Validation Loss', color='green')
-    plt.title('Training and Validation Metrics')
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy / Loss')
-    plt.legend()
-    plt.grid()
-    plt.savefig("training_plot_unet_lstm.png", dpi=300, bbox_inches='tight')
-    plt.show()
+    # 📌 ارزیابی مدل
+    loss, accuracy = model.evaluate(X_test, Y_test)
+    print(f"Test Loss: {loss:.4f}")
+    print(f"Test Accuracy: {accuracy:.4f}")
 
-    # **ارزیابی مدل**
-    Y_pred = (model.predict([X_test_unet]) > 0.5).astype("int32")
+    # 📌 پیش‌بینی روی داده‌های تست
+    Y_pred = (model.predict(X_test) > 0.5).astype("int32")
+
+    # 📌 محاسبه معیارهای ارزیابی
     accuracy = accuracy_score(Y_test, Y_pred)
     report = classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable'], labels=[0, 1])
 
@@ -557,152 +558,36 @@ def train_unet_lstm():
     print("Classification Report:")
     print(report)
 
-    # **ذخیره مدل**
-    model.save('final_unet_lstm_model.h5')
-    print("Model training completed and saved.")
+    # 📌 ذخیره مدل نهایی
+    model.save('LSTM_UNet_model.h5')
+    print("مدل نهایی ذخیره شد.")
+
+    # 📌 رسم نمودار دقت و خطا
+    plt.figure(figsize=(10, 6))
+    plt.plot(history.history['accuracy'], label='train acc', color='blue')
+    plt.plot(history.history['val_accuracy'], label='val acc', color='yellow')
+    plt.plot(history.history['loss'], label='train loss', color='red')
+    plt.plot(history.history['val_loss'], label='val loss', color='green')
+    plt.title('Model Accuracy and Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy / Loss')
+    plt.legend(loc='best')
+    plt.grid()
+    plt.show()
 
 
 
 
 if __name__ == "__main__":
-    files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
-    print(f"size files {files.__len__()}")
-    for batch_index, i in enumerate(range(0, len(files), batch_size)):
-        batch_files = files[i:i + batch_size]
-        print(f"size batch_files {batch_files.__len__()}")
-        process_batch_with_categorization(batch_files, target_vulner, batch_size, batch_index)
+    # files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
+    # print(f"size files {files.__len__()}")
+    # for batch_index, i in enumerate(range(0, len(files), batch_size)):
+    #     batch_files = files[i:i + batch_size]
+    #     print(f"size batch_files {batch_files.__len__()}")
+    #     process_batch_with_categorization(batch_files, target_vulner, batch_size, batch_index)
 
 
     train_unet_lstm()
 
-
-# 2025-01-31 16:22:26.441720: W tensorflow/core/common_runtime/gpu/gpu_bfc_allocator.cc:47] Overriding orig_value setting because the TF_FORCE_GPU_ALLOW_GROWTH environment variable is set. Original config value was 0.
-# I0000 00:00:1738340546.441899   11614 gpu_device.cc:2022] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 20967 MB memory:  -> device: 0, name: NVIDIA L4, pci bus id: 0000:00:03.0, compute capability: 8.9
-# 🔹 Shape of conv2: (None, 25, 150, 128)
-# 🔹 Shape of up1: (None, 26, 150, 256)
-# 🔹 Shape of conv1: (None, 50, 300, 64)
-# 🔹 Shape of up2: (None, 50, 300, 128)
-# Epoch 1/50
-# I0000 00:00:1738340558.282168   11726 cuda_dnn.cc:529] Loaded cuDNN version 90300
-# 1211/1211 - 185s - 153ms/step - accuracy: 0.6845 - loss: 0.6254 - val_accuracy: 0.6887 - val_loss: 0.6266
-# Epoch 2/50
-# 1211/1211 - 170s - 140ms/step - accuracy: 0.6848 - loss: 0.6242 - val_accuracy: 0.6887 - val_loss: 0.6260
-# Epoch 3/50
-# 1211/1211 - 170s - 140ms/step - accuracy: 0.6848 - loss: 0.6238 - val_accuracy: 0.6887 - val_loss: 0.6204
-# Epoch 4/50
-# 1211/1211 - 170s - 140ms/step - accuracy: 0.6848 - loss: 0.6239 - val_accuracy: 0.6887 - val_loss: 0.6210
-# Epoch 5/50
-# 1211/1211 - 168s - 139ms/step - accuracy: 0.6848 - loss: 0.6236 - val_accuracy: 0.6887 - val_loss: 0.6207
-# Epoch 6/50
-# 1211/1211 - 168s - 138ms/step - accuracy: 0.6848 - loss: 0.6236 - val_accuracy: 0.6887 - val_loss: 0.6211
-# Epoch 7/50
-# 1211/1211 - 168s - 139ms/step - accuracy: 0.6848 - loss: 0.6235 - val_accuracy: 0.6887 - val_loss: 0.6202
-# Epoch 8/50
-# 1211/1211 - 168s - 138ms/step - accuracy: 0.6848 - loss: 0.6235 - val_accuracy: 0.6887 - val_loss: 0.6201
-# Epoch 9/50
-# 1211/1211 - 168s - 138ms/step - accuracy: 0.6848 - loss: 0.6235 - val_accuracy: 0.6887 - val_loss: 0.6202
-# Epoch 10/50
-# 1211/1211 - 168s - 138ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6212
-# Epoch 11/50
-# 1211/1211 - 168s - 139ms/step - accuracy: 0.6848 - loss: 0.6236 - val_accuracy: 0.6887 - val_loss: 0.6205
-# Epoch 12/50
-# 1211/1211 - 168s - 139ms/step - accuracy: 0.6848 - loss: 0.6234 - val_accuracy: 0.6887 - val_loss: 0.6206
-# Epoch 13/50
-# 1211/1211 - 168s - 139ms/step - accuracy: 0.6848 - loss: 0.6234 - val_accuracy: 0.6887 - val_loss: 0.6201
-# Epoch 14/50
-# 1211/1211 - 168s - 139ms/step - accuracy: 0.6848 - loss: 0.6235 - val_accuracy: 0.6887 - val_loss: 0.6209
-# Epoch 15/50
-# 1211/1211 - 168s - 139ms/step - accuracy: 0.6848 - loss: 0.6234 - val_accuracy: 0.6887 - val_loss: 0.6203
-# Epoch 16/50
-# 1211/1211 - 168s - 139ms/step - accuracy: 0.6848 - loss: 0.6235 - val_accuracy: 0.6887 - val_loss: 0.6203
-# Epoch 17/50
-# 1211/1211 - 168s - 139ms/step - accuracy: 0.6848 - loss: 0.6235 - val_accuracy: 0.6887 - val_loss: 0.6202
-# Epoch 18/50
-# 1211/1211 - 168s - 139ms/step - accuracy: 0.6848 - loss: 0.6235 - val_accuracy: 0.6887 - val_loss: 0.6208
-# Epoch 19/50
-# 1211/1211 - 168s - 139ms/step - accuracy: 0.6848 - loss: 0.6235 - val_accuracy: 0.6887 - val_loss: 0.6205
-# Epoch 20/50
-# 1211/1211 - 168s - 139ms/step - accuracy: 0.6848 - loss: 0.6234 - val_accuracy: 0.6887 - val_loss: 0.6201
-# Epoch 21/50
-# 1211/1211 - 168s - 139ms/step - accuracy: 0.6848 - loss: 0.6234 - val_accuracy: 0.6887 - val_loss: 0.6201
-# Epoch 22/50
-# 1211/1211 - 168s - 139ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6205
-# Epoch 23/50
-# 1211/1211 - 168s - 139ms/step - accuracy: 0.6848 - loss: 0.6234 - val_accuracy: 0.6887 - val_loss: 0.6202
-# Epoch 24/50
-# 1211/1211 - 168s - 139ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6202
-# Epoch 25/50
-# 1211/1211 - 168s - 139ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6204
-# Epoch 26/50
-# 1211/1211 - 168s - 139ms/step - accuracy: 0.6848 - loss: 0.6234 - val_accuracy: 0.6887 - val_loss: 0.6204
-# Epoch 27/50
-# 1211/1211 - 168s - 139ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6201
-# Epoch 28/50
-# 1211/1211 - 168s - 139ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6201
-# Epoch 29/50
-# 1211/1211 - 167s - 138ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6201
-# Epoch 30/50
-# 1211/1211 - 167s - 138ms/step - accuracy: 0.6848 - loss: 0.6234 - val_accuracy: 0.6887 - val_loss: 0.6203
-# Epoch 31/50
-# 1211/1211 - 167s - 138ms/step - accuracy: 0.6848 - loss: 0.6234 - val_accuracy: 0.6887 - val_loss: 0.6202
-# Epoch 32/50
-# 1211/1211 - 167s - 138ms/step - accuracy: 0.6848 - loss: 0.6232 - val_accuracy: 0.6887 - val_loss: 0.6203
-# Epoch 33/50
-# 1211/1211 - 166s - 137ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6202
-# Epoch 34/50
-# 1211/1211 - 166s - 137ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6202
-# Epoch 35/50
-# 1211/1211 - 166s - 137ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6201
-# Epoch 36/50
-# 1211/1211 - 167s - 137ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6203
-# Epoch 37/50
-# 1211/1211 - 167s - 138ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6208
-# Epoch 38/50
-# 1211/1211 - 167s - 138ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6201
-# Epoch 39/50
-# 1211/1211 - 167s - 138ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6202
-# Epoch 40/50
-# 1211/1211 - 167s - 138ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6201
-# Epoch 41/50
-# 1211/1211 - 167s - 137ms/step - accuracy: 0.6848 - loss: 0.6232 - val_accuracy: 0.6887 - val_loss: 0.6202
-# Epoch 42/50
-# 1211/1211 - 167s - 138ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6202
-# Epoch 43/50
-# 1211/1211 - 167s - 138ms/step - accuracy: 0.6848 - loss: 0.6232 - val_accuracy: 0.6887 - val_loss: 0.6206
-# Epoch 44/50
-# 1211/1211 - 167s - 138ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6202
-# Epoch 45/50
-# 1211/1211 - 166s - 137ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6203
-# Epoch 46/50
-# 1211/1211 - 166s - 137ms/step - accuracy: 0.6848 - loss: 0.6232 - val_accuracy: 0.6887 - val_loss: 0.6210
-# Epoch 47/50
-# 1211/1211 - 166s - 137ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6201
-# Epoch 48/50
-# 1211/1211 - 166s - 137ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6204
-# Epoch 49/50
-# 1211/1211 - 166s - 137ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6206
-# Epoch 50/50
-# 1211/1211 - 166s - 137ms/step - accuracy: 0.6848 - loss: 0.6233 - val_accuracy: 0.6887 - val_loss: 0.6202
-# Figure(1000x600)
-# 379/379 ━━━━━━━━━━━━━━━━━━━━ 21s 53ms/step
-# /usr/local/lib/python3.11/dist-packages/sklearn/metrics/_classification.py:1565: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
-#   _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
-# /usr/local/lib/python3.11/dist-packages/sklearn/metrics/_classification.py:1565: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
-#   _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
-# /usr/local/lib/python3.11/dist-packages/sklearn/metrics/_classification.py:1565: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
-#   _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
-# Accuracy: 0.6800462504129501
-# Classification Report:
-#               precision    recall  f1-score   support
-#
-#         Safe       0.68      1.00      0.81      8234
-#   Vulnerable       0.00      0.00      0.00      3874
-#
-#     accuracy                           0.68     12108
-#    macro avg       0.34      0.50      0.40     12108
-# weighted avg       0.46      0.68      0.55     12108
-#
-# WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`.
-# Model training completed and saved.
 
 
