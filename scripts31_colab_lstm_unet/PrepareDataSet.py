@@ -402,29 +402,6 @@ def process_batch_with_categorization(files, target_vulnerability, batch_size, b
 #     """ تبدیل داده‌های ورودی سه‌بعدی به فرمت مناسب برای U-Net """
 #     return np.expand_dims(X, axis=-1)  # تبدیل به (samples, sequence_length, vector_length, 1)
 
-
-# def prepare_data_for_unet(X, target_shape=(50, 300)):
-#     """
-#     تبدیل داده‌های ورودی سه‌بعدی به فرمت مناسب برای U-Net
-#
-#     :param X: آرایه ورودی با شکل (samples, sequence_length, vector_length)
-#     :param target_shape: ابعاد نهایی که باید به U-Net داده شود (باید هم‌اندازه با ورودی اصلی باشد)
-#     :return: آرایه‌ای با ابعاد (samples, 50, 300, 1) برای استفاده در U-Net
-#     """
-#     if X.shape[1:] != target_shape:
-#         raise ValueError(f"❌ ابعاد داده ورودی با {target_shape} سازگار نیست! شکل فعلی: {X.shape}")
-#
-#     # ✅ اضافه کردن یک بعد کانال برای سازگاری با U-Net
-#     X = np.expand_dims(X, axis=-1)  # تبدیل به (samples, sequence_length, vector_length, 1)
-#
-#     print("\n🔍 **بررسی داده‌های تبدیل‌شده برای U-Net:**")
-#     print("🔹 شکل نهایی X برای U-Net:", X.shape)
-#     print("🔹 بیشینه مقدار X:", np.max(X))
-#     print("🔹 کمینه مقدار X:", np.min(X))
-#     print("🔹 میانگین مقدار X:", np.mean(X))
-#
-#     return X
-
 def prepare_data_for_unet(X, target_shape=(50, 300)):
     """
     تبدیل داده‌های ورودی سه‌بعدی به فرمت مناسب برای U-Net
@@ -495,28 +472,30 @@ def lstm_unet_model(input_shape):
     lstm = layers.Bidirectional(layers.LSTM(64, return_sequences=True))(lstm)
 
     # 📌 مسیر نزولی U-Net (Encoder)
-    conv1 = layers.Conv1D(64, 3, activation='relu', padding='same')(lstm)
-    conv1 = layers.Conv1D(64, 3, activation='relu', padding='same')(conv1)
-    pool1 = layers.MaxPooling1D(2)(conv1)
+    conv1 = layers.Conv1D(64, kernel_size=3, activation='relu', padding='same')(lstm)
+    conv1 = layers.Conv1D(64, kernel_size=3, activation='relu', padding='same')(conv1)
+    pool1 = layers.MaxPooling1D(pool_size=2)(conv1)
 
-    conv2 = layers.Conv1D(128, 3, activation='relu', padding='same')(pool1)
-    conv2 = layers.Conv1D(128, 3, activation='relu', padding='same')(conv2)
-    pool2 = layers.MaxPooling1D(2)(conv2)
+    conv2 = layers.Conv1D(128, kernel_size=3, activation='relu', padding='same')(pool1)
+    conv2 = layers.Conv1D(128, kernel_size=3, activation='relu', padding='same')(conv2)
+    pool2 = layers.MaxPooling1D(pool_size=2)(conv2)
 
     # 📌 Bottleneck
-    conv3 = layers.Conv1D(256, 3, activation='relu', padding='same')(pool2)
-    conv3 = layers.Conv1D(256, 3, activation='relu', padding='same')(conv3)
+    conv3 = layers.Conv1D(256, kernel_size=3, activation='relu', padding='same')(pool2)
+    conv3 = layers.Conv1D(256, kernel_size=3, activation='relu', padding='same')(conv3)
 
-    # 📌 مسیر صعودی U-Net (Decoder)
-    up1 = layers.UpSampling1D(2)(conv3)
-    up1 = layers.Conv1D(128, 3, activation='relu', padding='same')(up1)
-    concat1 = layers.concatenate([up1, conv2])
+    # 📌 مسیر صعودی U-Net (Decoder) - اصلاح شده
+    up1 = layers.Conv1DTranspose(128, kernel_size=3, strides=2, padding='same', activation='relu')(conv3)
+    concat1 = layers.concatenate([up1, conv2])  # دیگر نیازی به Cropping نداریم
+    conv4 = layers.Conv1D(128, kernel_size=3, activation='relu', padding='same')(concat1)
+    conv4 = layers.Conv1D(128, kernel_size=3, activation='relu', padding='same')(conv4)
 
-    up2 = layers.UpSampling1D(2)(concat1)
-    up2 = layers.Conv1D(64, 3, activation='relu', padding='same')(up2)
+    up2 = layers.Conv1DTranspose(64, kernel_size=3, strides=2, padding='same', activation='relu')(conv4)
     concat2 = layers.concatenate([up2, conv1])
+    conv5 = layers.Conv1D(64, kernel_size=3, activation='relu', padding='same')(concat2)
+    conv5 = layers.Conv1D(64, kernel_size=3, activation='relu', padding='same')(conv5)
 
-    outputs = layers.Conv1D(1, 1, activation='sigmoid')(concat2)  # خروجی احتمال آسیب‌پذیری
+    outputs = layers.Conv1D(1, kernel_size=1, activation='sigmoid')(conv5)  # احتمال آسیب‌پذیری
 
     model = models.Model(inputs, outputs)
     return model
