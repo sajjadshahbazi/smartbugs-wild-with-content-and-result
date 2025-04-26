@@ -410,16 +410,28 @@ def pad_to_multiple_of_four(X):
     return X
 
 
-# Residual block for 1D convolutions
+# Residual block for 1D convolutions with projection if channels differ
 class ResBlock1D(tf.keras.layers.Layer):
     def __init__(self, channels, kernel_size=3):
         super().__init__()
+        self.channels = channels
+        self.kernel_size = kernel_size
         self.conv1 = Conv1D(channels, kernel_size, padding='same')
         self.bn1 = BatchNormalization()
         self.act1 = Activation('relu')
         self.conv2 = Conv1D(channels, kernel_size, padding='same')
         self.bn2 = BatchNormalization()
         self.act2 = Activation('relu')
+        self.shortcut = None
+
+    def build(self, input_shape):
+        input_channels = input_shape[-1]
+        if input_channels != self.channels:
+            # projection to match channels
+            self.shortcut = Conv1D(self.channels, 1, padding='same')
+        else:
+            self.shortcut = tf.identity
+        super().build(input_shape)
 
     def call(self, x):
         y = self.conv1(x)
@@ -427,7 +439,8 @@ class ResBlock1D(tf.keras.layers.Layer):
         y = self.act1(y)
         y = self.conv2(y)
         y = self.bn2(y)
-        y = tf.keras.layers.add([x, y])
+        x_proj = self.shortcut(x)
+        y = tf.keras.layers.add([x_proj, y])
         return self.act2(y)
 
 # Squeeze-and-Excitation block for 1D
@@ -462,20 +475,20 @@ def build_unet_lstm_model(seq_len, embed_dim):
 
     # Bottleneck
     c3 = ResBlock1D(256)(p2)
-    c3 = SEBlock1D(256)(c3)
+    se3 = SEBlock1D(256)(c3)
 
     # Decoder
-    u1 = UpSampling1D(2)(c3)
+    u1 = UpSampling1D(2)(se3)
     merge1 = concatenate([u1, se2])
     c4 = ResBlock1D(128)(merge1)
-    c4 = SEBlock1D(128)(c4)
+    se4 = SEBlock1D(128)(c4)
 
-    u2 = UpSampling1D(2)(c4)
+    u2 = UpSampling1D(2)(se4)
     merge2 = concatenate([u2, se1])
     c5 = ResBlock1D(64)(merge2)
-    c5 = SEBlock1D(64)(c5)
+    se5 = SEBlock1D(64)(c5)
 
-    unet_feat = GlobalAveragePooling1D(name='unet_gap')(c5)
+    unet_feat = GlobalAveragePooling1D(name='unet_gap')(se5)
 
     # --- LSTM branch: exactly as original ---
     l1 = Bidirectional(LSTM(128, return_sequences=True), name='lstm1')(inp)
