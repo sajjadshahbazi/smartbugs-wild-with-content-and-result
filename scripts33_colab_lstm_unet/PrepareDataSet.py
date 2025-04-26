@@ -107,18 +107,6 @@ def is_sentence_in_text(sentence, text):
     flg = sentence in text
     return flg
 
-def load_vectors(cache_dir, ext='.pkl'):
-    X_batches, Y_batches = [], []
-    for fn in os.listdir(cache_dir):
-        if fn.endswith(ext):
-            with open(os.path.join(cache_dir, fn), 'rb') as f:
-                Xb, Yb = pickle.load(f)
-                X_batches.append(Xb)
-                Y_batches.append(Yb)
-    X = np.vstack(X_batches)
-    Y = np.hstack(Y_batches)
-    return X, Y
-
 
 def getResultVulnarable(contract_name, target_vulnerability):
 
@@ -399,73 +387,93 @@ def process_batch_with_categorization(files, target_vulnerability, batch_size, b
         pickle.dump((X_safe, Y_safe), f)
     print(f"Batch saved to {batch_file_vulnerable}, {batch_file_sensitive_negative}", {batch_file_safe})
 
-
-
-
+def load_vectors(cache_dir, ext='.pkl'):
+    Xbatches, Ybatches = [], []
+    for fn in os.listdir(cache_dir):
+        if fn.endswith(ext):
+            with open(os.path.join(cache_dir, fn), 'rb') as f:
+                Xb, Yb = pickle.load(f)
+                Xbatches.append(Xb)
+                Ybatches.append(Yb)
+    X = np.vstack(Xbatches)
+    Y = np.hstack(Ybatches)
+    return X, Y
 
 def pad_to_multiple_of_four(X):
-    """
-    Pads the time dimension of X to the next multiple of 4 (for two 2x pool-upsampling).
-    """
     seq_len = X.shape[1]
     if seq_len % 4 != 0:
         new_len = ((seq_len + 3) // 4) * 4
-        pad_amount = new_len - seq_len
-        # pad only on time axis at the end
-        X = np.pad(X, ((0, 0), (0, pad_amount), (0, 0)), mode='constant')
+        pad_amt = new_len - seq_len
+        X = np.pad(X, ((0,0),(0,pad_amt),(0,0)), mode='constant')
     return X
 
 
 def build_unet_lstm_model(seq_len, embed_dim):
     inp = Input(shape=(seq_len, embed_dim), name='input')
-    # UNet branch (1D)
-    c1 = Conv1D(64, 3, padding='same', activation='relu')(inp)
+    # --- UNet branch with double conv + BN ---
+    # Encoder block 1
+    x1 = Conv1D(64, 3, padding='same', activation='relu')(inp)
+    x1 = BatchNormalization()(x1)
+    x1 = Conv1D(64, 3, padding='same', activation='relu')(x1)
+    c1 = BatchNormalization()(x1)
     p1 = MaxPooling1D(2)(c1)
-    c2 = Conv1D(128, 3, padding='same', activation='relu')(p1)
+    # Encoder block 2
+    x2 = Conv1D(128, 3, padding='same', activation='relu')(p1)
+    x2 = BatchNormalization()(x2)
+    x2 = Conv1D(128, 3, padding='same', activation='relu')(x2)
+    c2 = BatchNormalization()(x2)
     p2 = MaxPooling1D(2)(c2)
-    c3 = Conv1D(256, 3, padding='same', activation='relu')(p2)
+    # Bottleneck
+    xb = Conv1D(256, 3, padding='same', activation='relu')(p2)
+    xb = BatchNormalization()(xb)
+    xb = Conv1D(256, 3, padding='same', activation='relu')(xb)
+    c3 = BatchNormalization()(xb)
+    # Decoder block 1
     u1 = UpSampling1D(2)(c3)
-    m1 = concatenate([u1, c2])
-    c4 = Conv1D(128, 3, padding='same', activation='relu')(m1)
+    x4 = concatenate([u1, c2])
+    x4 = Conv1D(128, 3, padding='same', activation='relu')(x4)
+    x4 = BatchNormalization()(x4)
+    x4 = Conv1D(128, 3, padding='same', activation='relu')(x4)
+    c4 = BatchNormalization()(x4)
+    # Decoder block 2
     u2 = UpSampling1D(2)(c4)
-    m2 = concatenate([u2, c1])
-    c5 = Conv1D(64, 3, padding='same', activation='relu')(m2)
+    x5 = concatenate([u2, c1])
+    x5 = Conv1D(64, 3, padding='same', activation='relu')(x5)
+    x5 = BatchNormalization()(x5)
+    x5 = Conv1D(64, 3, padding='same', activation='relu')(x5)
+    c5 = BatchNormalization()(x5)
     unet_feat = GlobalAveragePooling1D(name='unet_gap')(c5)
 
-    # LSTM branch
-    l1 = Bidirectional(LSTM(128, return_sequences=True))(inp)
-    l2 = Bidirectional(LSTM(64))(l1)
+    # --- LSTM branch: exactly as original implementation ---
+    l1 = Bidirectional(LSTM(128, return_sequences=True), name='lstm1')(inp)
+    l2 = Bidirectional(LSTM(64), name='lstm2')(l1)
 
-    # Combine branches
+    # --- Fusion and output ---
     merged = concatenate([unet_feat, l2], name='concat')
-    d1 = Dense(64, activation='relu')(merged)
-    drop = Dropout(0.5)(d1)
-    out = Dense(1, activation='sigmoid', name='output')(drop)
+    # Final dense same as original LSTM-only head:
+    out = Dense(1, activation='sigmoid', name='output')(merged)
 
-    model = Model(inp, out, name='UNet_LSTM')
+    model = Model(inputs=inp, outputs=out, name='UNet_LSTM')
     model.compile(optimizer=Adam(LEARNING_RATE), loss='binary_crossentropy', metrics=['accuracy'])
     return model
 
 
 if __name__ == '__main__':
-    # Load data
+    # Load and pad
     X, Y = load_vectors(CACHE_DIR)
-    # Pad time dimension so that it is divisible by 4 (for exact pool/up steps)
     X = pad_to_multiple_of_four(X)
-    print(f'Dataset shapes after padding: X={X.shape}, Y={Y.shape}')
     SEQ_LEN, EMBED_DIM = X.shape[1], X.shape[2]
+    print(f'X shape: {X.shape}, Y shape: {Y.shape}')
 
-    # Train/test split
+    # Split
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
 
-    # Build model
+    # Build
     model = build_unet_lstm_model(SEQ_LEN, EMBED_DIM)
     model.summary()
 
-    # Callbacks
+    # Train
     early = EarlyStopping(monitor='val_loss', patience=PATIENCE, restore_best_weights=True)
-
-    # Training
     history = model.fit(
         X_train, Y_train,
         validation_split=0.2,
@@ -475,8 +483,8 @@ if __name__ == '__main__':
         verbose=2
     )
 
-    # Plot metrics
-    plt.figure(figsize=(10, 6))
+    # Plot
+    plt.figure(figsize=(10,6))
     plt.plot(history.history['accuracy'], label='train_acc')
     plt.plot(history.history['val_accuracy'], label='val_acc')
     plt.plot(history.history['loss'], label='train_loss')
@@ -489,126 +497,12 @@ if __name__ == '__main__':
     plt.savefig('training_plot_unet_lstm.png', dpi=300, bbox_inches='tight')
     plt.show()
 
-    # Evaluation
+    # Eval
     Y_pred = (model.predict(X_test) > 0.5).astype(int)
     acc = accuracy_score(Y_test, Y_pred)
-    report = classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable'])
-    print(f'UNet+LSTM Test Accuracy: {acc:.4f}')
-    print('Classification Report:')
-    print(report)
+    print(f'Test Accuracy: {acc:.4f}')
+    print(classification_report(Y_test, Y_pred, target_names=['Safe','Vulnerable']))
 
-    # Save model
+    # Save
     model.save('final_unet_lstm_model.keras')
-    print('UNet+LSTM training complete.')
-
-
-#     //Model: "UNet_LSTM"
-# ┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┓
-# ┃ Layer (type)        ┃ Output Shape      ┃    Param # ┃ Connected to      ┃
-# ┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━┩
-# │ input (InputLayer)  │ (None, 52, 300)   │          0 │ -                 │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ conv1d (Conv1D)     │ (None, 52, 64)    │     57,664 │ input[0][0]       │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ max_pooling1d       │ (None, 26, 64)    │          0 │ conv1d[0][0]      │
-# │ (MaxPooling1D)      │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ conv1d_1 (Conv1D)   │ (None, 26, 128)   │     24,704 │ max_pooling1d[0]… │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ max_pooling1d_1     │ (None, 13, 128)   │          0 │ conv1d_1[0][0]    │
-# │ (MaxPooling1D)      │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ conv1d_2 (Conv1D)   │ (None, 13, 256)   │     98,560 │ max_pooling1d_1[… │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ up_sampling1d       │ (None, 26, 256)   │          0 │ conv1d_2[0][0]    │
-# │ (UpSampling1D)      │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ concatenate         │ (None, 26, 384)   │          0 │ up_sampling1d[0]… │
-# │ (Concatenate)       │                   │            │ conv1d_1[0][0]    │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ conv1d_3 (Conv1D)   │ (None, 26, 128)   │    147,584 │ concatenate[0][0] │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ up_sampling1d_1     │ (None, 52, 128)   │          0 │ conv1d_3[0][0]    │
-# │ (UpSampling1D)      │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ concatenate_1       │ (None, 52, 192)   │          0 │ up_sampling1d_1[… │
-# │ (Concatenate)       │                   │            │ conv1d[0][0]      │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ conv1d_4 (Conv1D)   │ (None, 52, 64)    │     36,928 │ concatenate_1[0]… │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ bidirectional       │ (None, 52, 256)   │    439,296 │ input[0][0]       │
-# │ (Bidirectional)     │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ unet_gap            │ (None, 64)        │          0 │ conv1d_4[0][0]    │
-# │ (GlobalAveragePool… │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ bidirectional_1     │ (None, 128)       │    164,352 │ bidirectional[0]… │
-# │ (Bidirectional)     │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ concat              │ (None, 192)       │          0 │ unet_gap[0][0],   │
-# │ (Concatenate)       │                   │            │ bidirectional_1[… │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ dense (Dense)       │ (None, 64)        │     12,352 │ concat[0][0]      │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ dropout (Dropout)   │ (None, 64)        │          0 │ dense[0][0]       │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ output (Dense)      │ (None, 1)         │         65 │ dropout[0][0]     │
-# └─────────────────────┴───────────────────┴────────────┴───────────────────┘
-#  Total params: 981,505 (3.74 MB)
-#  Trainable params: 981,505 (3.74 MB)
-#  Non-trainable params: 0 (0.00 B)
-# Epoch 1/50
-# I0000 00:00:1745695889.985884   28093 cuda_dnn.cc:529] Loaded cuDNN version 90300
-# 1211/1211 - 33s - 27ms/step - accuracy: 0.7440 - loss: 0.5247 - val_accuracy: 0.7803 - val_loss: 0.4705
-# Epoch 2/50
-# 1211/1211 - 23s - 19ms/step - accuracy: 0.7859 - loss: 0.4513 - val_accuracy: 0.7901 - val_loss: 0.4396
-# Epoch 3/50
-# 1211/1211 - 23s - 19ms/step - accuracy: 0.7925 - loss: 0.4131 - val_accuracy: 0.8033 - val_loss: 0.3927
-# Epoch 4/50
-# 1211/1211 - 23s - 19ms/step - accuracy: 0.8073 - loss: 0.3860 - val_accuracy: 0.8154 - val_loss: 0.3801
-# Epoch 5/50
-# 1211/1211 - 23s - 19ms/step - accuracy: 0.8197 - loss: 0.3693 - val_accuracy: 0.8193 - val_loss: 0.3683
-# Epoch 6/50
-# 1211/1211 - 23s - 19ms/step - accuracy: 0.8314 - loss: 0.3522 - val_accuracy: 0.8263 - val_loss: 0.3649
-# Epoch 7/50
-# 1211/1211 - 23s - 19ms/step - accuracy: 0.8382 - loss: 0.3406 - val_accuracy: 0.8348 - val_loss: 0.3538
-# Epoch 8/50
-# 1211/1211 - 23s - 19ms/step - accuracy: 0.8450 - loss: 0.3290 - val_accuracy: 0.8334 - val_loss: 0.3532
-# Epoch 9/50
-# 1211/1211 - 23s - 19ms/step - accuracy: 0.8551 - loss: 0.3181 - val_accuracy: 0.8373 - val_loss: 0.3540
-# Epoch 10/50
-# 1211/1211 - 23s - 19ms/step - accuracy: 0.8606 - loss: 0.3065 - val_accuracy: 0.8464 - val_loss: 0.3428
-# Epoch 11/50
-# 1211/1211 - 23s - 19ms/step - accuracy: 0.8656 - loss: 0.2975 - val_accuracy: 0.8454 - val_loss: 0.3492
-# Epoch 12/50
-# 1211/1211 - 23s - 19ms/step - accuracy: 0.8709 - loss: 0.2887 - val_accuracy: 0.8427 - val_loss: 0.3724
-# Epoch 13/50
-# 1211/1211 - 23s - 19ms/step - accuracy: 0.8774 - loss: 0.2770 - val_accuracy: 0.8434 - val_loss: 0.3469
-# Epoch 14/50
-# 1211/1211 - 23s - 19ms/step - accuracy: 0.8799 - loss: 0.2726 - val_accuracy: 0.8495 - val_loss: 0.3434
-# Epoch 15/50
-# 1211/1211 - 23s - 19ms/step - accuracy: 0.8841 - loss: 0.2624 - val_accuracy: 0.8538 - val_loss: 0.3721
-# Epoch 16/50
-# 1211/1211 - 23s - 19ms/step - accuracy: 0.8878 - loss: 0.2554 - val_accuracy: 0.8495 - val_loss: 0.3600
-# Epoch 17/50
-# 1211/1211 - 23s - 19ms/step - accuracy: 0.8905 - loss: 0.2511 - val_accuracy: 0.8546 - val_loss: 0.3624
-# Epoch 18/50
-# 1211/1211 - 23s - 19ms/step - accuracy: 0.8948 - loss: 0.2426 - val_accuracy: 0.8580 - val_loss: 0.3518
-# Epoch 19/50
-# 1211/1211 - 23s - 19ms/step - accuracy: 0.8974 - loss: 0.2385 - val_accuracy: 0.8534 - val_loss: 0.3734
-# Epoch 20/50
-# 1211/1211 - 23s - 19ms/step - accuracy: 0.8996 - loss: 0.2335 - val_accuracy: 0.8576 - val_loss: 0.3775
-# Figure(1000x600)
-# 379/379 ━━━━━━━━━━━━━━━━━━━━ 3s 7ms/step
-# UNet+LSTM Test Accuracy: 0.8492
-# Classification Report:
-#               precision    recall  f1-score   support
-#
-#         Safe       0.89      0.90      0.89      8308
-#   Vulnerable       0.77      0.75      0.76      3800
-#
-#     accuracy                           0.85     12108
-#    macro avg       0.83      0.82      0.82     12108
-# weighted avg       0.85      0.85      0.85     12108
-#
-# UNet+LSTM training complete.
+    print('Done.')
