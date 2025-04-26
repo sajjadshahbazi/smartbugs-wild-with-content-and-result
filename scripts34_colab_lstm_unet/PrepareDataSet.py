@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 from imblearn.over_sampling import SMOTE
 import pandas as pd
+from keras.src.layers import Multiply
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.utils import Sequence
 import sys
@@ -24,7 +25,7 @@ from tensorflow.keras.optimizers import Adam
 import tensorflow as tf
 from tensorflow.python.platform import build_info as tf_build_info
 from tensorflow.keras.layers import Input
-from tensorflow.keras.layers import Conv2D, Conv1D, LeakyReLU, UpSampling1D, GlobalAveragePooling1D, Bidirectional, concatenate, Cropping2D, MaxPooling2D, MaxPooling1D, UpSampling2D, concatenate, Flatten, Dense, Bidirectional, LSTM, Input, Reshape, BatchNormalization, Reshape
+from tensorflow.keras.layers import Conv2D, Conv1D, LeakyReLU, UpSampling1D, GlobalAveragePooling1D, Activation, Bidirectional, concatenate, Cropping2D, MaxPooling2D, MaxPooling1D, UpSampling2D, concatenate, Flatten, Dense, Bidirectional, LSTM, Input, Reshape, BatchNormalization, Reshape
 from tensorflow.keras.models import Model
 from tensorflow.keras import layers, models
 from tensorflow.keras.optimizers import Adam
@@ -399,6 +400,7 @@ def load_vectors(cache_dir, ext='.pkl'):
     Y = np.hstack(Ybatches)
     return X, Y
 
+
 def pad_to_multiple_of_four(X):
     seq_len = X.shape[1]
     if seq_len % 4 != 0:
@@ -408,49 +410,79 @@ def pad_to_multiple_of_four(X):
     return X
 
 
+# Residual block for 1D convolutions
+class ResBlock1D(tf.keras.layers.Layer):
+    def __init__(self, channels, kernel_size=3):
+        super().__init__()
+        self.conv1 = Conv1D(channels, kernel_size, padding='same')
+        self.bn1 = BatchNormalization()
+        self.act1 = Activation('relu')
+        self.conv2 = Conv1D(channels, kernel_size, padding='same')
+        self.bn2 = BatchNormalization()
+        self.act2 = Activation('relu')
+
+    def call(self, x):
+        y = self.conv1(x)
+        y = self.bn1(y)
+        y = self.act1(y)
+        y = self.conv2(y)
+        y = self.bn2(y)
+        y = tf.keras.layers.add([x, y])
+        return self.act2(y)
+
+# Squeeze-and-Excitation block for 1D
+class SEBlock1D(tf.keras.layers.Layer):
+    def __init__(self, channels, reduction=16):
+        super().__init__()
+        self.global_pool = GlobalAveragePooling1D()
+        self.fc1 = Dense(channels // reduction, activation='relu')
+        self.fc2 = Dense(channels, activation='sigmoid')
+        self.reshape = Reshape([1, channels])
+
+    def call(self, x):
+        s = self.global_pool(x)
+        s = self.fc1(s)
+        s = self.fc2(s)
+        s = self.reshape(s)
+        return Multiply()([x, s])
+
+
 def build_unet_lstm_model(seq_len, embed_dim):
     inp = Input(shape=(seq_len, embed_dim), name='input')
-    # --- UNet branch with double conv + BN ---
-    # Encoder block 1
-    x1 = Conv1D(64, 3, padding='same', activation='relu')(inp)
-    x1 = BatchNormalization()(x1)
-    x1 = Conv1D(64, 3, padding='same', activation='relu')(x1)
-    c1 = BatchNormalization()(x1)
-    p1 = MaxPooling1D(2)(c1)
-    # Encoder block 2
-    x2 = Conv1D(128, 3, padding='same', activation='relu')(p1)
-    x2 = BatchNormalization()(x2)
-    x2 = Conv1D(128, 3, padding='same', activation='relu')(x2)
-    c2 = BatchNormalization()(x2)
-    p2 = MaxPooling1D(2)(c2)
+
+    # --- UNet branch with Residual & SE ---
+    # Encoder
+    c1 = ResBlock1D(64)(inp)
+    se1 = SEBlock1D(64)(c1)
+    p1 = MaxPooling1D(2)(se1)
+
+    c2 = ResBlock1D(128)(p1)
+    se2 = SEBlock1D(128)(c2)
+    p2 = MaxPooling1D(2)(se2)
+
     # Bottleneck
-    xb = Conv1D(256, 3, padding='same', activation='relu')(p2)
-    xb = BatchNormalization()(xb)
-    xb = Conv1D(256, 3, padding='same', activation='relu')(xb)
-    c3 = BatchNormalization()(xb)
-    # Decoder block 1
+    c3 = ResBlock1D(256)(p2)
+    c3 = SEBlock1D(256)(c3)
+
+    # Decoder
     u1 = UpSampling1D(2)(c3)
-    x4 = concatenate([u1, c2])
-    x4 = Conv1D(128, 3, padding='same', activation='relu')(x4)
-    x4 = BatchNormalization()(x4)
-    x4 = Conv1D(128, 3, padding='same', activation='relu')(x4)
-    c4 = BatchNormalization()(x4)
-    # Decoder block 2
+    merge1 = concatenate([u1, se2])
+    c4 = ResBlock1D(128)(merge1)
+    c4 = SEBlock1D(128)(c4)
+
     u2 = UpSampling1D(2)(c4)
-    x5 = concatenate([u2, c1])
-    x5 = Conv1D(64, 3, padding='same', activation='relu')(x5)
-    x5 = BatchNormalization()(x5)
-    x5 = Conv1D(64, 3, padding='same', activation='relu')(x5)
-    c5 = BatchNormalization()(x5)
+    merge2 = concatenate([u2, se1])
+    c5 = ResBlock1D(64)(merge2)
+    c5 = SEBlock1D(64)(c5)
+
     unet_feat = GlobalAveragePooling1D(name='unet_gap')(c5)
 
-    # --- LSTM branch: exactly as original implementation ---
+    # --- LSTM branch: exactly as original ---
     l1 = Bidirectional(LSTM(128, return_sequences=True), name='lstm1')(inp)
     l2 = Bidirectional(LSTM(64), name='lstm2')(l1)
 
     # --- Fusion and output ---
     merged = concatenate([unet_feat, l2], name='concat')
-    # Final dense same as original LSTM-only head:
     out = Dense(1, activation='sigmoid', name='output')(merged)
 
     model = Model(inputs=inp, outputs=out, name='UNet_LSTM')
@@ -506,148 +538,3 @@ if __name__ == '__main__':
     # Save
     model.save('final_unet_lstm_model.keras')
     print('Done.')
-
-
-
-
-#Model: "UNet_LSTM"
-# ┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┓
-# ┃ Layer (type)        ┃ Output Shape      ┃    Param # ┃ Connected to      ┃
-# ┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━┩
-# │ input (InputLayer)  │ (None, 52, 300)   │          0 │ -                 │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ conv1d (Conv1D)     │ (None, 52, 64)    │     57,664 │ input[0][0]       │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ batch_normalization │ (None, 52, 64)    │        256 │ conv1d[0][0]      │
-# │ (BatchNormalizatio… │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ conv1d_1 (Conv1D)   │ (None, 52, 64)    │     12,352 │ batch_normalizat… │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ batch_normalizatio… │ (None, 52, 64)    │        256 │ conv1d_1[0][0]    │
-# │ (BatchNormalizatio… │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ max_pooling1d       │ (None, 26, 64)    │          0 │ batch_normalizat… │
-# │ (MaxPooling1D)      │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ conv1d_2 (Conv1D)   │ (None, 26, 128)   │     24,704 │ max_pooling1d[0]… │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ batch_normalizatio… │ (None, 26, 128)   │        512 │ conv1d_2[0][0]    │
-# │ (BatchNormalizatio… │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ conv1d_3 (Conv1D)   │ (None, 26, 128)   │     49,280 │ batch_normalizat… │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ batch_normalizatio… │ (None, 26, 128)   │        512 │ conv1d_3[0][0]    │
-# │ (BatchNormalizatio… │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ max_pooling1d_1     │ (None, 13, 128)   │          0 │ batch_normalizat… │
-# │ (MaxPooling1D)      │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ conv1d_4 (Conv1D)   │ (None, 13, 256)   │     98,560 │ max_pooling1d_1[… │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ batch_normalizatio… │ (None, 13, 256)   │      1,024 │ conv1d_4[0][0]    │
-# │ (BatchNormalizatio… │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ conv1d_5 (Conv1D)   │ (None, 13, 256)   │    196,864 │ batch_normalizat… │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ batch_normalizatio… │ (None, 13, 256)   │      1,024 │ conv1d_5[0][0]    │
-# │ (BatchNormalizatio… │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ up_sampling1d       │ (None, 26, 256)   │          0 │ batch_normalizat… │
-# │ (UpSampling1D)      │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ concatenate         │ (None, 26, 384)   │          0 │ up_sampling1d[0]… │
-# │ (Concatenate)       │                   │            │ batch_normalizat… │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ conv1d_6 (Conv1D)   │ (None, 26, 128)   │    147,584 │ concatenate[0][0] │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ batch_normalizatio… │ (None, 26, 128)   │        512 │ conv1d_6[0][0]    │
-# │ (BatchNormalizatio… │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ conv1d_7 (Conv1D)   │ (None, 26, 128)   │     49,280 │ batch_normalizat… │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ batch_normalizatio… │ (None, 26, 128)   │        512 │ conv1d_7[0][0]    │
-# │ (BatchNormalizatio… │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ up_sampling1d_1     │ (None, 52, 128)   │          0 │ batch_normalizat… │
-# │ (UpSampling1D)      │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ concatenate_1       │ (None, 52, 192)   │          0 │ up_sampling1d_1[… │
-# │ (Concatenate)       │                   │            │ batch_normalizat… │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ conv1d_8 (Conv1D)   │ (None, 52, 64)    │     36,928 │ concatenate_1[0]… │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ batch_normalizatio… │ (None, 52, 64)    │        256 │ conv1d_8[0][0]    │
-# │ (BatchNormalizatio… │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ conv1d_9 (Conv1D)   │ (None, 52, 64)    │     12,352 │ batch_normalizat… │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ batch_normalizatio… │ (None, 52, 64)    │        256 │ conv1d_9[0][0]    │
-# │ (BatchNormalizatio… │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ lstm1               │ (None, 52, 256)   │    439,296 │ input[0][0]       │
-# │ (Bidirectional)     │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ unet_gap            │ (None, 64)        │          0 │ batch_normalizat… │
-# │ (GlobalAveragePool… │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ lstm2               │ (None, 128)       │    164,352 │ lstm1[0][0]       │
-# │ (Bidirectional)     │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ concat              │ (None, 192)       │          0 │ unet_gap[0][0],   │
-# │ (Concatenate)       │                   │            │ lstm2[0][0]       │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ output (Dense)      │ (None, 1)         │        193 │ concat[0][0]      │
-# └─────────────────────┴───────────────────┴────────────┴───────────────────┘
-#  Total params: 1,294,529 (4.94 MB)
-#  Trainable params: 1,291,969 (4.93 MB)
-#  Non-trainable params: 2,560 (10.00 KB)
-# Epoch 1/50
-# I0000 00:00:1745700930.857702   50233 cuda_dnn.cc:529] Loaded cuDNN version 90300
-# 1211/1211 - 46s - 38ms/step - accuracy: 0.7962 - loss: 0.4207 - val_accuracy: 0.8148 - val_loss: 0.3910
-# Epoch 2/50
-# 1211/1211 - 33s - 27ms/step - accuracy: 0.8206 - loss: 0.3755 - val_accuracy: 0.8247 - val_loss: 0.3751
-# Epoch 3/50
-# 1211/1211 - 33s - 27ms/step - accuracy: 0.8343 - loss: 0.3540 - val_accuracy: 0.8301 - val_loss: 0.3540
-# Epoch 4/50
-# 1211/1211 - 33s - 27ms/step - accuracy: 0.8474 - loss: 0.3342 - val_accuracy: 0.8325 - val_loss: 0.3649
-# Epoch 5/50
-# 1211/1211 - 33s - 27ms/step - accuracy: 0.8578 - loss: 0.3198 - val_accuracy: 0.8427 - val_loss: 0.3442
-# Epoch 6/50
-# 1211/1211 - 33s - 27ms/step - accuracy: 0.8634 - loss: 0.3051 - val_accuracy: 0.8476 - val_loss: 0.3403
-# Epoch 7/50
-# 1211/1211 - 33s - 27ms/step - accuracy: 0.8719 - loss: 0.2908 - val_accuracy: 0.8511 - val_loss: 0.3374
-# Epoch 8/50
-# 1211/1211 - 33s - 27ms/step - accuracy: 0.8776 - loss: 0.2786 - val_accuracy: 0.8564 - val_loss: 0.3309
-# Epoch 9/50
-# 1211/1211 - 33s - 27ms/step - accuracy: 0.8841 - loss: 0.2651 - val_accuracy: 0.8550 - val_loss: 0.3333
-# Epoch 10/50
-# 1211/1211 - 33s - 27ms/step - accuracy: 0.8889 - loss: 0.2551 - val_accuracy: 0.8566 - val_loss: 0.3344
-# Epoch 11/50
-# 1211/1211 - 33s - 27ms/step - accuracy: 0.8924 - loss: 0.2466 - val_accuracy: 0.8584 - val_loss: 0.3434
-# Epoch 12/50
-# 1211/1211 - 33s - 27ms/step - accuracy: 0.8984 - loss: 0.2392 - val_accuracy: 0.8662 - val_loss: 0.3417
-# Epoch 13/50
-# 1211/1211 - 33s - 27ms/step - accuracy: 0.9026 - loss: 0.2322 - val_accuracy: 0.8587 - val_loss: 0.3614
-# Epoch 14/50
-# 1211/1211 - 33s - 27ms/step - accuracy: 0.9019 - loss: 0.2294 - val_accuracy: 0.8417 - val_loss: 0.4032
-# Epoch 15/50
-# 1211/1211 - 33s - 27ms/step - accuracy: 0.9081 - loss: 0.2194 - val_accuracy: 0.8631 - val_loss: 0.3544
-# Epoch 16/50
-# 1211/1211 - 33s - 27ms/step - accuracy: 0.9087 - loss: 0.2160 - val_accuracy: 0.8653 - val_loss: 0.3514
-# Epoch 17/50
-# 1211/1211 - 33s - 27ms/step - accuracy: 0.9118 - loss: 0.2105 - val_accuracy: 0.8667 - val_loss: 0.3510
-# Epoch 18/50
-# 1211/1211 - 33s - 27ms/step - accuracy: 0.9138 - loss: 0.2070 - val_accuracy: 0.8668 - val_loss: 0.3735
-# Figure(1000x600)
-# 379/379 ━━━━━━━━━━━━━━━━━━━━ 4s 8ms/step
-# Test Accuracy: 0.8537
-#               precision    recall  f1-score   support
-#
-#         Safe       0.89      0.90      0.89      8308
-#   Vulnerable       0.78      0.74      0.76      3800
-#
-#     accuracy                           0.85     12108
-#    macro avg       0.83      0.82      0.83     12108
-# weighted avg       0.85      0.85      0.85     12108
-#
-# Done.
