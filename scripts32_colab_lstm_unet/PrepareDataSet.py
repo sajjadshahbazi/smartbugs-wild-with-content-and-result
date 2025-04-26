@@ -403,6 +403,19 @@ def process_batch_with_categorization(files, target_vulnerability, batch_size, b
 
 
 
+def pad_to_multiple_of_four(X):
+    """
+    Pads the time dimension of X to the next multiple of 4 (for two 2x pool-upsampling).
+    """
+    seq_len = X.shape[1]
+    if seq_len % 4 != 0:
+        new_len = ((seq_len + 3) // 4) * 4
+        pad_amount = new_len - seq_len
+        # pad only on time axis at the end
+        X = np.pad(X, ((0, 0), (0, pad_amount), (0, 0)), mode='constant')
+    return X
+
+
 def build_unet_lstm_model(seq_len, embed_dim):
     inp = Input(shape=(seq_len, embed_dim), name='input')
     # UNet branch (1D)
@@ -423,29 +436,30 @@ def build_unet_lstm_model(seq_len, embed_dim):
     l1 = Bidirectional(LSTM(128, return_sequences=True))(inp)
     l2 = Bidirectional(LSTM(64))(l1)
 
-    # Combine
+    # Combine branches
     merged = concatenate([unet_feat, l2], name='concat')
     d1 = Dense(64, activation='relu')(merged)
     drop = Dropout(0.5)(d1)
     out = Dense(1, activation='sigmoid', name='output')(drop)
 
     model = Model(inp, out, name='UNet_LSTM')
-    model.compile(optimizer=Adam(LEARNING_RATE),
-                  loss='binary_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=Adam(LEARNING_RATE), loss='binary_crossentropy', metrics=['accuracy'])
     return model
 
 
 if __name__ == '__main__':
     # Load data
     X, Y = load_vectors(CACHE_DIR)
-    print(f'Dataset shapes: X={X.shape}, Y={Y.shape}')
-    SEQUENCE_LENGTH, EMBED_DIM = X.shape[1], X.shape[2]
+    # Pad time dimension so that it is divisible by 4 (for exact pool/up steps)
+    X = pad_to_multiple_of_four(X)
+    print(f'Dataset shapes after padding: X={X.shape}, Y={Y.shape}')
+    SEQ_LEN, EMBED_DIM = X.shape[1], X.shape[2]
 
     # Train/test split
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
 
     # Build model
-    model = build_unet_lstm_model(SEQUENCE_LENGTH, EMBED_DIM)
+    model = build_unet_lstm_model(SEQ_LEN, EMBED_DIM)
     model.summary()
 
     # Callbacks
@@ -486,5 +500,4 @@ if __name__ == '__main__':
     # Save model
     model.save('final_unet_lstm_model.keras')
     print('UNet+LSTM training complete.')
-
 
