@@ -424,171 +424,127 @@ def process_batch_with_categorization(files, target_vulnerability, batch_size, b
     print(f"Batch saved to {batch_file_vulnerable}, {batch_file_sensitive_negative}", {batch_file_safe})
 
 
-def train_LSTM():
-    # بارگذاری داده‌ها
-    X, Y = load_batches(CACHE_DIR, file_extension=".pkl")
-    print(f"Shape of X: {X.shape}")
-    print(f"Shape of Y: {Y.shape}")
-    print("Distribution in Y:", np.unique(Y, return_counts=True))
+def load_batches(folder, file_extension=".pkl"):
+    X_batches, Y_batches = [], []
+    for file in os.listdir(folder):
+        if file.endswith(file_extension):
+            with open(os.path.join(folder, file), 'rb') as f:
+                X, Y = pickle.load(f)
+                X_batches.append(X)
+                Y_batches.append(Y)
+    return np.vstack(X_batches), np.hstack(Y_batches)
 
-    # تقسیم داده‌ها به آموزش و تست
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
-    print("Distribution in Y_test:", np.unique(Y_test, return_counts=True))
 
-    # تعریف ورودی
-    inputs = Input(shape=(X_train.shape[1], X_train.shape[2]))
+# بارگذاری داده‌ها
+X, Y = load_batches(CACHE_DIR, file_extension=".pkl")
+print(f"Shape of X: {X.shape}")
+print(f"Shape of Y: {Y.shape}")
+print("Distribution in Y:", np.unique(Y, return_counts=True))
 
-    # شاخه U-Net
-    conv1 = Conv1D(64, 3, activation='relu', padding='same')(inputs)
+# تقسیم داده‌ها به مجموعه آموزشی و تست
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+print("Distribution in Y_test:", np.unique(Y_test, return_counts=True))
+
+
+# تعریف تابع معماری U-Net بهینه‌شده
+def build_unet(input_layer):
+    # Encoding path
+    conv1 = Conv1D(64, 3, activation='relu', padding='same')(input_layer)
+    conv1 = Conv1D(64, 3, activation='relu', padding='same')(conv1)
     pool1 = MaxPooling1D(2)(conv1)
+
     conv2 = Conv1D(128, 3, activation='relu', padding='same')(pool1)
+    conv2 = Conv1D(128, 3, activation='relu', padding='same')(conv2)
     pool2 = MaxPooling1D(2)(conv2)
+
     conv3 = Conv1D(256, 3, activation='relu', padding='same')(pool2)
-    unet_output = GlobalAveragePooling1D()(conv3)
+    conv3 = Conv1D(256, 3, activation='relu', padding='same')(conv3)
+    pool3 = MaxPooling1D(2)(conv3)
 
-    # شاخه LSTM (بدون تغییر)
-    lstm1 = Bidirectional(LSTM(128, return_sequences=True))(inputs)
-    lstm2 = Bidirectional(LSTM(64))(lstm1)
+    # Bottleneck
+    conv4 = Conv1D(512, 3, activation='relu', padding='same')(pool3)
+    conv4 = Conv1D(512, 3, activation='relu', padding='same')(conv4)
 
-    # ترکیب خروجی‌ها
-    combined = Concatenate()([unet_output, lstm2])
+    # Decoding path
+    up5 = UpSampling1D(2)(conv4)
+    concat5 = Concatenate()([up5, conv3])
+    conv5 = Conv1D(256, 3, activation='relu', padding='same')(concat5)
+    conv5 = Conv1D(256, 3, activation='relu', padding='same')(conv5)
 
-    # لایه خروجی
-    output = Dense(1, activation='sigmoid')(combined)
+    up6 = UpSampling1D(2)(conv5)
+    concat6 = Concatenate()([up6, conv2])
+    conv6 = Conv1D(128, 3, activation='relu', padding='same')(concat6)
+    conv6 = Conv1D(128, 3, activation='relu', padding='same')(conv6)
 
-    # ساخت مدل
-    model = Model(inputs=inputs, outputs=output)
+    up7 = UpSampling1D(2)(conv6)
+    concat7 = Concatenate()([up7, conv1])
+    conv7 = Conv1D(64, 3, activation='relu', padding='same')(concat7)
+    conv7 = Conv1D(64, 3, activation='relu', padding='same')(conv7)
 
-    # کامپایل مدل
-    model.compile(
-        optimizer=Adam(learning_rate=0.001),
-        loss="binary_crossentropy",
-        metrics=['accuracy']
-    )
+    # Output layer for U-Net
+    unet_output = Conv1D(1, 1, activation='sigmoid')(conv7)
 
-    early_stopping = EarlyStopping(
-        monitor='val_loss',
-        patience=10,
-        restore_best_weights=True
-    )
-
-    # آموزش مدل
-    history = model.fit(
-        X_train, Y_train,
-        epochs=50,
-        batch_size=32,
-        validation_split=0.2,
-        callbacks=[early_stopping],
-        verbose=2
-    )
-
-    # رسم نمودار
-    plt.figure(figsize=(10, 6))
-    plt.plot(history.history['accuracy'], label='train acc', color='blue')
-    plt.plot(history.history['val_accuracy'], label='val acc', color='yellow')
-    plt.plot(history.history['loss'], label='train loss', color='red')
-    plt.plot(history.history['val_loss'], label='val loss', color='green')
-    plt.title('Model Accuracy and Loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy / Loss')
-    plt.legend(loc='best')
-    plt.grid()
-    output_image_path = "training_plot_lstm_unet.png"
-    plt.savefig(output_image_path, dpi=300, bbox_inches='tight')
-    print(f"Plot saved to {output_image_path}")
-    plt.show()
-
-    # پیش‌بینی و ارزیابی
-    Y_pred = (model.predict(X_test) > 0.5).astype("int32")
-    accuracy = accuracy_score(Y_test, Y_pred)
-    report = classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable'], labels=[0, 1])
-    print(f"Accuracy: {accuracy}")
-    print("Classification Report:")
-    print(report)
-
-    # ذخیره مدل
-    model.save('final_LSTM_UNet_model.h5')
-    print("Training complete with LSTM and U-Net.")
-
-if __name__ == "__main__":
-    train_LSTM()
+    return unet_output
 
 
-#Epoch 1/50
-# I0000 00:00:1745746482.222081   20369 cuda_dnn.cc:529] Loaded cuDNN version 90300
-# 1211/1211 - 27s - 23ms/step - accuracy: 0.7545 - loss: 0.5040 - val_accuracy: 0.7833 - val_loss: 0.4537
-# Epoch 2/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.7934 - loss: 0.4264 - val_accuracy: 0.7968 - val_loss: 0.4258
-# Epoch 3/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8038 - loss: 0.4047 - val_accuracy: 0.8103 - val_loss: 0.4012
-# Epoch 4/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8130 - loss: 0.3885 - val_accuracy: 0.8148 - val_loss: 0.3864
-# Epoch 5/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8219 - loss: 0.3734 - val_accuracy: 0.8147 - val_loss: 0.3806
-# Epoch 6/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8274 - loss: 0.3639 - val_accuracy: 0.8181 - val_loss: 0.3802
-# Epoch 7/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8332 - loss: 0.3539 - val_accuracy: 0.8205 - val_loss: 0.3756
-# Epoch 8/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8402 - loss: 0.3454 - val_accuracy: 0.8246 - val_loss: 0.3679
-# Epoch 9/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8429 - loss: 0.3385 - val_accuracy: 0.8306 - val_loss: 0.3635
-# Epoch 10/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8467 - loss: 0.3314 - val_accuracy: 0.8206 - val_loss: 0.3887
-# Epoch 11/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8506 - loss: 0.3264 - val_accuracy: 0.8329 - val_loss: 0.3585
-# Epoch 12/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8550 - loss: 0.3192 - val_accuracy: 0.8354 - val_loss: 0.3641
-# Epoch 13/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8583 - loss: 0.3128 - val_accuracy: 0.8349 - val_loss: 0.3608
-# Epoch 14/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8604 - loss: 0.3087 - val_accuracy: 0.8385 - val_loss: 0.3556
-# Epoch 15/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8654 - loss: 0.3032 - val_accuracy: 0.8374 - val_loss: 0.3624
-# Epoch 16/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8666 - loss: 0.2989 - val_accuracy: 0.8441 - val_loss: 0.3521
-# Epoch 17/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8683 - loss: 0.2948 - val_accuracy: 0.8410 - val_loss: 0.3529
-# Epoch 18/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8706 - loss: 0.2915 - val_accuracy: 0.8417 - val_loss: 0.3492
-# Epoch 19/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8750 - loss: 0.2842 - val_accuracy: 0.8472 - val_loss: 0.3546
-# Epoch 20/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8751 - loss: 0.2832 - val_accuracy: 0.8452 - val_loss: 0.3500
-# Epoch 21/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8765 - loss: 0.2776 - val_accuracy: 0.8434 - val_loss: 0.3563
-# Epoch 22/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8790 - loss: 0.2751 - val_accuracy: 0.8496 - val_loss: 0.3425
-# Epoch 23/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8808 - loss: 0.2709 - val_accuracy: 0.8505 - val_loss: 0.3521
-# Epoch 24/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8837 - loss: 0.2673 - val_accuracy: 0.8505 - val_loss: 0.3523
-# Epoch 25/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8844 - loss: 0.2631 - val_accuracy: 0.8502 - val_loss: 0.3427
-# Epoch 26/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8866 - loss: 0.2608 - val_accuracy: 0.8492 - val_loss: 0.3516
-# Epoch 27/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8874 - loss: 0.2588 - val_accuracy: 0.8442 - val_loss: 0.3590
-# Epoch 28/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8902 - loss: 0.2536 - val_accuracy: 0.8524 - val_loss: 0.3460
-# Epoch 29/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8910 - loss: 0.2503 - val_accuracy: 0.8512 - val_loss: 0.3524
-# Epoch 30/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8923 - loss: 0.2497 - val_accuracy: 0.8520 - val_loss: 0.3546
-# Epoch 31/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8923 - loss: 0.2475 - val_accuracy: 0.8491 - val_loss: 0.3588
-# Epoch 32/50
-# 1211/1211 - 19s - 16ms/step - accuracy: 0.8929 - loss: 0.2485 - val_accuracy: 0.8520 - val_loss: 0.3478
-# Plot saved to training_plot_lstm_unet.png
-# Figure(1000x600)
-# 379/379 ━━━━━━━━━━━━━━━━━━━━ 3s 6ms/step
-# Accuracy: 0.8549719193921375
-# Classification Report:
-#               precision    recall  f1-score   support
-#
-#         Safe       0.87      0.93      0.90      8308
-#   Vulnerable       0.81      0.70      0.75      3800
-#
-#     accuracy                           0.85     12108
-#    macro avg       0.84      0.81      0.82     12108
-# weighted avg       0.85      0.85      0.85     12108
+inputs = Input(shape=(X_train.shape[1], X_train.shape[2]))
+
+unet_output = build_unet(inputs)
+flattened_unet = Flatten()(unet_output)
+
+lstm1 = Bidirectional(LSTM(128, return_sequences=True))(inputs)
+lstm2 = Bidirectional(LSTM(64))(lstm1)
+
+combined = Concatenate()([flattened_unet, lstm2])
+
+output = Dense(1, activation='sigmoid')(combined)
+
+# ساخت مدل
+model = Model(inputs=inputs, outputs=output)
+
+# کامپایل مدل
+model.compile(
+    optimizer=Adam(learning_rate=0.001),
+    loss="binary_crossentropy",
+    metrics=['accuracy']
+)
+
+# تنظیم EarlyStopping
+early_stopping = EarlyStopping(
+    monitor='val_loss',
+    patience=10,
+    restore_best_weights=True
+)
+
+# آموزش مدل
+history = model.fit(
+    X_train, Y_train,
+    epochs=50,
+    batch_size=32,
+    validation_split=0.2,
+    callbacks=[early_stopping],
+    verbose=2
+)
+
+# رسم و ذخیره‌سازی نمودارها
+plt.figure(figsize=(10, 6))
+plt.plot(history.history['accuracy'], label='train acc', color='blue')
+plt.plot(history.history['val_accuracy'], label='val acc', color='yellow')
+plt.plot(history.history['loss'], label='train loss', color='red')
+plt.plot(history.history['val_loss'], label='val loss', color='green')
+plt.title('Model Accuracy and Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy / Loss')
+plt.legend(loc='best')
+plt.grid()
+
+# ذخیره در پوشه docs
+docs_dir = os.path.join(ROOT, 'docs')
+if not os.path.exists(docs_dir):
+    os.makedirs(docs_dir)
+output_image_path = os.path.join(docs_dir, 'training_plot_lstm_unet.png')
+plt.savefig(output_image_path, dpi=300, bbox_inches='tight')
+print(f"Plot saved to {output_image_path}")
+
+# نمایش نمودار
+plt.show()
