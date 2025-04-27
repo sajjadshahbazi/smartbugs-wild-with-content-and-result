@@ -17,7 +17,7 @@ from tensorflow.keras import backend as K
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, accuracy_score
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, Conv1D, LeakyReLU, UpSampling1D, Concatenate, GlobalAveragePooling1D, Activation, Bidirectional, concatenate, Cropping2D, MaxPooling2D, MaxPooling1D, UpSampling2D, concatenate, Flatten, Dense, Bidirectional, LSTM, Input, Reshape, BatchNormalization, Reshape
+from tensorflow.keras.layers import Conv2D, Conv1D, LeakyReLU, UpSampling1D, Concatenate, ZeroPadding1D, GlobalAveragePooling1D, Activation, Bidirectional, concatenate, Cropping2D, MaxPooling2D, MaxPooling1D, UpSampling2D, concatenate, Flatten, Dense, Bidirectional, LSTM, Input, Reshape, BatchNormalization, Reshape
 from tensorflow.keras.models import Model
 from tensorflow.keras import layers, models
 from tensorflow.keras.optimizers import Adam
@@ -446,105 +446,128 @@ X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_
 print("Distribution in Y_test:", np.unique(Y_test, return_counts=True))
 
 
-# تعریف تابع معماری U-Net بهینه‌شده
-def build_unet(input_layer):
-    # Encoding path
-    conv1 = Conv1D(64, 3, activation='relu', padding='same')(input_layer)
+def train_LSTM_UNET():
+    # بارگذاری داده‌ها
+    X, Y = load_batches(CACHE_DIR, file_extension=".pkl")
+    print(f"Shape of X: {X.shape}")
+    print(f"Shape of Y: {Y.shape}")
+    print("Distribution in Y:", np.unique(Y, return_counts=True))
+
+    # تقسیم داده‌ها به مجموعه آموزشی و تست
+    X_train_full, X_test, Y_train_full, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+    print("Distribution in Y_test:", np.unique(Y_test, return_counts=True))
+
+    # تعریف ورودی
+    inputs = Input(shape=(X_train_full.shape[1], X_train_full.shape[2]))
+
+    # شاخه U-Net با Padding
+    padded = ZeroPadding1D(padding=(7,7))(inputs)  # Padding از 50 به 64
+
+    # Encoder
+    conv1 = Conv1D(64, 3, activation='relu', padding='same')(padded)
     conv1 = Conv1D(64, 3, activation='relu', padding='same')(conv1)
-    pool1 = MaxPooling1D(2)(conv1)
+    pool1 = MaxPooling1D(2)(conv1)  # 64 -> 32
 
     conv2 = Conv1D(128, 3, activation='relu', padding='same')(pool1)
     conv2 = Conv1D(128, 3, activation='relu', padding='same')(conv2)
-    pool2 = MaxPooling1D(2)(conv2)
+    pool2 = MaxPooling1D(2)(conv2)  # 32 -> 16
 
     conv3 = Conv1D(256, 3, activation='relu', padding='same')(pool2)
     conv3 = Conv1D(256, 3, activation='relu', padding='same')(conv3)
-    pool3 = MaxPooling1D(2)(conv3)
+    pool3 = MaxPooling1D(2)(conv3)  # 16 -> 8
 
     # Bottleneck
     conv4 = Conv1D(512, 3, activation='relu', padding='same')(pool3)
     conv4 = Conv1D(512, 3, activation='relu', padding='same')(conv4)
 
-    # Decoding path
-    up5 = UpSampling1D(2)(conv4)
-    concat5 = Concatenate()([up5, conv3])
+    # Decoder
+    up5 = UpSampling1D(2)(conv4)  # 8 -> 16
+    concat5 = Concatenate()([up5, conv3])  # هر دو با طول 16
     conv5 = Conv1D(256, 3, activation='relu', padding='same')(concat5)
     conv5 = Conv1D(256, 3, activation='relu', padding='same')(conv5)
 
-    up6 = UpSampling1D(2)(conv5)
-    concat6 = Concatenate()([up6, conv2])
+    up6 = UpSampling1D(2)(conv5)  # 16 -> 32
+    concat6 = Concatenate()([up6, conv2])  # هر دو با طول 32
     conv6 = Conv1D(128, 3, activation='relu', padding='same')(concat6)
     conv6 = Conv1D(128, 3, activation='relu', padding='same')(conv6)
 
-    up7 = UpSampling1D(2)(conv6)
-    concat7 = Concatenate()([up7, conv1])
+    up7 = UpSampling1D(2)(conv6)  # 32 -> 64
+    concat7 = Concatenate()([up7, conv1])  # هر دو با طول 64
     conv7 = Conv1D(64, 3, activation='relu', padding='same')(concat7)
     conv7 = Conv1D(64, 3, activation='relu', padding='same')(conv7)
 
-    # Output layer for U-Net
-    unet_output = Conv1D(1, 1, activation='sigmoid')(conv7)
+    # تبدیل خروجی U-Net به بردار ثابت‌اندازه
+    conv8 = Conv1D(128, 1, activation='relu')(conv7)  # (64, 128)
+    unet_output = GlobalAveragePooling1D()(conv8)  # (128,)
 
-    return unet_output
+    # شاخه LSTM (بدون تغییر)
+    lstm1 = Bidirectional(LSTM(128, return_sequences=True))(inputs)
+    lstm2 = Bidirectional(LSTM(64))(lstm1)  # (128,)
 
+    # ترکیب خروجی‌ها
+    combined = Concatenate()([unet_output, lstm2])  # (128 + 128 = 256)
 
-inputs = Input(shape=(X_train.shape[1], X_train.shape[2]))
+    # لایه خروجی
+    output = Dense(1, activation='sigmoid')(combined)
 
-unet_output = build_unet(inputs)
-flattened_unet = Flatten()(unet_output)
+    # ساخت مدل
+    model = Model(inputs=inputs, outputs=output)
 
-lstm1 = Bidirectional(LSTM(128, return_sequences=True))(inputs)
-lstm2 = Bidirectional(LSTM(64))(lstm1)
+    # کامپایل مدل
+    model.compile(
+        optimizer=Adam(learning_rate=0.001),
+        loss="binary_crossentropy",
+        metrics=['accuracy']
+    )
 
-combined = Concatenate()([flattened_unet, lstm2])
+    # EarlyStopping
+    early_stopping = EarlyStopping(
+        monitor='val_loss',
+        patience=10,
+        restore_best_weights=True
+    )
 
-output = Dense(1, activation='sigmoid')(combined)
+    # آموزش مدل
+    history = model.fit(
+        X_train_full,
+        Y_train_full,
+        epochs=50,
+        batch_size=32,
+        validation_split=0.2,
+        callbacks=[early_stopping],
+        verbose=2
+    )
 
-# ساخت مدل
-model = Model(inputs=inputs, outputs=output)
+    # رسم و ذخیره نمودار در پوشه docs
+    docs_dir = os.path.join(ROOT, 'docs')
+    if not os.path.exists(docs_dir):
+        os.makedirs(docs_dir)
+    plt.figure(figsize=(10,6))
+    plt.plot(history.history['accuracy'], label='train acc', color='blue')
+    plt.plot(history.history['val_accuracy'], label='val acc', color='yellow')
+    plt.plot(history.history['loss'], label='train loss', color='red')
+    plt.plot(history.history['val_loss'], label='val loss', color='green')
+    plt.title('Model Accuracy and Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy / Loss')
+    plt.legend(loc='best')
+    plt.grid()
+    output_image_path = os.path.join(docs_dir, 'training_plot_lstm_unet.png')
+    plt.savefig(output_image_path, dpi=300, bbox_inches='tight')
+    print(f"Plot saved to {output_image_path}")
+    plt.show()
 
-# کامپایل مدل
-model.compile(
-    optimizer=Adam(learning_rate=0.001),
-    loss="binary_crossentropy",
-    metrics=['accuracy']
-)
+    # ارزیابی روی مجموعه تست
+    Y_pred = (model.predict(X_test) > 0.5).astype("int32")
+    accuracy = accuracy_score(Y_test, Y_pred)
+    report = classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable'], labels=[0,1])
+    print(f"Accuracy: {accuracy}")
+    print("Classification Report:")
+    print(report)
 
-# تنظیم EarlyStopping
-early_stopping = EarlyStopping(
-    monitor='val_loss',
-    patience=10,
-    restore_best_weights=True
-)
+    # ذخیره مدل
+    model.save('final_LSTM_UNET_model.h5')
+    print("Training complete with LSTM and U-Net.")
 
-# آموزش مدل
-history = model.fit(
-    X_train, Y_train,
-    epochs=50,
-    batch_size=32,
-    validation_split=0.2,
-    callbacks=[early_stopping],
-    verbose=2
-)
-
-# رسم و ذخیره‌سازی نمودارها
-plt.figure(figsize=(10, 6))
-plt.plot(history.history['accuracy'], label='train acc', color='blue')
-plt.plot(history.history['val_accuracy'], label='val acc', color='yellow')
-plt.plot(history.history['loss'], label='train loss', color='red')
-plt.plot(history.history['val_loss'], label='val loss', color='green')
-plt.title('Model Accuracy and Loss')
-plt.xlabel('Epochs')
-plt.ylabel('Accuracy / Loss')
-plt.legend(loc='best')
-plt.grid()
-
-# ذخیره در پوشه docs
-docs_dir = os.path.join(ROOT, 'docs')
-if not os.path.exists(docs_dir):
-    os.makedirs(docs_dir)
-output_image_path = os.path.join(docs_dir, 'training_plot_lstm_unet.png')
-plt.savefig(output_image_path, dpi=300, bbox_inches='tight')
-print(f"Plot saved to {output_image_path}")
-
-# نمایش نمودار
-plt.show()
+if __name__ == "__main__":
+    train_LSTM_UNET()
