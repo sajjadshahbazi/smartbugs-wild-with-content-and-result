@@ -441,10 +441,6 @@ print(f"Shape of X: {X.shape}")
 print(f"Shape of Y: {Y.shape}")
 print("Distribution in Y:", np.unique(Y, return_counts=True))
 
-# تقسیم داده‌ها به مجموعه آموزشی و تست
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
-print("Distribution in Y_test:", np.unique(Y_test, return_counts=True))
-
 
 def train_LSTM_UNET():
     # بارگذاری داده‌ها
@@ -571,3 +567,96 @@ def train_LSTM_UNET():
 
 if __name__ == "__main__":
     train_LSTM_UNET()
+
+
+    # Epoch 1/50
+    # I0000 00:00:1745782851.415125    8768 cuda_dnn.cc:529] Loaded cuDNN version 90300
+    # 1211/1211 - 40s - 33ms/step - accuracy: 0.7385 - loss: 0.5268 - val_accuracy: 0.7789 - val_loss: 0.4799
+    # Epoch 2/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.7733 - loss: 0.4693 - val_accuracy: 0.7866 - val_loss: 0.4481
+    # Epoch 3/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.7798 - loss: 0.4414 - val_accuracy: 0.7890 - val_loss: 0.4201
+    # Epoch 4/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.7842 - loss: 0.4260 - val_accuracy: 0.7848 - val_loss: 0.4419
+    # Epoch 5/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.7878 - loss: 0.4160 - val_accuracy: 0.8019 - val_loss: 0.4080
+    # Epoch 6/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.7967 - loss: 0.4014 - val_accuracy: 0.7983 - val_loss: 0.4022
+    # Epoch 7/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.8017 - loss: 0.3915 - val_accuracy: 0.8028 - val_loss: 0.3987
+    # Epoch 8/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.8061 - loss: 0.3855 - val_accuracy: 0.8046 - val_loss: 0.3862
+    # Epoch 9/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.8111 - loss: 0.3774 - val_accuracy: 0.8082 - val_loss: 0.3922
+    # Epoch 10/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.8142 - loss: 0.3713 - val_accuracy: 0.8129 - val_loss: 0.3762
+    # Epoch 11/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.8208 - loss: 0.3632 - val_accuracy: 0.8234 - val_loss: 0.3642
+    # Epoch 12/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.8276 - loss: 0.3542 - val_accuracy: 0.8259 - val_loss: 0.3633
+    # Epoch 13/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.8331 - loss: 0.3484 - val_accuracy: 0.8287 - val_loss: 0.3565
+    # Epoch 14/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.8384 - loss: 0.3399 - val_accuracy: 0.8066 - val_loss: 0.3740
+    # Epoch 15/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.8423 - loss: 0.3337 - val_accuracy: 0.8355 - val_loss: 0.3465
+    # Epoch 16/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.8463 - loss: 0.3264 - val_accuracy: 0.8402 - val_loss: 0.3462
+    # Epoch 17/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.8520 - loss: 0.3183 - val_accuracy: 0.8349 - val_loss: 0.3465
+    # Epoch 18/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.8523 - loss: 0.3141 - val_accuracy: 0.8465 - val_loss: 0.3380
+    # Epoch 19/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.8592 - loss: 0.3070 - val_accuracy: 0.8345 - val_loss: 0.3402
+    # Epoch 20/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.8628 - loss: 0.3016 - val_accuracy: 0.8420 - val_loss: 0.3413
+    # Epoch 21/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.8642 - loss: 0.2976 - val_accuracy: 0.8480 - val_loss: 0.3304
+    # Epoch 22/50
+    # 1211/1211 - 29s - 24ms/step - accuracy: 0.8676 - loss: 0.2908 - val_accuracy: 0.8437 - val_loss: 0.3291
+    # Epoch 23/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.8701 - loss: 0.2886 - val_accuracy: 0.8501 - val_loss: 0.3316
+    # Epoch 24/50
+    # 1211/1211 - 28s - 24ms/step - accuracy: 0.8739 - loss: 0.2823 - val_accuracy: 0.8422 - val_loss: 0.3354
+    # Epoch 25/50
+    # 1211/1211 - 29s - 24ms/step - accuracy: 0.8790 - loss: 0.2759 - val_accuracy: 0.8461 - val_loss: 0.3331
+    # Epoch 26/50
+    # 1211/1211 - 29s - 24ms/step - accuracy: 0.8813 - loss: 0.2707 - val_accuracy: 0.8493 - val_loss: 0.3340
+    # Epoch 27/50
+    # 1211/1211 - 29s - 24ms/step - accuracy: 0.8800 - loss: 0.2710 - val_accuracy: 0.8537 - val_loss: 0.3226
+    # Epoch 28/50
+    # 1211/1211 - 29s - 24ms/step - accuracy: 0.8871 - loss: 0.2616 - val_accuracy: 0.8533 - val_loss: 0.3357
+    # Epoch 29/50
+    # 1211/1211 - 29s - 24ms/step - accuracy: 0.8881 - loss: 0.2580 - val_accuracy: 0.8470 - val_loss: 0.3318
+    # Epoch 30/50
+    # 1211/1211 - 29s - 24ms/step - accuracy: 0.8873 - loss: 0.2571 - val_accuracy: 0.8597 - val_loss: 0.3234
+    # Epoch 31/50
+    # 1211/1211 - 29s - 24ms/step - accuracy: 0.8926 - loss: 0.2486 - val_accuracy: 0.8500 - val_loss: 0.3425
+    # Epoch 32/50
+    # 1211/1211 - 28s - 23ms/step - accuracy: 0.8959 - loss: 0.2447 - val_accuracy: 0.8557 - val_loss: 0.3325
+    # Epoch 33/50
+    # 1211/1211 - 29s - 24ms/step - accuracy: 0.8961 - loss: 0.2431 - val_accuracy: 0.8606 - val_loss: 0.3263
+    # Epoch 34/50
+    # 1211/1211 - 29s - 24ms/step - accuracy: 0.9002 - loss: 0.2360 - val_accuracy: 0.8501 - val_loss: 0.3387
+    # Epoch 35/50
+    # 1211/1211 - 29s - 24ms/step - accuracy: 0.8997 - loss: 0.2357 - val_accuracy: 0.8603 - val_loss: 0.3335
+    # Epoch 36/50
+    # 1211/1211 - 29s - 24ms/step - accuracy: 0.9024 - loss: 0.2328 - val_accuracy: 0.8525 - val_loss: 0.3460
+    # Epoch 37/50
+    # 1211/1211 - 29s - 24ms/step - accuracy: 0.9035 - loss: 0.2277 - val_accuracy: 0.8518 - val_loss: 0.3453
+    # Plot saved to /content/smartbugs-wild-with-content-and-result/docs/training_plot_lstm_unet.png
+    # Figure(1000x600)
+    # 379/379 ━━━━━━━━━━━━━━━━━━━━ 4s 8ms/step
+    # Accuracy: 0.8500991080277502
+    # Classification Report:
+    #               precision    recall  f1-score   support
+    #
+    #         Safe       0.87      0.92      0.89      8308
+    #   Vulnerable       0.79      0.71      0.75      3800
+    #
+    #     accuracy                           0.85     12108
+    #    macro avg       0.83      0.81      0.82     12108
+    # weighted avg       0.85      0.85      0.85     12108
+    #
+    # WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`.
+    # Training complete with LSTM and U-Net.
