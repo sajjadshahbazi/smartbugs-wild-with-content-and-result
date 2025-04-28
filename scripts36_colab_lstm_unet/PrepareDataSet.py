@@ -441,6 +441,9 @@ print(f"Shape of X: {X.shape}")
 print(f"Shape of Y: {Y.shape}")
 print("Distribution in Y:", np.unique(Y, return_counts=True))
 
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+print("Distribution in Y_test:", np.unique(Y_test, return_counts=True))
+
 
 def train_LSTM_UNET():
     # بارگذاری داده‌ها
