@@ -535,7 +535,7 @@ def train_LSTM_UNET():
     )
 
     # رسم و ذخیره نمودار در پوشه docs
-    docs_dir = os.path.join(ROOT, 'docs')
+    docs_dir = os.path.join(ROOT, 'doc')
     if not os.path.exists(docs_dir):
         os.makedirs(docs_dir)
     plt.figure(figsize=(10,6))
