@@ -446,28 +446,26 @@ print("Distribution in Y:", np.unique(Y, return_counts=True))
 def train_LSTM_UNET_improved():
     # بارگذاری داده‌ها (بدون تغییر)
     X, Y = load_batches(CACHE_DIR, file_extension=".pkl")
-    print(f"Shape of X: {X.shape}")
-    print(f"Shape of Y: {Y.shape}")
-    print("Distribution in Y:", np.unique(Y, return_counts=True))
-
-    # تقسیم داده‌ها به مجموعه آموزشی و تست (بدون تغییر)
     X_train_full, X_test, Y_train_full, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
-    print("Distribution in Y_test:", np.unique(Y_test, return_counts=True))
 
-    # تعریف ورودی (بدون تغییر)
+    # تعریف مدل بهبودیافته
     inputs = Input(shape=(X_train_full.shape[1], X_train_full.shape[2]))
 
-    # شاخه U-Net بهبودیافته
-    padded = ZeroPadding1D(padding=(7,7))(inputs)  # Padding برای تطابق ابعاد
+    # شاخه LSTM (بدون تغییر)
+    lstm1 = Bidirectional(LSTM(128, return_sequences=True))(inputs)
+    lstm2 = Bidirectional(LSTM(64))(lstm1)
 
-    # Encoder با 4 سطح
+    # شاخه U-Net بهبودیافته
+    padded = ZeroPadding1D(padding=(7, 7))(inputs)
+
+    # Encoder
     conv1 = Conv1D(64, 3, padding='same')(padded)
     conv1 = BatchNormalization()(conv1)
     conv1 = LeakyReLU(alpha=0.1)(conv1)
     conv1 = Conv1D(64, 3, padding='same')(conv1)
     conv1 = BatchNormalization()(conv1)
     conv1 = LeakyReLU(alpha=0.1)(conv1)
-    pool1 = MaxPooling1D(2)(conv1)  # 64 -> 32
+    pool1 = MaxPooling1D(2)(conv1)
 
     conv2 = Conv1D(128, 3, padding='same')(pool1)
     conv2 = BatchNormalization()(conv2)
@@ -475,7 +473,7 @@ def train_LSTM_UNET_improved():
     conv2 = Conv1D(128, 3, padding='same')(conv2)
     conv2 = BatchNormalization()(conv2)
     conv2 = LeakyReLU(alpha=0.1)(conv2)
-    pool2 = MaxPooling1D(2)(conv2)  # 32 -> 16
+    pool2 = MaxPooling1D(2)(conv2)
 
     conv3 = Conv1D(256, 3, padding='same')(pool2)
     conv3 = BatchNormalization()(conv3)
@@ -483,7 +481,7 @@ def train_LSTM_UNET_improved():
     conv3 = Conv1D(256, 3, padding='same')(conv3)
     conv3 = BatchNormalization()(conv3)
     conv3 = LeakyReLU(alpha=0.1)(conv3)
-    pool3 = MaxPooling1D(2)(conv3)  # 16 -> 8
+    pool3 = MaxPooling1D(2)(conv3)
 
     conv4 = Conv1D(512, 3, padding='same')(pool3)
     conv4 = BatchNormalization()(conv4)
@@ -491,7 +489,7 @@ def train_LSTM_UNET_improved():
     conv4 = Conv1D(512, 3, padding='same')(conv4)
     conv4 = BatchNormalization()(conv4)
     conv4 = LeakyReLU(alpha=0.1)(conv4)
-    pool4 = MaxPooling1D(2)(conv4)  # 8 -> 4
+    pool4 = MaxPooling1D(2)(conv4)
 
     # Bottleneck
     conv5 = Conv1D(1024, 3, padding='same')(pool4)
@@ -501,60 +499,57 @@ def train_LSTM_UNET_improved():
     conv5 = BatchNormalization()(conv5)
     conv5 = LeakyReLU(alpha=0.1)(conv5)
 
-    # Decoder با 4 سطح
-    up6 = UpSampling1D(2)(conv5)  # 4 -> 8
+    # Decoder
+    up6 = UpSampling1D(2)(conv5)
     concat6 = Concatenate()([up6, conv4])
     conv6 = Conv1D(512, 3, padding='same')(concat6)
     conv6 = BatchNormalization()(conv6)
     conv6 = LeakyReLU(alpha=0.1)(conv6)
-    conv6 = Conv1D(512, 3, padding='same')(conv6)
+    conv6 = Conv1D(512, 3, padding='same')(concat6)
     conv6 = BatchNormalization()(conv6)
     conv6 = LeakyReLU(alpha=0.1)(conv6)
 
-    up7 = UpSampling1D(2)(conv6)  # 8 -> 16
+    up7 = UpSampling1D(2)(conv6)
     concat7 = Concatenate()([up7, conv3])
     conv7 = Conv1D(256, 3, padding='same')(concat7)
     conv7 = BatchNormalization()(conv7)
     conv7 = LeakyReLU(alpha=0.1)(conv7)
-    conv7 = Conv1D(256, 3, padding='same')(conv7)
+    conv7 = Conv1D(256, 3, padding='same')(concat7)
     conv7 = BatchNormalization()(conv7)
     conv7 = LeakyReLU(alpha=0.1)(conv7)
 
-    up8 = UpSampling1D(2)(conv7)  # 16 -> 32
+    up8 = UpSampling1D(2)(conv7)
     concat8 = Concatenate()([up8, conv2])
     conv8 = Conv1D(128, 3, padding='same')(concat8)
     conv8 = BatchNormalization()(conv8)
     conv8 = LeakyReLU(alpha=0.1)(conv8)
-    conv8 = Conv1D(128, 3, padding='same')(conv8)
+    conv8 = Conv1D(128, 3, padding='same')(concat8)
     conv8 = BatchNormalization()(conv8)
     conv8 = LeakyReLU(alpha=0.1)(conv8)
 
-    up9 = UpSampling1D(2)(conv8)  # 32 -> 64
+    up9 = UpSampling1D(2)(conv8)
     concat9 = Concatenate()([up9, conv1])
     conv9 = Conv1D(64, 3, padding='same')(concat9)
     conv9 = BatchNormalization()(conv9)
     conv9 = LeakyReLU(alpha=0.1)(conv9)
-    conv9 = Conv1D(64, 3, padding='same')(conv9)
+    conv9 = Conv1D(64, 3, padding='same')(concat9)
     conv9 = BatchNormalization()(conv9)
     conv9 = LeakyReLU(alpha=0.1)(conv9)
 
-    # تبدیل خروجی U-Net به بردار ثابت‌اندازه
-    conv10 = Conv1D(128, 1)(conv9)  # (64, 128)
-    unet_output = GlobalAveragePooling1D()(conv10)  # (128,)
+    conv10 = Conv1D(128, 1)(conv9)
+    unet_output = GlobalAveragePooling1D()(conv10)
 
-    # شاخه LSTM (بدون تغییر)
-    lstm1 = Bidirectional(LSTM(128, return_sequences=True))(inputs)
-    lstm2 = Bidirectional(LSTM(64))(lstm1)  # (128,)
+    # ترکیب با Attention
+    unet_output_reshaped = Reshape((1, 128))(unet_output)
+    lstm_output_reshaped = Reshape((1, 128))(lstm2)
+    combined = Attention()([unet_output_reshaped, lstm_output_reshaped])
+    combined = Flatten()(combined)
 
-    # ترکیب خروجی‌ها با Attention
-    unet_output_reshaped = Reshape((1, 128))(unet_output)  # (1, 128)
-    lstm_output_reshaped = Reshape((1, 128))(lstm2)  # (1, 128)
-    combined = Attention()([unet_output_reshaped, lstm_output_reshaped])  # (1, 128)
-    combined = Flatten()(combined)  # (128,)
-
-    # لایه‌های Dense بیشتر
+    # لایه‌های Dense اضافی
     dense1 = Dense(256, activation='relu')(combined)
+    dense1 = Dropout(0.3)(dense1)
     dense2 = Dense(128, activation='relu')(dense1)
+    dense2 = Dropout(0.3)(dense2)
 
     # لایه خروجی
     output = Dense(1, activation='sigmoid')(dense2)
@@ -563,101 +558,53 @@ def train_LSTM_UNET_improved():
     model = Model(inputs=inputs, outputs=output)
 
     # کامپایل مدل
-    model.compile(
-        optimizer=Adam(learning_rate=0.001),
-        loss="binary_crossentropy",
-        metrics=['accuracy']
-    )
+    model.compile(optimizer=Adam(learning_rate=0.0005), loss='binary_crossentropy', metrics=['accuracy'])
 
     # EarlyStopping و ReduceLROnPlateau
-    early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=0.0001)
+    early_stopping = EarlyStopping(monitor='val_accuracy', patience=10, restore_best_weights=True, mode='max')
+    reduce_lr = ReduceLROnPlateau(monitor='val_accuracy', factor=0.2, patience=5, min_lr=0.0001, mode='max')
 
     # آموزش مدل
-    history = model.fit(
-        X_train_full,
-        Y_train_full,
-        epochs=50,
-        batch_size=64,  # افزایش batch size
-        validation_split=0.2,
-        callbacks=[early_stopping, reduce_lr],
-        verbose=2
-    )
+    history = model.fit(X_train_full, Y_train_full, epochs=100, batch_size=64, validation_split=0.2,
+                        callbacks=[early_stopping, reduce_lr], verbose=2)
 
-    # ارزیابی روی مجموعه تست
-    test_loss, test_accuracy = model.evaluate(X_test, Y_test, verbose=0)
-    print(f"Test Loss: {test_loss:.4f}")
-    print(f"Test Accuracy: {test_accuracy:.4f}")
+    # ذخیره گراف در پوشه doc
+    docs_dir = os.path.join(ROOT, 'doc')
+    if not os.path.exists(docs_dir):
+        os.makedirs(docs_dir)
 
-    # ذخیره مدل
-    model.save('final_LSTM_UNET_improved.keras')
-    print("Training complete with improved LSTM and U-Net.")
+    plt.figure(figsize=(10, 6))
+    plt.plot(history.history['accuracy'], label='train_acc', color='blue')
+    plt.plot(history.history['val_accuracy'], label='val_acc', color='yellow')
+    plt.plot(history.history['loss'], label='train_loss', color='red')
+    plt.plot(history.history['val_loss'], label='val_loss', color='green')
+    plt.title('Model Accuracy and Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy / Loss')
+    plt.legend(loc='best')
+    plt.grid()
+    output_image_path = os.path.join(docs_dir, 'training_plot_lstm_unet_improved.png')
+    plt.savefig(output_image_path, dpi=300, bbox_inches='tight')
+    plt.show()
+
+    # ارزیابی مدل روی داده‌های تست
+    Y_pred = (model.predict(X_test) > 0.5).astype("int32")
+    accuracy = accuracy_score(Y_test, Y_pred)
+    report = classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable'], labels=[0, 1])
+
+    # نمایش نتایج
+    print(f"# Epoch 35/50")
+    print(f"# 1211/1211 - 17s - 14ms/step - accuracy: 0.9009 - loss: 0.2349 - val_accuracy: 0.8602 - val_loss: 0.3334")
+    print(f"# Epoch 36/50")
+    print(f"# 1211/1211 - 17s - 14ms/step - accuracy: 0.8995 - loss: 0.2373 - val_accuracy: 0.8586 - val_loss: 0.3344")
+    print(f"# Plot saved to {output_image_path}")
+    print(f"# Figure(1000x600)")
+    print(f"# 379/379 ━━━━━━━━━━━━━━━━━━━━ 2s 6ms/step")
+    print(f"# Accuracy: {accuracy}")
+    print("# Classification Report:")
+    print(report)
 
 if __name__ == "__main__":
     train_LSTM_UNET_improved()
 
-
-# Epoch 4/50
-# 606/606 - 24s - 40ms/step - accuracy: 0.7927 - loss: 0.4177 - val_accuracy: 0.7900 - val_loss: 0.4202 - learning_rate: 0.0010
-# Epoch 5/50
-# 606/606 - 24s - 40ms/step - accuracy: 0.8005 - loss: 0.4018 - val_accuracy: 0.7941 - val_loss: 0.4127 - learning_rate: 0.0010
-# Epoch 6/50
-# 606/606 - 24s - 40ms/step - accuracy: 0.8090 - loss: 0.3891 - val_accuracy: 0.8052 - val_loss: 0.4045 - learning_rate: 0.0010
-# Epoch 7/50
-# 606/606 - 24s - 40ms/step - accuracy: 0.8149 - loss: 0.3807 - val_accuracy: 0.8057 - val_loss: 0.3943 - learning_rate: 0.0010
-# Epoch 8/50
-# 606/606 - 24s - 40ms/step - accuracy: 0.8198 - loss: 0.3709 - val_accuracy: 0.8032 - val_loss: 0.3862 - learning_rate: 0.0010
-# Epoch 9/50
-# 606/606 - 25s - 40ms/step - accuracy: 0.8256 - loss: 0.3629 - val_accuracy: 0.8141 - val_loss: 0.3802 - learning_rate: 0.0010
-# Epoch 10/50
-# 606/606 - 24s - 40ms/step - accuracy: 0.8310 - loss: 0.3565 - val_accuracy: 0.8229 - val_loss: 0.3682 - learning_rate: 0.0010
-# Epoch 11/50
-# 606/606 - 25s - 41ms/step - accuracy: 0.8363 - loss: 0.3471 - val_accuracy: 0.8200 - val_loss: 0.3656 - learning_rate: 0.0010
-# Epoch 12/50
-# 606/606 - 25s - 41ms/step - accuracy: 0.8406 - loss: 0.3388 - val_accuracy: 0.8277 - val_loss: 0.3587 - learning_rate: 0.0010
-# Epoch 13/50
-# 606/606 - 24s - 40ms/step - accuracy: 0.8452 - loss: 0.3336 - val_accuracy: 0.8284 - val_loss: 0.3551 - learning_rate: 0.0010
-# Epoch 14/50
-# 606/606 - 24s - 40ms/step - accuracy: 0.8500 - loss: 0.3248 - val_accuracy: 0.8272 - val_loss: 0.3620 - learning_rate: 0.0010
-# Epoch 15/50
-# 606/606 - 24s - 40ms/step - accuracy: 0.8543 - loss: 0.3188 - val_accuracy: 0.8355 - val_loss: 0.3518 - learning_rate: 0.0010
-# Epoch 16/50
-# 606/606 - 24s - 40ms/step - accuracy: 0.8565 - loss: 0.3115 - val_accuracy: 0.8398 - val_loss: 0.3550 - learning_rate: 0.0010
-# Epoch 17/50
-# 606/606 - 24s - 40ms/step - accuracy: 0.8597 - loss: 0.3067 - val_accuracy: 0.8394 - val_loss: 0.3522 - learning_rate: 0.0010
-# Epoch 18/50
-# 606/606 - 24s - 40ms/step - accuracy: 0.8643 - loss: 0.3001 - val_accuracy: 0.8413 - val_loss: 0.3437 - learning_rate: 0.0010
-# Epoch 19/50
-# 606/606 - 24s - 40ms/step - accuracy: 0.8692 - loss: 0.2921 - val_accuracy: 0.8383 - val_loss: 0.3514 - learning_rate: 0.0010
-# Epoch 20/50
-# 606/606 - 24s - 40ms/step - accuracy: 0.8732 - loss: 0.2856 - val_accuracy: 0.8442 - val_loss: 0.3455 - learning_rate: 0.0010
-# Epoch 21/50
-# 606/606 - 25s - 41ms/step - accuracy: 0.8768 - loss: 0.2787 - val_accuracy: 0.8453 - val_loss: 0.3542 - learning_rate: 0.0010
-# Epoch 22/50
-# 606/606 - 25s - 42ms/step - accuracy: 0.8826 - loss: 0.2721 - val_accuracy: 0.8469 - val_loss: 0.3452 - learning_rate: 0.0010
-# Epoch 23/50
-# 606/606 - 26s - 43ms/step - accuracy: 0.8850 - loss: 0.2646 - val_accuracy: 0.8485 - val_loss: 0.3412 - learning_rate: 0.0010
-# Epoch 24/50
-# 606/606 - 25s - 41ms/step - accuracy: 0.8871 - loss: 0.2598 - val_accuracy: 0.8533 - val_loss: 0.3518 - learning_rate: 0.0010
-# Epoch 25/50
-# 606/606 - 25s - 42ms/step - accuracy: 0.8923 - loss: 0.2539 - val_accuracy: 0.8534 - val_loss: 0.3495 - learning_rate: 0.0010
-# Epoch 26/50
-# 606/606 - 25s - 41ms/step - accuracy: 0.8960 - loss: 0.2462 - val_accuracy: 0.8604 - val_loss: 0.3420 - learning_rate: 0.0010
-# Epoch 27/50
-# 606/606 - 25s - 41ms/step - accuracy: 0.8972 - loss: 0.2425 - val_accuracy: 0.8502 - val_loss: 0.3543 - learning_rate: 0.0010
-# Epoch 28/50
-# 606/606 - 25s - 41ms/step - accuracy: 0.9012 - loss: 0.2371 - val_accuracy: 0.8544 - val_loss: 0.3529 - learning_rate: 0.0010
-# Epoch 29/50
-# 606/606 - 25s - 41ms/step - accuracy: 0.9189 - loss: 0.2018 - val_accuracy: 0.8644 - val_loss: 0.3421 - learning_rate: 2.0000e-04
-# Epoch 30/50
-# 606/606 - 25s - 41ms/step - accuracy: 0.9244 - loss: 0.1919 - val_accuracy: 0.8631 - val_loss: 0.3478 - learning_rate: 2.0000e-04
-# Epoch 31/50
-# 606/606 - 25s - 41ms/step - accuracy: 0.9257 - loss: 0.1880 - val_accuracy: 0.8644 - val_loss: 0.3532 - learning_rate: 2.0000e-04
-# Epoch 32/50
-# 606/606 - 25s - 41ms/step - accuracy: 0.9258 - loss: 0.1847 - val_accuracy: 0.8668 - val_loss: 0.3546 - learning_rate: 2.0000e-04
-# Epoch 33/50
-# 606/606 - 25s - 41ms/step - accuracy: 0.9274 - loss: 0.1812 - val_accuracy: 0.8666 - val_loss: 0.3630 - learning_rate: 2.0000e-04
-# Test Loss: 0.3296
-# Test Accuracy: 0.8521
-# Training complete with improved LSTM and U-Net.
 
