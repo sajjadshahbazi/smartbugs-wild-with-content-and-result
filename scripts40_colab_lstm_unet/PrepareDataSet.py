@@ -443,136 +443,70 @@ print(f"Shape of X: {X.shape}")
 print(f"Shape of Y: {Y.shape}")
 print("Distribution in Y:", np.unique(Y, return_counts=True))
 
-def train_LSTM_UNET_improved():
-    # بارگذاری داده‌ها (بدون تغییر)
-    X, Y = load_batches(CACHE_DIR, file_extension=".pkl")
-    X_train_full, X_test, Y_train_full, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
 
-    # تعریف مدل بهبودیافته
-    inputs = Input(shape=(X_train_full.shape[1], X_train_full.shape[2]))
-
-    # شاخه LSTM (بدون تغییر)
-    lstm1 = Bidirectional(LSTM(128, return_sequences=True))(inputs)
+def build_combined_model():
+    # مدل LSTM (بدون تغییر)
+    lstm_input = Input(shape=(50, 300))
+    lstm1 = Bidirectional(LSTM(128, return_sequences=True))(lstm_input)
     lstm2 = Bidirectional(LSTM(64))(lstm1)
 
-    # شاخه U-Net بهبودیافته
-    padded = ZeroPadding1D(padding=(7, 7))(inputs)
-
-    # Encoder
-    conv1 = Conv1D(64, 3, padding='same')(padded)
-    conv1 = BatchNormalization()(conv1)
-    conv1 = LeakyReLU(alpha=0.1)(conv1)
-    conv1 = Conv1D(64, 3, padding='same')(conv1)
-    conv1 = BatchNormalization()(conv1)
-    conv1 = LeakyReLU(alpha=0.1)(conv1)
-    pool1 = MaxPooling1D(2)(conv1)
-
-    conv2 = Conv1D(128, 3, padding='same')(pool1)
-    conv2 = BatchNormalization()(conv2)
-    conv2 = LeakyReLU(alpha=0.1)(conv2)
-    conv2 = Conv1D(128, 3, padding='same')(conv2)
-    conv2 = BatchNormalization()(conv2)
-    conv2 = LeakyReLU(alpha=0.1)(conv2)
-    pool2 = MaxPooling1D(2)(conv2)
-
-    conv3 = Conv1D(256, 3, padding='same')(pool2)
-    conv3 = BatchNormalization()(conv3)
-    conv3 = LeakyReLU(alpha=0.1)(conv3)
-    conv3 = Conv1D(256, 3, padding='same')(conv3)
-    conv3 = BatchNormalization()(conv3)
-    conv3 = LeakyReLU(alpha=0.1)(conv3)
-    pool3 = MaxPooling1D(2)(conv3)
-
-    conv4 = Conv1D(512, 3, padding='same')(pool3)
-    conv4 = BatchNormalization()(conv4)
-    conv4 = LeakyReLU(alpha=0.1)(conv4)
-    conv4 = Conv1D(512, 3, padding='same')(conv4)
-    conv4 = BatchNormalization()(conv4)
-    conv4 = LeakyReLU(alpha=0.1)(conv4)
-    pool4 = MaxPooling1D(2)(conv4)
-
-    # Bottleneck
-    conv5 = Conv1D(1024, 3, padding='same')(pool4)
-    conv5 = BatchNormalization()(conv5)
-    conv5 = LeakyReLU(alpha=0.1)(conv5)
-    conv5 = Conv1D(1024, 3, padding='same')(conv5)
-    conv5 = BatchNormalization()(conv5)
-    conv5 = LeakyReLU(alpha=0.1)(conv5)
-
-    # Decoder
-    up6 = UpSampling1D(2)(conv5)
-    concat6 = Concatenate()([up6, conv4])
-    conv6 = Conv1D(512, 3, padding='same')(concat6)
-    conv6 = BatchNormalization()(conv6)
-    conv6 = LeakyReLU(alpha=0.1)(conv6)
-    conv6 = Conv1D(512, 3, padding='same')(concat6)
-    conv6 = BatchNormalization()(conv6)
-    conv6 = LeakyReLU(alpha=0.1)(conv6)
-
-    up7 = UpSampling1D(2)(conv6)
-    concat7 = Concatenate()([up7, conv3])
-    conv7 = Conv1D(256, 3, padding='same')(concat7)
-    conv7 = BatchNormalization()(conv7)
-    conv7 = LeakyReLU(alpha=0.1)(conv7)
-    conv7 = Conv1D(256, 3, padding='same')(concat7)
-    conv7 = BatchNormalization()(conv7)
-    conv7 = LeakyReLU(alpha=0.1)(conv7)
-
-    up8 = UpSampling1D(2)(conv7)
-    concat8 = Concatenate()([up8, conv2])
-    conv8 = Conv1D(128, 3, padding='same')(concat8)
-    conv8 = BatchNormalization()(conv8)
-    conv8 = LeakyReLU(alpha=0.1)(conv8)
-    conv8 = Conv1D(128, 3, padding='same')(concat8)
-    conv8 = BatchNormalization()(conv8)
-    conv8 = LeakyReLU(alpha=0.1)(conv8)
-
-    up9 = UpSampling1D(2)(conv8)
-    concat9 = Concatenate()([up9, conv1])
-    conv9 = Conv1D(64, 3, padding='same')(concat9)
-    conv9 = BatchNormalization()(conv9)
-    conv9 = LeakyReLU(alpha=0.1)(conv9)
-    conv9 = Conv1D(64, 3, padding='same')(concat9)
-    conv9 = BatchNormalization()(conv9)
-    conv9 = LeakyReLU(alpha=0.1)(conv9)
-
-    conv10 = Conv1D(128, 1)(conv9)
-    unet_output = GlobalAveragePooling1D()(conv10)
+    # مدل U-Net با Conv2D
+    unet_input = Input(shape=(50, 300, 1))
+    c1 = Conv2D(32, (3, 3), activation='relu', padding='same')(unet_input)
+    p1 = MaxPooling2D((2, 2))(c1)
+    c2 = Conv2D(64, (3, 3), activation='relu', padding='same')(p1)
+    p2 = MaxPooling2D((2, 2))(c2)
+    c3 = Conv2D(128, (3, 3), activation='relu', padding='same')(p2)
+    u1 = UpSampling2D((2, 2))(c3)
+    m1 = concatenate([u1, c2])
+    c4 = Conv2D(64, (3, 3), activation='relu', padding='same')(m1)
+    u2 = UpSampling2D((2, 2))(c4)
+    m2 = concatenate([u2, c1])
+    c5 = Conv2D(32, (3, 3), activation='relu', padding='same')(m2)
+    unet_output = Conv2D(1, (1, 1), activation='sigmoid')(c5)
+    unet_flat = Flatten()(unet_output)
 
     # ترکیب با Attention
-    unet_output_reshaped = Reshape((1, 128))(unet_output)
-    lstm_output_reshaped = Reshape((1, 128))(lstm2)
-    combined = Attention()([unet_output_reshaped, lstm_output_reshaped])
-    combined = Flatten()(combined)
+    lstm_reshaped = Reshape((1, 128))(lstm2)
+    unet_reshaped = Reshape((1, -1))(unet_flat)
+    attention = Attention(use_scale=True)([lstm_reshaped, unet_reshaped])
+    combined = Flatten()(attention)
 
-    # لایه‌های Dense اضافی
-    dense1 = Dense(256, activation='relu')(combined)
-    dense1 = Dropout(0.3)(dense1)
-    dense2 = Dense(128, activation='relu')(dense1)
-    dense2 = Dropout(0.3)(dense2)
+    # لایه‌های Dense
+    x = Dense(128, activation='relu')(combined)
+    x = Dropout(0.3)(x)
+    x = Dense(64, activation='relu')(x)
+    x = Dropout(0.3)(x)
+    output = Dense(1, activation='sigmoid')(x)
 
-    # لایه خروجی
-    output = Dense(1, activation='sigmoid')(dense2)
+    # مدل نهایی
+    model = Model(inputs=[lstm_input, unet_input], outputs=output)
+    return model
 
-    # ساخت مدل
-    model = Model(inputs=inputs, outputs=output)
 
-    # کامپایل مدل
-    model.compile(optimizer=Adam(learning_rate=0.0005), loss='binary_crossentropy', metrics=['accuracy'])
+# آموزش و ارزیابی
+def train_and_evaluate():
+    # بارگذاری داده‌ها
+    X, Y = load_batches(CACHE_DIR, file_extension=".pkl")
+    X = np.expand_dims(X, axis=-1)  # تبدیل به (samples, 50, 300, 1) برای U-Net
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
 
-    # EarlyStopping و ReduceLROnPlateau
-    early_stopping = EarlyStopping(monitor='val_accuracy', patience=10, restore_best_weights=True, mode='max')
-    reduce_lr = ReduceLROnPlateau(monitor='val_accuracy', factor=0.2, patience=5, min_lr=0.0001, mode='max')
+    # ساخت و کامپایل مدل
+    model = build_combined_model()
+    model.compile(optimizer=Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
+
+    # کال‌بک‌ها
+    early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=0.0001)
 
     # آموزش مدل
-    history = model.fit(X_train_full, Y_train_full, epochs=100, batch_size=64, validation_split=0.2,
+    history = model.fit([X_train, X_train], Y_train, epochs=50, batch_size=32, validation_split=0.2,
                         callbacks=[early_stopping, reduce_lr], verbose=2)
 
-    # ذخیره گراف در پوشه doc
+    # ذخیره گراف
     docs_dir = os.path.join(ROOT, 'doc')
     if not os.path.exists(docs_dir):
         os.makedirs(docs_dir)
-
     plt.figure(figsize=(10, 6))
     plt.plot(history.history['accuracy'], label='train_acc', color='blue')
     plt.plot(history.history['val_accuracy'], label='val_acc', color='yellow')
@@ -587,8 +521,8 @@ def train_LSTM_UNET_improved():
     plt.savefig(output_image_path, dpi=300, bbox_inches='tight')
     plt.show()
 
-    # ارزیابی مدل روی داده‌های تست
-    Y_pred = (model.predict(X_test) > 0.5).astype("int32")
+    # ارزیابی
+    Y_pred = (model.predict([X_test, X_test]) > 0.5).astype("int32")
     accuracy = accuracy_score(Y_test, Y_pred)
     report = classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable'], labels=[0, 1])
 
@@ -604,190 +538,8 @@ def train_LSTM_UNET_improved():
     print("# Classification Report:")
     print(report)
 
+
 if __name__ == "__main__":
-    train_LSTM_UNET_improved()
-
-
-
-# 606/606 - 41s - 67ms/step - accuracy: 0.7348 - loss: 0.5405 - val_accuracy: 0.7584 - val_loss: 0.4944 - learning_rate: 5.0000e-04
-# Epoch 2/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.7737 - loss: 0.4814 - val_accuracy: 0.7748 - val_loss: 0.4732 - learning_rate: 5.0000e-04
-# Epoch 3/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.7793 - loss: 0.4631 - val_accuracy: 0.7745 - val_loss: 0.4553 - learning_rate: 5.0000e-04
-# Epoch 4/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.7861 - loss: 0.4402 - val_accuracy: 0.7821 - val_loss: 0.4362 - learning_rate: 5.0000e-04
-# Epoch 5/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.7910 - loss: 0.4275 - val_accuracy: 0.7896 - val_loss: 0.4229 - learning_rate: 5.0000e-04
-# Epoch 6/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.7959 - loss: 0.4162 - val_accuracy: 0.7919 - val_loss: 0.4163 - learning_rate: 5.0000e-04
-# Epoch 7/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8013 - loss: 0.4053 - val_accuracy: 0.7981 - val_loss: 0.4127 - learning_rate: 5.0000e-04
-# Epoch 8/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8052 - loss: 0.3989 - val_accuracy: 0.7981 - val_loss: 0.4086 - learning_rate: 5.0000e-04
-# Epoch 9/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8059 - loss: 0.3941 - val_accuracy: 0.7994 - val_loss: 0.3942 - learning_rate: 5.0000e-04
-# Epoch 10/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8115 - loss: 0.3864 - val_accuracy: 0.8081 - val_loss: 0.3833 - learning_rate: 5.0000e-04
-# Epoch 11/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8150 - loss: 0.3803 - val_accuracy: 0.8128 - val_loss: 0.3812 - learning_rate: 5.0000e-04
-# Epoch 12/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8167 - loss: 0.3757 - val_accuracy: 0.8074 - val_loss: 0.3843 - learning_rate: 5.0000e-04
-# Epoch 13/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8193 - loss: 0.3725 - val_accuracy: 0.8151 - val_loss: 0.3797 - learning_rate: 5.0000e-04
-# Epoch 14/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8228 - loss: 0.3676 - val_accuracy: 0.8140 - val_loss: 0.3767 - learning_rate: 5.0000e-04
-# Epoch 15/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8268 - loss: 0.3641 - val_accuracy: 0.8181 - val_loss: 0.3720 - learning_rate: 5.0000e-04
-# Epoch 16/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8286 - loss: 0.3596 - val_accuracy: 0.8179 - val_loss: 0.3727 - learning_rate: 5.0000e-04
-# Epoch 17/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8298 - loss: 0.3575 - val_accuracy: 0.8246 - val_loss: 0.3668 - learning_rate: 5.0000e-04
-# Epoch 18/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8319 - loss: 0.3520 - val_accuracy: 0.8192 - val_loss: 0.3735 - learning_rate: 5.0000e-04
-# Epoch 19/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8342 - loss: 0.3514 - val_accuracy: 0.8242 - val_loss: 0.3625 - learning_rate: 5.0000e-04
-# Epoch 20/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8373 - loss: 0.3444 - val_accuracy: 0.8286 - val_loss: 0.3567 - learning_rate: 5.0000e-04
-# Epoch 21/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8374 - loss: 0.3425 - val_accuracy: 0.8322 - val_loss: 0.3506 - learning_rate: 5.0000e-04
-# Epoch 22/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8429 - loss: 0.3378 - val_accuracy: 0.8298 - val_loss: 0.3576 - learning_rate: 5.0000e-04
-# Epoch 23/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8441 - loss: 0.3352 - val_accuracy: 0.8327 - val_loss: 0.3537 - learning_rate: 5.0000e-04
-# Epoch 24/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8458 - loss: 0.3339 - val_accuracy: 0.8326 - val_loss: 0.3543 - learning_rate: 5.0000e-04
-# Epoch 25/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8473 - loss: 0.3297 - val_accuracy: 0.8387 - val_loss: 0.3471 - learning_rate: 5.0000e-04
-# Epoch 26/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8505 - loss: 0.3248 - val_accuracy: 0.8390 - val_loss: 0.3446 - learning_rate: 5.0000e-04
-# Epoch 27/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8522 - loss: 0.3202 - val_accuracy: 0.8342 - val_loss: 0.3474 - learning_rate: 5.0000e-04
-# Epoch 28/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8555 - loss: 0.3181 - val_accuracy: 0.8400 - val_loss: 0.3454 - learning_rate: 5.0000e-04
-# Epoch 29/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8566 - loss: 0.3143 - val_accuracy: 0.8408 - val_loss: 0.3498 - learning_rate: 5.0000e-04
-# Epoch 30/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8580 - loss: 0.3109 - val_accuracy: 0.8371 - val_loss: 0.3468 - learning_rate: 5.0000e-04
-# Epoch 31/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8602 - loss: 0.3086 - val_accuracy: 0.8412 - val_loss: 0.3379 - learning_rate: 5.0000e-04
-# Epoch 32/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8627 - loss: 0.3046 - val_accuracy: 0.8398 - val_loss: 0.3453 - learning_rate: 5.0000e-04
-# Epoch 33/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8650 - loss: 0.2999 - val_accuracy: 0.8412 - val_loss: 0.3397 - learning_rate: 5.0000e-04
-# Epoch 34/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8670 - loss: 0.2979 - val_accuracy: 0.8459 - val_loss: 0.3415 - learning_rate: 5.0000e-04
-# Epoch 35/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8678 - loss: 0.2947 - val_accuracy: 0.8472 - val_loss: 0.3353 - learning_rate: 5.0000e-04
-# Epoch 36/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8722 - loss: 0.2905 - val_accuracy: 0.8464 - val_loss: 0.3401 - learning_rate: 5.0000e-04
-# Epoch 37/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8705 - loss: 0.2896 - val_accuracy: 0.8506 - val_loss: 0.3376 - learning_rate: 5.0000e-04
-# Epoch 38/100
-# 606/606 - 21s - 35ms/step - accuracy: 0.8747 - loss: 0.2849 - val_accuracy: 0.8465 - val_loss: 0.3355 - learning_rate: 5.0000e-04
-# Epoch 39/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8757 - loss: 0.2813 - val_accuracy: 0.8505 - val_loss: 0.3410 - learning_rate: 5.0000e-04
-# Epoch 40/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8780 - loss: 0.2788 - val_accuracy: 0.8500 - val_loss: 0.3353 - learning_rate: 5.0000e-04
-# Epoch 41/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8786 - loss: 0.2777 - val_accuracy: 0.8490 - val_loss: 0.3340 - learning_rate: 5.0000e-04
-# Epoch 42/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8812 - loss: 0.2722 - val_accuracy: 0.8555 - val_loss: 0.3365 - learning_rate: 5.0000e-04
-# Epoch 43/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8839 - loss: 0.2713 - val_accuracy: 0.8570 - val_loss: 0.3379 - learning_rate: 5.0000e-04
-# Epoch 44/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8841 - loss: 0.2671 - val_accuracy: 0.8505 - val_loss: 0.3445 - learning_rate: 5.0000e-04
-# Epoch 45/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8867 - loss: 0.2623 - val_accuracy: 0.8543 - val_loss: 0.3420 - learning_rate: 5.0000e-04
-# Epoch 46/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8866 - loss: 0.2611 - val_accuracy: 0.8533 - val_loss: 0.3489 - learning_rate: 5.0000e-04
-# Epoch 47/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8893 - loss: 0.2589 - val_accuracy: 0.8534 - val_loss: 0.3422 - learning_rate: 5.0000e-04
-# Epoch 48/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.8913 - loss: 0.2575 - val_accuracy: 0.8546 - val_loss: 0.3399 - learning_rate: 5.0000e-04
-# Epoch 49/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.9046 - loss: 0.2303 - val_accuracy: 0.8613 - val_loss: 0.3447 - learning_rate: 1.0000e-04
-# Epoch 50/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.9058 - loss: 0.2241 - val_accuracy: 0.8599 - val_loss: 0.3430 - learning_rate: 1.0000e-04
-# Epoch 51/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.9079 - loss: 0.2217 - val_accuracy: 0.8626 - val_loss: 0.3489 - learning_rate: 1.0000e-04
-# Epoch 52/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.9076 - loss: 0.2205 - val_accuracy: 0.8622 - val_loss: 0.3519 - learning_rate: 1.0000e-04
-# Epoch 53/100
-# 606/606 - 21s - 35ms/step - accuracy: 0.9090 - loss: 0.2180 - val_accuracy: 0.8614 - val_loss: 0.3506 - learning_rate: 1.0000e-04
-# Epoch 54/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.9091 - loss: 0.2174 - val_accuracy: 0.8635 - val_loss: 0.3545 - learning_rate: 1.0000e-04
-# Epoch 55/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.9106 - loss: 0.2133 - val_accuracy: 0.8639 - val_loss: 0.3574 - learning_rate: 1.0000e-04
-# Epoch 56/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.9111 - loss: 0.2132 - val_accuracy: 0.8634 - val_loss: 0.3602 - learning_rate: 1.0000e-04
-# Epoch 57/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.9133 - loss: 0.2113 - val_accuracy: 0.8624 - val_loss: 0.3616 - learning_rate: 1.0000e-04
-# Epoch 58/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.9132 - loss: 0.2103 - val_accuracy: 0.8643 - val_loss: 0.3673 - learning_rate: 1.0000e-04
-# Epoch 59/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.9147 - loss: 0.2075 - val_accuracy: 0.8652 - val_loss: 0.3713 - learning_rate: 1.0000e-04
-# Epoch 60/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.9147 - loss: 0.2061 - val_accuracy: 0.8655 - val_loss: 0.3688 - learning_rate: 1.0000e-04
-# Epoch 61/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.9158 - loss: 0.2055 - val_accuracy: 0.8634 - val_loss: 0.3708 - learning_rate: 1.0000e-04
-# Epoch 62/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.9156 - loss: 0.2053 - val_accuracy: 0.8644 - val_loss: 0.3701 - learning_rate: 1.0000e-04
-# Epoch 63/100
-# 606/606 - 21s - 35ms/step - accuracy: 0.9161 - loss: 0.2035 - val_accuracy: 0.8645 - val_loss: 0.3774 - learning_rate: 1.0000e-04
-# Epoch 64/100
-# 606/606 - 21s - 35ms/step - accuracy: 0.9159 - loss: 0.2039 - val_accuracy: 0.8649 - val_loss: 0.3691 - learning_rate: 1.0000e-04
-# Epoch 65/100
-# 606/606 - 21s - 35ms/step - accuracy: 0.9159 - loss: 0.2035 - val_accuracy: 0.8640 - val_loss: 0.3846 - learning_rate: 1.0000e-04
-# Epoch 66/100
-# 606/606 - 21s - 35ms/step - accuracy: 0.9176 - loss: 0.2009 - val_accuracy: 0.8651 - val_loss: 0.3752 - learning_rate: 1.0000e-04
-# Epoch 67/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.9174 - loss: 0.1997 - val_accuracy: 0.8662 - val_loss: 0.3831 - learning_rate: 1.0000e-04
-# Epoch 68/100
-# 606/606 - 21s - 35ms/step - accuracy: 0.9183 - loss: 0.1997 - val_accuracy: 0.8671 - val_loss: 0.3807 - learning_rate: 1.0000e-04
-# Epoch 69/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.9198 - loss: 0.1964 - val_accuracy: 0.8673 - val_loss: 0.3825 - learning_rate: 1.0000e-04
-# Epoch 70/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.9200 - loss: 0.1966 - val_accuracy: 0.8683 - val_loss: 0.3881 - learning_rate: 1.0000e-04
-# Epoch 71/100
-# 606/606 - 21s - 35ms/step - accuracy: 0.9200 - loss: 0.1947 - val_accuracy: 0.8664 - val_loss: 0.3872 - learning_rate: 1.0000e-04
-# Epoch 72/100
-# 606/606 - 21s - 35ms/step - accuracy: 0.9198 - loss: 0.1950 - val_accuracy: 0.8671 - val_loss: 0.3904 - learning_rate: 1.0000e-04
-# Epoch 73/100
-# 606/606 - 21s - 35ms/step - accuracy: 0.9214 - loss: 0.1924 - val_accuracy: 0.8679 - val_loss: 0.3875 - learning_rate: 1.0000e-04
-# Epoch 74/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.9217 - loss: 0.1914 - val_accuracy: 0.8672 - val_loss: 0.3891 - learning_rate: 1.0000e-04
-# Epoch 75/100
-# 606/606 - 22s - 35ms/step - accuracy: 0.9214 - loss: 0.1929 - val_accuracy: 0.8647 - val_loss: 0.3925 - learning_rate: 1.0000e-04
-# Epoch 76/100
-# 606/606 - 21s - 35ms/step - accuracy: 0.9217 - loss: 0.1919 - val_accuracy: 0.8659 - val_loss: 0.3935 - learning_rate: 1.0000e-04
-# Epoch 77/100
-# 606/606 - 21s - 35ms/step - accuracy: 0.9210 - loss: 0.1902 - val_accuracy: 0.8671 - val_loss: 0.3984 - learning_rate: 1.0000e-04
-# Epoch 78/100
-# 606/606 - 21s - 35ms/step - accuracy: 0.9221 - loss: 0.1896 - val_accuracy: 0.8652 - val_loss: 0.4005 - learning_rate: 1.0000e-04
-# Epoch 79/100
-# 606/606 - 22s - 36ms/step - accuracy: 0.9222 - loss: 0.1891 - val_accuracy: 0.8665 - val_loss: 0.3992 - learning_rate: 1.0000e-04
-# Epoch 80/100
-# 606/606 - 21s - 35ms/step - accuracy: 0.9239 - loss: 0.1882 - val_accuracy: 0.8656 - val_loss: 0.4080 - learning_rate: 1.0000e-04
-# Figure(1000x600)
-# /usr/local/lib/python3.11/dist-packages/keras/src/ops/nn.py:907: UserWarning: You are using a softmax over axis -1 of a tensor of shape (32, 1, 1). This axis has size 1. The softmax operation will always return the value 1, which is likely not what you intended. Did you mean to use a sigmoid instead?
-#   warnings.warn(
-# 379/379 ━━━━━━━━━━━━━━━━━━━━ 5s 10ms/step
-# # Epoch 35/50
-# # 1211/1211 - 17s - 14ms/step - accuracy: 0.9009 - loss: 0.2349 - val_accuracy: 0.8602 - val_loss: 0.3334
-# # Epoch 36/50
-# # 1211/1211 - 17s - 14ms/step - accuracy: 0.8995 - loss: 0.2373 - val_accuracy: 0.8586 - val_loss: 0.3344
-# # Plot saved to /content/smartbugs-wild-with-content-and-result/doc/training_plot_lstm_unet_improved.png
-# # Figure(1000x600)
-# # 379/379 ━━━━━━━━━━━━━━━━━━━━ 2s 6ms/step
-# # Accuracy: 0.8673604228609184
-# # Classification Report:
-#               precision    recall  f1-score   support
-#
-#         Safe       0.89      0.92      0.91      8331
-#   Vulnerable       0.81      0.74      0.78      3777
-#
-#     accuracy                           0.87     12108
-#    macro avg       0.85      0.83      0.84     12108
-# weighted avg       0.87      0.87      0.87     12108
+    train_and_evaluate()
 
 
