@@ -484,7 +484,6 @@ def build_combined_model():
     return model
 
 
-# آموزش و ارزیابی
 def train_and_evaluate():
     # بارگذاری داده‌ها
     X, Y = load_batches(CACHE_DIR, file_extension=".pkl")
@@ -537,9 +536,4 @@ def train_and_evaluate():
     print(f"# Accuracy: {accuracy}")
     print("# Classification Report:")
     print(report)
-
-
-if __name__ == "__main__":
-    train_and_evaluate()
-
 
