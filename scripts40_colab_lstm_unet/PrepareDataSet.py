@@ -460,13 +460,13 @@ def train_LSTM_UNET_improved():
     padded = ZeroPadding1D(padding=(7, 7))(inputs)
 
     # Encoder
-    conv1 = Conv1D(128, 3, padding='same')(padded)  # افزایش فیلترها
+    conv1 = Conv1D(128, 3, padding='same')(padded)
     conv1 = BatchNormalization()(conv1)
     conv1 = LeakyReLU(alpha=0.1)(conv1)
     conv1 = Conv1D(128, 3, padding='same')(conv1)
     conv1 = BatchNormalization()(conv1)
     conv1 = LeakyReLU(alpha=0.1)(conv1)
-    conv1 = Dropout(0.2)(conv1)  # اضافه کردن Dropout
+    conv1 = Dropout(0.2)(conv1)
     pool1 = MaxPooling1D(2)(conv1)
 
     conv2 = Conv1D(256, 3, padding='same')(pool1)
@@ -497,7 +497,7 @@ def train_LSTM_UNET_improved():
     pool4 = MaxPooling1D(2)(conv4)
 
     # Bottleneck
-    conv5 = Conv1D(2048, 3, padding='same')(pool4)  # افزایش ظرفیت
+    conv5 = Conv1D(2048, 3, padding='same')(pool4)
     conv5 = BatchNormalization()(conv5)
     conv5 = LeakyReLU(alpha=0.1)(conv5)
     conv5 = Conv1D(2048, 3, padding='same')(conv5)
@@ -547,7 +547,7 @@ def train_LSTM_UNET_improved():
     # ترکیب با Attention
     unet_output_reshaped = Reshape((1, 128))(unet_output)
     lstm_output_reshaped = Reshape((1, 128))(lstm2)
-    combined = MultiHeadAttention(num_heads=4, key_dim=128)([unet_output_reshaped, lstm_output_reshaped])
+    combined = MultiHeadAttention(num_heads=4, key_dim=128)(query=lstm_output_reshaped, value=unet_output_reshaped, key=unet_output_reshaped)
     combined = Flatten()(combined)
 
     # لایه‌های Dense اضافی
@@ -608,6 +608,7 @@ def train_LSTM_UNET_improved():
     print(f"# Accuracy: {accuracy}")
     print("# Classification Report:")
     print(report)
+
 
 if __name__ == "__main__":
     train_LSTM_UNET_improved()
