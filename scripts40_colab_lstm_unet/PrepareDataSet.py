@@ -445,41 +445,43 @@ print("Distribution in Y:", np.unique(Y, return_counts=True))
 
 
 def build_combined_model():
-    # مدل LSTM (بدون تغییر)
+    # LSTM Model (unchanged)
     lstm_input = Input(shape=(50, 300))
     lstm1 = Bidirectional(LSTM(128, return_sequences=True))(lstm_input)
     lstm2 = Bidirectional(LSTM(64))(lstm1)
 
-    # مدل U-Net با Conv2D
+    # U-Net Model with Conv2D
     unet_input = Input(shape=(50, 300, 1))
-    c1 = Conv2D(32, (3, 3), activation='relu', padding='same')(unet_input)
-    p1 = MaxPooling2D((2, 2))(c1)
-    c2 = Conv2D(64, (3, 3), activation='relu', padding='same')(p1)
-    p2 = MaxPooling2D((2, 2))(c2)
-    c3 = Conv2D(128, (3, 3), activation='relu', padding='same')(p2)
-    u1 = UpSampling2D((2, 2))(c3)
-    m1 = concatenate([u1, c2])
-    c4 = Conv2D(64, (3, 3), activation='relu', padding='same')(m1)
-    u2 = UpSampling2D((2, 2))(c4)
-    m2 = concatenate([u2, c1])
-    c5 = Conv2D(32, (3, 3), activation='relu', padding='same')(m2)
-    unet_output = Conv2D(1, (1, 1), activation='sigmoid')(c5)
+    c1 = Conv2D(32, (3, 3), activation='relu', padding='same')(unet_input)  # (None, 50, 300, 32)
+    p1 = MaxPooling2D((2, 2))(c1)  # (None, 25, 150, 32)
+    c2 = Conv2D(64, (3, 3), activation='relu', padding='same')(p1)  # (None, 25, 150, 64)
+    p2 = MaxPooling2D((2, 2))(c2)  # (None, 12, 75, 64)
+    c3 = Conv2D(128, (3, 3), activation='relu', padding='same')(p2)  # (None, 12, 75, 128)
+
+    u1 = UpSampling2D((2, 2))(c3)  # (None, 24, 150, 128)
+    u1_padded = ZeroPadding2D(padding=((1, 0), (0, 0)))(u1)  # (None, 25, 150, 128)
+    m1 = concatenate([u1_padded, c2])  # (None, 25, 150, 192)
+    c4 = Conv2D(64, (3, 3), activation='relu', padding='same')(m1)  # (None, 25, 150, 64)
+    u2 = UpSampling2D((2, 2))(c4)  # (None, 50, 300, 64)
+    m2 = concatenate([u2, c1])  # (None, 50, 300, 96)
+    c5 = Conv2D(32, (3, 3), activation='relu', padding='same')(m2)  # (None, 50, 300, 32)
+    unet_output = Conv2D(1, (1, 1), activation='sigmoid')(c5)  # (None, 50, 300, 1)
     unet_flat = Flatten()(unet_output)
 
-    # ترکیب با Attention
+    # Combine with Attention
     lstm_reshaped = Reshape((1, 128))(lstm2)
     unet_reshaped = Reshape((1, -1))(unet_flat)
     attention = Attention(use_scale=True)([lstm_reshaped, unet_reshaped])
     combined = Flatten()(attention)
 
-    # لایه‌های Dense
+    # Dense Layers
     x = Dense(128, activation='relu')(combined)
     x = Dropout(0.3)(x)
     x = Dense(64, activation='relu')(x)
     x = Dropout(0.3)(x)
     output = Dense(1, activation='sigmoid')(x)
 
-    # مدل نهایی
+    # Final Model
     model = Model(inputs=[lstm_input, unet_input], outputs=output)
     return model
 
