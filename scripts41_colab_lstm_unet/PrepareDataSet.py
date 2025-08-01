@@ -19,7 +19,7 @@ from tensorflow.keras import backend as K
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import Sequential
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, roc_auc_score
-from tensorflow.keras.layers import Conv2D, Conv1D, ZeroPadding2D, Attention, LeakyReLU, UpSampling1D, Concatenate, Dropout, ZeroPadding1D, GlobalAveragePooling1D, Activation, Bidirectional, concatenate, Cropping2D, MaxPooling2D, MaxPooling1D, UpSampling2D, concatenate, Flatten, Dense, Bidirectional, LSTM, Input, Reshape, BatchNormalization, Reshape
+from tensorflow.keras.layers import Conv2D, Add, Conv1D, ZeroPadding2D, Attention, LeakyReLU, UpSampling1D, Concatenate, Dropout, ZeroPadding1D, GlobalAveragePooling1D, Activation, Bidirectional, concatenate, Cropping2D, MaxPooling2D, MaxPooling1D, UpSampling2D, concatenate, Flatten, Dense, Bidirectional, LSTM, Input, Reshape, BatchNormalization, Reshape
 from tensorflow.keras.models import Model
 from tensorflow.keras import layers, models
 from tensorflow.keras.optimizers import Adam
@@ -445,139 +445,123 @@ print("Distribution in Y:", np.unique(Y, return_counts=True))
 
 
 def train_LSTM_UNET_improved():
-    # بارگذاری داده‌ها (بدون تغییر)
+    # بارگذاری داده‌ها
     X, Y = load_batches(CACHE_DIR, file_extension=".pkl")
     X_train_full, X_test, Y_train_full, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
 
-    # تعریف مدل بهبودیافته
+    # تعریف مدل
     inputs = Input(shape=(X_train_full.shape[1], X_train_full.shape[2]))
 
-    # شاخه LSTM (بدون تغییر)
+    # شاخه LSTM
     lstm1 = Bidirectional(LSTM(128, return_sequences=True))(inputs)
     lstm2 = Bidirectional(LSTM(64))(lstm1)
 
-    # شاخه U-Net بهبودیافته
-    padded = ZeroPadding1D(padding=(7, 7))(inputs)
-
+    # شاخه U-Net
     # Encoder
-    conv1 = Conv1D(128, 3, padding='same')(padded)
+    conv1 = Conv1D(128, 3, padding='same')(inputs)
     conv1 = BatchNormalization()(conv1)
-    conv1 = LeakyReLU(alpha=0.1)(conv1)
+    conv1 = LeakyReLU(negative_slope=0.1)(conv1)
+    conv1_residual = conv1
     conv1 = Conv1D(128, 3, padding='same')(conv1)
     conv1 = BatchNormalization()(conv1)
-    conv1 = LeakyReLU(alpha=0.1)(conv1)
-    conv1 = Dropout(0.2)(conv1)
+    conv1 = LeakyReLU(negative_slope=0.1)(conv1)
+    conv1 = Add()([conv1, conv1_residual])
     pool1 = MaxPooling1D(2)(conv1)
 
     conv2 = Conv1D(256, 3, padding='same')(pool1)
     conv2 = BatchNormalization()(conv2)
-    conv2 = LeakyReLU(alpha=0.1)(conv2)
+    conv2 = LeakyReLU(negative_slope=0.1)(conv2)
+    conv2_residual = conv2
     conv2 = Conv1D(256, 3, padding='same')(conv2)
     conv2 = BatchNormalization()(conv2)
-    conv2 = LeakyReLU(alpha=0.1)(conv2)
-    conv2 = Dropout(0.2)(conv2)
+    conv2 = LeakyReLU(negative_slope=0.1)(conv2)
+    conv2 = Add()([conv2, conv2_residual])
     pool2 = MaxPooling1D(2)(conv2)
 
     conv3 = Conv1D(512, 3, padding='same')(pool2)
     conv3 = BatchNormalization()(conv3)
-    conv3 = LeakyReLU(alpha=0.1)(conv3)
+    conv3 = LeakyReLU(negative_slope=0.1)(conv3)
+    conv3_residual = conv3
     conv3 = Conv1D(512, 3, padding='same')(conv3)
     conv3 = BatchNormalization()(conv3)
-    conv3 = LeakyReLU(alpha=0.1)(conv3)
-    conv3 = Dropout(0.2)(conv3)
+    conv3 = LeakyReLU(negative_slope=0.1)(conv3)
+    conv3 = Add()([conv3, conv3_residual])
     pool3 = MaxPooling1D(2)(conv3)
 
     conv4 = Conv1D(1024, 3, padding='same')(pool3)
     conv4 = BatchNormalization()(conv4)
-    conv4 = LeakyReLU(alpha=0.1)(conv4)
+    conv4 = LeakyReLU(negative_slope=0.1)(conv4)
+    conv4_residual = conv4
     conv4 = Conv1D(1024, 3, padding='same')(conv4)
     conv4 = BatchNormalization()(conv4)
-    conv4 = LeakyReLU(alpha=0.1)(conv4)
-    conv4 = Dropout(0.2)(conv4)
+    conv4 = LeakyReLU(negative_slope=0.1)(conv4)
+    conv4 = Add()([conv4, conv4_residual])
     pool4 = MaxPooling1D(2)(conv4)
 
-    # Bottleneck
     conv5 = Conv1D(2048, 3, padding='same')(pool4)
     conv5 = BatchNormalization()(conv5)
-    conv5 = LeakyReLU(alpha=0.1)(conv5)
+    conv5 = LeakyReLU(negative_slope=0.1)(conv5)
+    conv5_residual = conv5
     conv5 = Conv1D(2048, 3, padding='same')(conv5)
     conv5 = BatchNormalization()(conv5)
-    conv5 = LeakyReLU(alpha=0.1)(conv5)
+    conv5 = LeakyReLU(negative_slope=0.1)(conv5)
+    conv5 = Add()([conv5, conv5_residual])
 
     # Decoder
     up6 = UpSampling1D(2)(conv5)
     concat6 = Concatenate()([up6, conv4])
     conv6 = Conv1D(1024, 3, padding='same')(concat6)
     conv6 = BatchNormalization()(conv6)
-    conv6 = LeakyReLU(alpha=0.1)(conv6)
-    conv6 = Conv1D(1024, 3, padding='same')(concat6)
-    conv6 = BatchNormalization()(conv6)
-    conv6 = LeakyReLU(alpha=0.1)(conv6)
+    conv6 = LeakyReLU(negative_slope=0.1)(conv6)
 
     up7 = UpSampling1D(2)(conv6)
     concat7 = Concatenate()([up7, conv3])
     conv7 = Conv1D(512, 3, padding='same')(concat7)
     conv7 = BatchNormalization()(conv7)
-    conv7 = LeakyReLU(alpha=0.1)(conv7)
-    conv7 = Conv1D(512, 3, padding='same')(concat7)
-    conv7 = BatchNormalization()(conv7)
-    conv7 = LeakyReLU(alpha=0.1)(conv7)
+    conv7 = LeakyReLU(negative_slope=0.1)(conv7)
 
     up8 = UpSampling1D(2)(conv7)
     concat8 = Concatenate()([up8, conv2])
     conv8 = Conv1D(256, 3, padding='same')(concat8)
     conv8 = BatchNormalization()(conv8)
-    conv8 = LeakyReLU(alpha=0.1)(conv8)
-    conv8 = Conv1D(256, 3, padding='same')(concat8)
-    conv8 = BatchNormalization()(conv8)
-    conv8 = LeakyReLU(alpha=0.1)(conv8)
+    conv8 = LeakyReLU(negative_slope=0.1)(conv8)
 
     up9 = UpSampling1D(2)(conv8)
     concat9 = Concatenate()([up9, conv1])
     conv9 = Conv1D(128, 3, padding='same')(concat9)
     conv9 = BatchNormalization()(conv9)
-    conv9 = LeakyReLU(alpha=0.1)(conv9)
-    conv9 = Conv1D(128, 3, padding='same')(concat9)
-    conv9 = BatchNormalization()(conv9)
-    conv9 = LeakyReLU(alpha=0.1)(conv9)
+    conv9 = LeakyReLU(negative_slope=0.1)(conv9)
 
-    conv10 = Conv1D(128, 1)(conv9)
-    unet_output = GlobalAveragePooling1D()(conv10)
+    unet_output = GlobalAveragePooling1D()(conv9)
 
-    # ترکیب با Attention
+    # ترکیب با Cross-Attention
     unet_output_reshaped = Reshape((1, 128))(unet_output)
     lstm_output_reshaped = Reshape((1, 128))(lstm2)
-    combined = MultiHeadAttention(num_heads=4, key_dim=128)(query=lstm_output_reshaped, value=unet_output_reshaped, key=unet_output_reshaped)
+    combined = MultiHeadAttention(num_heads=8, key_dim=128)(query=lstm_output_reshaped, value=unet_output_reshaped, key=unet_output_reshaped)
     combined = Flatten()(combined)
 
-    # لایه‌های Dense اضافی
+    # لایه‌های Dense
     dense1 = Dense(256, activation='relu')(combined)
-    dense1 = Dropout(0.3)(dense1)
+    dense1 = Dropout(0.4)(dense1)
     dense2 = Dense(128, activation='relu')(dense1)
-    dense2 = Dropout(0.3)(dense2)
-
-    # لایه خروجی
+    dense2 = Dropout(0.4)(dense2)
     output = Dense(1, activation='sigmoid')(dense2)
 
     # ساخت مدل
     model = Model(inputs=inputs, outputs=output)
-
-    # کامپایل مدل
     model.compile(optimizer=Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
 
-    # EarlyStopping و ReduceLROnPlateau
+    # تنظیمات callbacks
     early_stopping = EarlyStopping(monitor='val_accuracy', patience=10, restore_best_weights=True, mode='max')
     reduce_lr = ReduceLROnPlateau(monitor='val_accuracy', factor=0.2, patience=5, min_lr=0.0001, mode='max')
 
     # آموزش مدل
-    history = model.fit(X_train_full, Y_train_full, epochs=100, batch_size=64, validation_split=0.2,
+    history = model.fit(X_train_full, Y_train_full, epochs=100, batch_size=128, validation_split=0.2,
                         callbacks=[early_stopping, reduce_lr], verbose=2)
 
-    # ذخیره گراف در پوشه doc
+    # ذخیره و نمایش گراف
     docs_dir = os.path.join(ROOT, 'doc')
-    if not os.path.exists(docs_dir):
-        os.makedirs(docs_dir)
-
+    os.makedirs(docs_dir, exist_ok=True)
     plt.figure(figsize=(10, 6))
     plt.plot(history.history['accuracy'], label='train_acc', color='blue')
     plt.plot(history.history['val_accuracy'], label='val_acc', color='yellow')
@@ -592,21 +576,13 @@ def train_LSTM_UNET_improved():
     plt.savefig(output_image_path, dpi=300, bbox_inches='tight')
     plt.show()
 
-    # ارزیابی مدل روی داده‌های تست
+    # ارزیابی مدل
     Y_pred = (model.predict(X_test) > 0.5).astype("int32")
     accuracy = accuracy_score(Y_test, Y_pred)
     report = classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable'], labels=[0, 1])
 
-    # نمایش نتایج
-    print(f"# Epoch 35/100")
-    print(f"# 1211/1211 - 17s - 14ms/step - accuracy: 0.9100 - loss: 0.2200 - val_accuracy: 0.8700 - val_loss: 0.3200")
-    print(f"# Epoch 36/100")
-    print(f"# 1211/1211 - 17s - 14ms/step - accuracy: 0.9090 - loss: 0.2250 - val_accuracy: 0.8680 - val_loss: 0.3250")
-    print(f"# Plot saved to {output_image_path}")
-    print(f"# Figure(1000x600)")
-    print(f"# 379/379 ━━━━━━━━━━━━━━━━━━━━ 2s 6ms/step")
-    print(f"# Accuracy: {accuracy}")
-    print("# Classification Report:")
+    print(f"Accuracy: {accuracy}")
+    print("Classification Report:")
     print(report)
 
 
@@ -614,45 +590,6 @@ if __name__ == "__main__":
     train_LSTM_UNET_improved()
 
 
-# Epoch 59/100
-# 606/606 - 25s - 41ms/step - accuracy: 0.9372 - loss: 0.1524 - val_accuracy: 0.8749 - val_loss: 0.4577 - learning_rate: 1.0000e-04
-# Epoch 60/100
-# 606/606 - 25s - 41ms/step - accuracy: 0.9368 - loss: 0.1521 - val_accuracy: 0.8732 - val_loss: 0.4636 - learning_rate: 1.0000e-04
-# Epoch 61/100
-# 606/606 - 25s - 41ms/step - accuracy: 0.9371 - loss: 0.1514 - val_accuracy: 0.8738 - val_loss: 0.4605 - learning_rate: 1.0000e-04
-# Epoch 62/100
-# 606/606 - 25s - 41ms/step - accuracy: 0.9372 - loss: 0.1526 - val_accuracy: 0.8728 - val_loss: 0.4794 - learning_rate: 1.0000e-04
-# Epoch 63/100
-# 606/606 - 25s - 41ms/step - accuracy: 0.9389 - loss: 0.1497 - val_accuracy: 0.8728 - val_loss: 0.4839 - learning_rate: 1.0000e-04
-# Epoch 64/100
-# 606/606 - 25s - 41ms/step - accuracy: 0.9382 - loss: 0.1522 - val_accuracy: 0.8736 - val_loss: 0.4619 - learning_rate: 1.0000e-04
-# Epoch 65/100
-# 606/606 - 25s - 41ms/step - accuracy: 0.9383 - loss: 0.1510 - val_accuracy: 0.8729 - val_loss: 0.4837 - learning_rate: 1.0000e-04
-# Epoch 66/100
-# 606/606 - 25s - 41ms/step - accuracy: 0.9378 - loss: 0.1499 - val_accuracy: 0.8728 - val_loss: 0.4874 - learning_rate: 1.0000e-04
-# Epoch 67/100
-# 606/606 - 25s - 41ms/step - accuracy: 0.9391 - loss: 0.1491 - val_accuracy: 0.8740 - val_loss: 0.4741 - learning_rate: 1.0000e-04
-# Epoch 68/100
-# 606/606 - 25s - 41ms/step - accuracy: 0.9390 - loss: 0.1488 - val_accuracy: 0.8739 - val_loss: 0.4725 - learning_rate: 1.0000e-04
-# Epoch 69/100
-# 606/606 - 25s - 41ms/step - accuracy: 0.9381 - loss: 0.1508 - val_accuracy: 0.8732 - val_loss: 0.4783 - learning_rate: 1.0000e-04
-# Figure(1000x600)
-# 379/379 ━━━━━━━━━━━━━━━━━━━━ 5s 10ms/step
-# # Epoch 35/100
-# # 1211/1211 - 17s - 14ms/step - accuracy: 0.9100 - loss: 0.2200 - val_accuracy: 0.8700 - val_loss: 0.3200
-# # Epoch 36/100
-# # 1211/1211 - 17s - 14ms/step - accuracy: 0.9090 - loss: 0.2250 - val_accuracy: 0.8680 - val_loss: 0.3250
-# # Plot saved to /content/smartbugs-wild-with-content-and-result/doc/training_plot_lstm_unet_improved.png
-# # Figure(1000x600)
-# # 379/379 ━━━━━━━━━━━━━━━━━━━━ 2s 6ms/step
-# # Accuracy: 0.8742979848034358
-# # Classification Report:
-#               precision    recall  f1-score   support
-#
-#         Safe       0.89      0.93      0.91      8371
-#   Vulnerable       0.83      0.75      0.79      3737
-#
-#     accuracy                           0.87     12108
-#    macro avg       0.86      0.84      0.85     12108
-# weighted avg       0.87      0.87      0.87     12108
+
+
 
