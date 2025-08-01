@@ -19,7 +19,7 @@ from tensorflow.keras import backend as K
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import Sequential
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, roc_auc_score
-from tensorflow.keras.layers import Conv2D, Conv1D, Attention, LeakyReLU, UpSampling1D, Concatenate, Dropout, ZeroPadding1D, GlobalAveragePooling1D, Activation, Bidirectional, concatenate, Cropping2D, MaxPooling2D, MaxPooling1D, UpSampling2D, concatenate, Flatten, Dense, Bidirectional, LSTM, Input, Reshape, BatchNormalization, Reshape
+from tensorflow.keras.layers import Conv2D, Conv1D, ZeroPadding2D, Attention, LeakyReLU, UpSampling1D, Concatenate, Dropout, ZeroPadding1D, GlobalAveragePooling1D, Activation, Bidirectional, concatenate, Cropping2D, MaxPooling2D, MaxPooling1D, UpSampling2D, concatenate, Flatten, Dense, Bidirectional, LSTM, Input, Reshape, BatchNormalization, Reshape
 from tensorflow.keras.models import Model
 from tensorflow.keras import layers, models
 from tensorflow.keras.optimizers import Adam
