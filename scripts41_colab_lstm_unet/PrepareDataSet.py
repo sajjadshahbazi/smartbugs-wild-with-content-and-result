@@ -509,24 +509,28 @@ def train_LSTM_UNET_improved():
 
     # Decoder
     up6 = UpSampling1D(2)(conv5)
+    up6 = ZeroPadding1D(padding=(0, 1))(up6)  # تنظیم ابعاد برای تطابق با conv4
     concat6 = Concatenate()([up6, conv4])
     conv6 = Conv1D(1024, 3, padding='same')(concat6)
     conv6 = BatchNormalization()(conv6)
     conv6 = LeakyReLU(negative_slope=0.1)(conv6)
 
     up7 = UpSampling1D(2)(conv6)
+    up7 = ZeroPadding1D(padding=(0, 1))(up7)  # تنظیم ابعاد برای تطابق با conv3
     concat7 = Concatenate()([up7, conv3])
     conv7 = Conv1D(512, 3, padding='same')(concat7)
     conv7 = BatchNormalization()(conv7)
     conv7 = LeakyReLU(negative_slope=0.1)(conv7)
 
     up8 = UpSampling1D(2)(conv7)
+    up8 = ZeroPadding1D(padding=(0, 1))(up8)  # تنظیم ابعاد برای تطابق با conv2
     concat8 = Concatenate()([up8, conv2])
     conv8 = Conv1D(256, 3, padding='same')(concat8)
     conv8 = BatchNormalization()(conv8)
     conv8 = LeakyReLU(negative_slope=0.1)(conv8)
 
     up9 = UpSampling1D(2)(conv8)
+    up9 = ZeroPadding1D(padding=(0, 1))(up9)  # تنظیم ابعاد برای تطابق با conv1
     concat9 = Concatenate()([up9, conv1])
     conv9 = Conv1D(128, 3, padding='same')(concat9)
     conv9 = BatchNormalization()(conv9)
