@@ -536,7 +536,12 @@ def train_LSTM_UNET_improved():
     conv9 = BatchNormalization()(conv9)
     conv9 = LeakyReLU(negative_slope=0.1)(conv9)
 
-    unet_output = GlobalAveragePooling1D()(conv9)
+    # لایه اضافی برای تقویت U-Net
+    conv10 = Conv1D(4096, 3, padding='same')(conv9)
+    conv10 = BatchNormalization()(conv10)
+    conv10 = LeakyReLU(negative_slope=0.1)(conv10)
+
+    unet_output = GlobalAveragePooling1D()(conv10)
 
     # ترکیب با Cross-Attention
     unet_output_reshaped = Reshape((1, 128))(unet_output)
@@ -546,20 +551,20 @@ def train_LSTM_UNET_improved():
 
     # لایه‌های Dense
     dense1 = Dense(256, activation='relu')(combined)
-    dense1 = Dropout(0.4)(dense1)
+    dense1 = Dropout(0.6)(dense1)  # افزایش Dropout به 0.6
     dense2 = Dense(128, activation='relu')(dense1)
-    dense2 = Dropout(0.4)(dense2)
+    dense2 = Dropout(0.6)(dense2)  # افزایش Dropout به 0.6
     output = Dense(1, activation='sigmoid')(dense2)
 
     # ساخت مدل
     model = Model(inputs=inputs, outputs=output)
-    model.compile(optimizer=Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=Adam(learning_rate=0.0005), loss='binary_crossentropy', metrics=['accuracy'])  # کاهش نرخ یادگیری
 
     # تنظیمات callbacks
-    early_stopping = EarlyStopping(monitor='val_accuracy', patience=10, restore_best_weights=True, mode='max')
+    early_stopping = EarlyStopping(monitor='val_accuracy', patience=5, restore_best_weights=True, mode='max')  # کاهش patience
     reduce_lr = ReduceLROnPlateau(monitor='val_accuracy', factor=0.2, patience=5, min_lr=0.0001, mode='max')
 
-    # آموزش مدل
+    # آموزش مدل (بدون وزن‌دهی)
     history = model.fit(X_train_full, Y_train_full, epochs=100, batch_size=128, validation_split=0.2,
                         callbacks=[early_stopping, reduce_lr], verbose=2)
 
@@ -592,158 +597,5 @@ def train_LSTM_UNET_improved():
 
 if __name__ == "__main__":
     train_LSTM_UNET_improved()
-
-
-
-# Epoch 5/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.8613 - loss: 0.3116 - val_accuracy: 0.8309 - val_loss: 0.4019 - learning_rate: 0.0010
-# Epoch 6/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.8693 - loss: 0.2974 - val_accuracy: 0.8453 - val_loss: 0.3363 - learning_rate: 0.0010
-# Epoch 7/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.8771 - loss: 0.2801 - val_accuracy: 0.8489 - val_loss: 0.3566 - learning_rate: 0.0010
-# Epoch 8/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.8824 - loss: 0.2702 - val_accuracy: 0.8214 - val_loss: 0.3971 - learning_rate: 0.0010
-# Epoch 9/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.8914 - loss: 0.2576 - val_accuracy: 0.8550 - val_loss: 0.3545 - learning_rate: 0.0010
-# Epoch 10/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.8946 - loss: 0.2478 - val_accuracy: 0.8559 - val_loss: 0.3432 - learning_rate: 0.0010
-# Epoch 11/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9011 - loss: 0.2368 - val_accuracy: 0.8527 - val_loss: 0.4003 - learning_rate: 0.0010
-# Epoch 12/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9039 - loss: 0.2275 - val_accuracy: 0.8603 - val_loss: 0.3498 - learning_rate: 0.0010
-# Epoch 13/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9069 - loss: 0.2231 - val_accuracy: 0.8643 - val_loss: 0.3454 - learning_rate: 0.0010
-# Epoch 14/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9087 - loss: 0.2186 - val_accuracy: 0.8562 - val_loss: 0.3796 - learning_rate: 0.0010
-# Epoch 15/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9114 - loss: 0.2130 - val_accuracy: 0.8634 - val_loss: 0.3822 - learning_rate: 0.0010
-# Epoch 16/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9153 - loss: 0.2044 - val_accuracy: 0.8602 - val_loss: 0.3896 - learning_rate: 0.0010
-# Epoch 17/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9171 - loss: 0.2017 - val_accuracy: 0.8670 - val_loss: 0.4393 - learning_rate: 0.0010
-# Epoch 18/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9187 - loss: 0.1971 - val_accuracy: 0.8655 - val_loss: 0.4221 - learning_rate: 0.0010
-# Epoch 19/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9204 - loss: 0.1927 - val_accuracy: 0.8673 - val_loss: 0.4305 - learning_rate: 0.0010
-# Epoch 20/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9239 - loss: 0.1861 - val_accuracy: 0.8590 - val_loss: 0.4816 - learning_rate: 0.0010
-# Epoch 21/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9231 - loss: 0.1874 - val_accuracy: 0.8589 - val_loss: 0.5546 - learning_rate: 0.0010
-# Epoch 22/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9245 - loss: 0.1831 - val_accuracy: 0.8651 - val_loss: 0.3878 - learning_rate: 0.0010
-# Epoch 23/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9277 - loss: 0.1784 - val_accuracy: 0.8658 - val_loss: 0.4996 - learning_rate: 0.0010
-# Epoch 24/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9262 - loss: 0.1802 - val_accuracy: 0.8566 - val_loss: 0.4249 - learning_rate: 0.0010
-# Epoch 25/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9344 - loss: 0.1593 - val_accuracy: 0.8724 - val_loss: 0.4382 - learning_rate: 2.0000e-04
-# Epoch 26/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9386 - loss: 0.1472 - val_accuracy: 0.8726 - val_loss: 0.4618 - learning_rate: 2.0000e-04
-# Epoch 27/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9395 - loss: 0.1448 - val_accuracy: 0.8732 - val_loss: 0.4834 - learning_rate: 2.0000e-04
-# Epoch 28/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9393 - loss: 0.1436 - val_accuracy: 0.8689 - val_loss: 0.5595 - learning_rate: 2.0000e-04
-# Epoch 29/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9401 - loss: 0.1423 - val_accuracy: 0.8705 - val_loss: 0.6204 - learning_rate: 2.0000e-04
-# Epoch 30/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9409 - loss: 0.1418 - val_accuracy: 0.8729 - val_loss: 0.5137 - learning_rate: 2.0000e-04
-# Epoch 31/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9408 - loss: 0.1417 - val_accuracy: 0.8725 - val_loss: 0.5669 - learning_rate: 2.0000e-04
-# Epoch 32/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9414 - loss: 0.1400 - val_accuracy: 0.8733 - val_loss: 0.6386 - learning_rate: 2.0000e-04
-# Epoch 33/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9416 - loss: 0.1395 - val_accuracy: 0.8726 - val_loss: 0.5951 - learning_rate: 2.0000e-04
-# Epoch 34/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9409 - loss: 0.1400 - val_accuracy: 0.8740 - val_loss: 0.6231 - learning_rate: 2.0000e-04
-# Epoch 35/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9419 - loss: 0.1372 - val_accuracy: 0.8717 - val_loss: 0.6807 - learning_rate: 2.0000e-04
-# Epoch 36/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9416 - loss: 0.1378 - val_accuracy: 0.8728 - val_loss: 0.5985 - learning_rate: 2.0000e-04
-# Epoch 37/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9426 - loss: 0.1368 - val_accuracy: 0.8744 - val_loss: 0.6065 - learning_rate: 2.0000e-04
-# Epoch 38/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9415 - loss: 0.1376 - val_accuracy: 0.8737 - val_loss: 0.6392 - learning_rate: 2.0000e-04
-# Epoch 39/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9416 - loss: 0.1391 - val_accuracy: 0.8733 - val_loss: 0.6048 - learning_rate: 2.0000e-04
-# Epoch 40/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9417 - loss: 0.1376 - val_accuracy: 0.8745 - val_loss: 0.6375 - learning_rate: 2.0000e-04
-# Epoch 41/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9429 - loss: 0.1347 - val_accuracy: 0.8745 - val_loss: 0.5738 - learning_rate: 2.0000e-04
-# Epoch 42/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9432 - loss: 0.1339 - val_accuracy: 0.8751 - val_loss: 0.6816 - learning_rate: 2.0000e-04
-# Epoch 43/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9432 - loss: 0.1345 - val_accuracy: 0.8736 - val_loss: 0.6950 - learning_rate: 2.0000e-04
-# Epoch 44/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9426 - loss: 0.1354 - val_accuracy: 0.8751 - val_loss: 0.5907 - learning_rate: 2.0000e-04
-# Epoch 45/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9431 - loss: 0.1345 - val_accuracy: 0.8728 - val_loss: 0.6743 - learning_rate: 2.0000e-04
-# Epoch 46/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9438 - loss: 0.1340 - val_accuracy: 0.8733 - val_loss: 0.6389 - learning_rate: 2.0000e-04
-# Epoch 47/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9441 - loss: 0.1336 - val_accuracy: 0.8737 - val_loss: 0.6697 - learning_rate: 2.0000e-04
-# Epoch 48/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9443 - loss: 0.1307 - val_accuracy: 0.8759 - val_loss: 0.6800 - learning_rate: 1.0000e-04
-# Epoch 49/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9446 - loss: 0.1297 - val_accuracy: 0.8755 - val_loss: 0.7402 - learning_rate: 1.0000e-04
-# Epoch 50/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9448 - loss: 0.1296 - val_accuracy: 0.8763 - val_loss: 0.7094 - learning_rate: 1.0000e-04
-# Epoch 51/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9447 - loss: 0.1294 - val_accuracy: 0.8756 - val_loss: 0.6933 - learning_rate: 1.0000e-04
-# Epoch 52/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9443 - loss: 0.1298 - val_accuracy: 0.8755 - val_loss: 0.7277 - learning_rate: 1.0000e-04
-# Epoch 53/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9446 - loss: 0.1304 - val_accuracy: 0.8748 - val_loss: 0.7401 - learning_rate: 1.0000e-04
-# Epoch 54/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9451 - loss: 0.1298 - val_accuracy: 0.8752 - val_loss: 0.7699 - learning_rate: 1.0000e-04
-# Epoch 55/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9448 - loss: 0.1294 - val_accuracy: 0.8752 - val_loss: 0.7756 - learning_rate: 1.0000e-04
-# Epoch 56/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9445 - loss: 0.1300 - val_accuracy: 0.8755 - val_loss: 0.7437 - learning_rate: 1.0000e-04
-# Epoch 57/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9450 - loss: 0.1293 - val_accuracy: 0.8767 - val_loss: 0.7272 - learning_rate: 1.0000e-04
-# Epoch 58/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9446 - loss: 0.1301 - val_accuracy: 0.8765 - val_loss: 0.7099 - learning_rate: 1.0000e-04
-# Epoch 59/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9450 - loss: 0.1283 - val_accuracy: 0.8762 - val_loss: 0.7698 - learning_rate: 1.0000e-04
-# Epoch 60/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9449 - loss: 0.1291 - val_accuracy: 0.8764 - val_loss: 0.7201 - learning_rate: 1.0000e-04
-# Epoch 61/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9444 - loss: 0.1291 - val_accuracy: 0.8762 - val_loss: 0.7535 - learning_rate: 1.0000e-04
-# Epoch 62/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9450 - loss: 0.1286 - val_accuracy: 0.8762 - val_loss: 0.7861 - learning_rate: 1.0000e-04
-# Epoch 63/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9448 - loss: 0.1281 - val_accuracy: 0.8773 - val_loss: 0.8004 - learning_rate: 1.0000e-04
-# Epoch 64/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9447 - loss: 0.1292 - val_accuracy: 0.8771 - val_loss: 0.7216 - learning_rate: 1.0000e-04
-# Epoch 65/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9452 - loss: 0.1282 - val_accuracy: 0.8773 - val_loss: 0.7790 - learning_rate: 1.0000e-04
-# Epoch 66/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9449 - loss: 0.1288 - val_accuracy: 0.8756 - val_loss: 0.8436 - learning_rate: 1.0000e-04
-# Epoch 67/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9452 - loss: 0.1287 - val_accuracy: 0.8754 - val_loss: 0.7749 - learning_rate: 1.0000e-04
-# Epoch 68/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9453 - loss: 0.1282 - val_accuracy: 0.8762 - val_loss: 0.7890 - learning_rate: 1.0000e-04
-# Epoch 69/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9451 - loss: 0.1296 - val_accuracy: 0.8757 - val_loss: 0.8066 - learning_rate: 1.0000e-04
-# Epoch 70/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9455 - loss: 0.1279 - val_accuracy: 0.8751 - val_loss: 0.7949 - learning_rate: 1.0000e-04
-# Epoch 71/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9448 - loss: 0.1275 - val_accuracy: 0.8762 - val_loss: 0.7850 - learning_rate: 1.0000e-04
-# Epoch 72/100
-# 303/303 - 13s - 43ms/step - accuracy: 0.9453 - loss: 0.1276 - val_accuracy: 0.8757 - val_loss: 0.8461 - learning_rate: 1.0000e-04
-# Epoch 73/100
-# 303/303 - 13s - 44ms/step - accuracy: 0.9451 - loss: 0.1276 - val_accuracy: 0.8766 - val_loss: 0.7724 - learning_rate: 1.0000e-04
-# Figure(1000x600)
-# 379/379 ━━━━━━━━━━━━━━━━━━━━ 5s 10ms/step
-# Accuracy: 0.875619425173439
-# Classification Report:
-#               precision    recall  f1-score   support
-#
-#         Safe       0.90      0.93      0.91      8371
-#   Vulnerable       0.83      0.76      0.79      3737
-#
-#     accuracy                           0.88     12108
-#    macro avg       0.86      0.84      0.85     12108
-# weighted avg       0.87      0.88      0.87     12108
 
 
