@@ -543,6 +543,9 @@ def train_LSTM_UNET_improved():
 
     unet_output = GlobalAveragePooling1D()(conv10)
 
+    # کاهش ابعاد به 128 با Dense
+    unet_output = Dense(128, activation='relu')(unet_output)
+
     # ترکیب با Cross-Attention
     unet_output_reshaped = Reshape((1, 128))(unet_output)
     lstm_output_reshaped = Reshape((1, 128))(lstm2)
