@@ -554,17 +554,17 @@ def train_LSTM_UNET_improved():
 
     # لایه‌های Dense
     dense1 = Dense(256, activation='relu')(combined)
-    dense1 = Dropout(0.5)(dense1)  # برگرداندن به 0.5
+    dense1 = Dropout(0.5)(dense1)
     dense2 = Dense(128, activation='relu')(dense1)
-    dense2 = Dropout(0.5)(dense2)  # برگرداندن به 0.5
+    dense2 = Dropout(0.5)(dense2)
     output = Dense(1, activation='sigmoid')(dense2)
 
     # ساخت مدل
     model = Model(inputs=inputs, outputs=output)
-    model.compile(optimizer=Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])  # برگرداندن به 0.001
+    model.compile(optimizer=Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
 
     # تنظیمات callbacks
-    early_stopping = EarlyStopping(monitor='val_accuracy', patience=5, restore_best_weights=True, mode='max')  # برگرداندن به 5
+    early_stopping = EarlyStopping(monitor='val_accuracy', patience=5, restore_best_weights=True, mode='max')
     reduce_lr = ReduceLROnPlateau(monitor='val_accuracy', factor=0.2, patience=5, min_lr=0.0001, mode='max')
 
     # آموزش مدل (بدون وزن‌دهی)
