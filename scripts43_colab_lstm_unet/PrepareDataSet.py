@@ -602,3 +602,59 @@ if __name__ == "__main__":
     train_LSTM_UNET_improved()
 
 
+
+# Epoch 1/100
+# I0000 00:00:1754168358.699488    9842 cuda_dnn.cc:529] Loaded cuDNN version 90300
+# 303/303 - 39s - 128ms/step - accuracy: 0.7798 - loss: 0.4314 - val_accuracy: 0.6915 - val_loss: 3.2229 - learning_rate: 5.0000e-04
+# Epoch 2/100
+# 303/303 - 14s - 47ms/step - accuracy: 0.8107 - loss: 0.3798 - val_accuracy: 0.6963 - val_loss: 0.6408 - learning_rate: 5.0000e-04
+# Epoch 3/100
+# 303/303 - 14s - 48ms/step - accuracy: 0.8256 - loss: 0.3607 - val_accuracy: 0.7722 - val_loss: 0.4981 - learning_rate: 5.0000e-04
+# Epoch 4/100
+# 303/303 - 14s - 48ms/step - accuracy: 0.8408 - loss: 0.3364 - val_accuracy: 0.8298 - val_loss: 0.3847 - learning_rate: 5.0000e-04
+# Epoch 5/100
+# 303/303 - 14s - 47ms/step - accuracy: 0.8533 - loss: 0.3189 - val_accuracy: 0.8356 - val_loss: 0.3847 - learning_rate: 5.0000e-04
+# Epoch 6/100
+# 303/303 - 14s - 48ms/step - accuracy: 0.8646 - loss: 0.3028 - val_accuracy: 0.8438 - val_loss: 0.3454 - learning_rate: 5.0000e-04
+# Epoch 7/100
+# 303/303 - 14s - 48ms/step - accuracy: 0.8724 - loss: 0.2915 - val_accuracy: 0.8526 - val_loss: 0.3266 - learning_rate: 5.0000e-04
+# Epoch 8/100
+# 303/303 - 14s - 47ms/step - accuracy: 0.8765 - loss: 0.2804 - val_accuracy: 0.8411 - val_loss: 0.3620 - learning_rate: 5.0000e-04
+# Epoch 9/100
+# 303/303 - 14s - 47ms/step - accuracy: 0.8833 - loss: 0.2681 - val_accuracy: 0.8452 - val_loss: 0.3779 - learning_rate: 5.0000e-04
+# Epoch 10/100
+# 303/303 - 14s - 47ms/step - accuracy: 0.8905 - loss: 0.2570 - val_accuracy: 0.8466 - val_loss: 0.3444 - learning_rate: 5.0000e-04
+# Epoch 11/100
+# 303/303 - 14s - 47ms/step - accuracy: 0.8958 - loss: 0.2476 - val_accuracy: 0.8565 - val_loss: 0.3285 - learning_rate: 5.0000e-04
+# Epoch 12/100
+# 303/303 - 14s - 47ms/step - accuracy: 0.8973 - loss: 0.2442 - val_accuracy: 0.8457 - val_loss: 0.3834 - learning_rate: 5.0000e-04
+# Epoch 13/100
+# 303/303 - 14s - 47ms/step - accuracy: 0.9011 - loss: 0.2363 - val_accuracy: 0.8593 - val_loss: 0.3710 - learning_rate: 5.0000e-04
+# Epoch 14/100
+# 303/303 - 14s - 47ms/step - accuracy: 0.9045 - loss: 0.2279 - val_accuracy: 0.8580 - val_loss: 0.3198 - learning_rate: 5.0000e-04
+# Epoch 15/100
+# 303/303 - 14s - 47ms/step - accuracy: 0.9066 - loss: 0.2225 - val_accuracy: 0.8338 - val_loss: 0.4536 - learning_rate: 5.0000e-04
+# Epoch 16/100
+# 303/303 - 14s - 47ms/step - accuracy: 0.9132 - loss: 0.2111 - val_accuracy: 0.8639 - val_loss: 0.3241 - learning_rate: 5.0000e-04
+# Epoch 18/100
+# 303/303 - 14s - 47ms/step - accuracy: 0.9060 - loss: 0.2267 - val_accuracy: 0.8606 - val_loss: 0.3266 - learning_rate: 5.0000e-04
+# Epoch 19/100
+# 303/303 - 14s - 47ms/step - accuracy: 0.9153 - loss: 0.2057 - val_accuracy: 0.8618 - val_loss: 0.3623 - learning_rate: 5.0000e-04
+# Epoch 20/100
+# 303/303 - 14s - 47ms/step - accuracy: 0.9196 - loss: 0.1974 - val_accuracy: 0.8686 - val_loss: 0.3690 - learning_rate: 5.0000e-04
+# Epoch 21/100
+# 303/303 - 14s - 47ms/step - accuracy: 0.9202 - loss: 0.1936 - val_accuracy: 0.8280 - val_loss: 0.8674 - learning_rate: 5.0000e-04
+# Figure(1000x600)
+# 379/379 ━━━━━━━━━━━━━━━━━━━━ 5s 11ms/step
+# Accuracy: 0.8693425834159234
+# Classification Report:
+#               precision    recall  f1-score   support
+#
+#         Safe       0.87      0.95      0.91      8322
+#   Vulnerable       0.87      0.68      0.77      3786
+#
+#     accuracy                           0.87     12108
+#    macro avg       0.87      0.82      0.84     12108
+# weighted avg       0.87      0.87      0.86     12108
+
+
