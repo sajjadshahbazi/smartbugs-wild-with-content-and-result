@@ -446,14 +446,18 @@ print("Distribution in Y:", np.unique(Y, return_counts=True))
 
 def train_LSTM_UNET_improved():
     X, Y = load_batches(CACHE_DIR, file_extension=".pkl")
+    print(f"Shape of X: {X.shape}")
+    print(f"Shape of Y: {Y.shape}")
+    print(f"Distribution in Y: {np.unique(Y, return_counts=True)}")
     X_train_full, X_test, Y_train_full, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
 
     # تعریف مدل
     inputs = Input(shape=(sequence_length, vector_length))  # (70, 300)
 
     # شاخه LSTM
-    lstm1 = Bidirectional(LSTM(256, return_sequences=True))(inputs)  # افزایش واحد به 256 برای 70 گام
-    lstm2 = Bidirectional(LSTM(128))(lstm1)
+    lstm1 = Bidirectional(LSTM(256, return_sequences=True))(inputs)
+    lstm2 = Bidirectional(LSTM(128))(lstm1)  # خروجی (batch_size, 256)
+    lstm_output_reshaped = Reshape((1, 256))(lstm2)  # تغییر به 256
 
     # شاخه U-Net
     # Encoder
@@ -517,23 +521,23 @@ def train_LSTM_UNET_improved():
     conv7 = BatchNormalization()(conv7)
     conv7 = LeakyReLU(negative_slope=0.1)(conv7)
 
-    # لایه اضافی برای تقویت U-Net
+    # لایه اضافی
     conv8 = Conv1D(512, 3, padding='same')(conv7)  # کاهش از 4096 به 512
     conv8 = BatchNormalization()(conv8)
     conv8 = LeakyReLU(negative_slope=0.1)(conv8)
 
     unet_output = GlobalAveragePooling1D()(conv8)
-    unet_output = Dense(128, activation='relu')(unet_output)
+    unet_output = Dense(256, activation='relu')(unet_output)  # تغییر به 256
+    unet_output_reshaped = Reshape((1, 256))(unet_output)
 
     # ترکیب با Cross-Attention
-    unet_output_reshaped = Reshape((1, 128))(unet_output)
-    lstm_output_reshaped = Reshape((1, 128))(lstm2)
-    combined = MultiHeadAttention(num_heads=8, key_dim=128)(query=lstm_output_reshaped, value=unet_output_reshaped, key=unet_output_reshaped)
+    combined = MultiHeadAttention(num_heads=8, key_dim=256)(query=lstm_output_reshaped, value=unet_output_reshaped,
+                                                            key=unet_output_reshaped)
     combined = Flatten()(combined)
 
     # لایه‌های نهایی
     dense1 = Dense(256, activation='relu')(combined)
-    dense1 = Dropout(0.6)(dense1)  # افزایش به 0.6 برای کاهش overfitting
+    dense1 = Dropout(0.6)(dense1)
     dense2 = Dense(128, activation='relu')(dense1)
     dense2 = Dropout(0.6)(dense2)
     output = Dense(1, activation='sigmoid')(dense2)
