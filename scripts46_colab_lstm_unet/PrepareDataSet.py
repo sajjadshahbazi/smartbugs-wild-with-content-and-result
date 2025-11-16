@@ -58,7 +58,10 @@ target_vulner = target_vulnerability_reentrancy
 # os.makedirs(CACHE_DIR, exist_ok=True)
 
 ROOT = '/content/smartbugs-wild-with-content-and-result' # Linux
-CACHE_DIR = os.path.join(ROOT, 'vectorcollections01') # Linux
+# CACHE_DIR = os.path.join(ROOT, 'vectorcollections01') # Linux
+CACHE_DIR = '/content/drive/MyDrive/vectorcollections01'
+os.makedirs(CACHE_DIR, exist_ok=True)
+print(f"Cache directory created: {CACHE_DIR}")
 
 cache_path = os.path.join(CACHE_DIR, 'tokenized_fragments.pkl')
 vulnerability_fd = open(os.path.join(ROOT, 'metadata', 'vulnerabilities.csv'), 'w', encoding='utf-8')
