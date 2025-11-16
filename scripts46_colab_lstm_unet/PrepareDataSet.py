@@ -4,24 +4,21 @@ import os
 from pathlib import Path
 from imblearn.over_sampling import SMOTE
 import pandas as pd
-from keras.src.layers import GlobalAveragePooling2D, MultiHeadAttention
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.utils import Sequence
 import sys
 from gensim.models import Word2Vec
 import numpy as np
 import pickle
-import PreProcessTools
-import numpy as np
+import PreProcessTools  # فایل PreProcessTools.py در کنار این فایل
 import io
 import seaborn as sns
 from tensorflow.keras import backend as K
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import Sequential
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, roc_auc_score
-from tensorflow.keras.layers import Conv2D, Add, Conv1D, ZeroPadding2D, Attention, LeakyReLU, UpSampling1D, Concatenate, Dropout, ZeroPadding1D, GlobalAveragePooling1D, Activation, Bidirectional, concatenate, Cropping2D, MaxPooling2D, MaxPooling1D, UpSampling2D, concatenate, Flatten, Dense, Bidirectional, LSTM, Input, Reshape, BatchNormalization, Reshape
+from tensorflow.keras.layers import Conv1D, ZeroPadding1D, LeakyReLU, UpSampling1D, Concatenate, Dropout, GlobalAveragePooling1D, Bidirectional, LSTM, Input, Reshape, BatchNormalization, Add, MultiHeadAttention, Flatten, Dense, MaxPooling1D
 from tensorflow.keras.models import Model
-from tensorflow.keras import layers, models
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 import matplotlib.pyplot as plt
@@ -41,7 +38,7 @@ tool_stat = {}
 tool_category_stat = {}
 total_duration = 0
 contract_vulnerabilities = {}
-sequence_length = 70
+sequence_length = 70  # تغییر به 70
 vulnerability_mapping = {}
 
 tools = ['mythril', 'slither', 'osiris', 'smartcheck', 'manticore', 'maian', 'securify',
@@ -57,7 +54,8 @@ target_vulnerability_integer_underflow = 'Integer Underflow'  # sum safe smart c
 target_vulner = target_vulnerability_reentrancy
 
 ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-CACHE_DIR = os.path.join(ROOT, 'vectorcollections01')
+CACHE_DIR = os.path.join(ROOT, 'vectorcollections01')  # پوشه جدید
+os.makedirs(CACHE_DIR, exist_ok=True)
 
 # ROOT = '/content/smartbugs-wild-with-content-and-result' # Linux
 # CACHE_DIR = os.path.join(ROOT, 'vectorcollections') # Linux
@@ -75,7 +73,6 @@ os.chdir(PATH)
 final_df = pd.DataFrame(columns=['X', 'Y'])
 
 
-
 def is_sentence_in_text(sentence, text):
     sentence = sentence.lower()
     text = text.lower()
@@ -84,16 +81,20 @@ def is_sentence_in_text(sentence, text):
     return flg
 
 
-
 def load_batches(folder, file_extension=".pkl"):
     X_batches, Y_batches = [], []
     for file in os.listdir(folder):
         if file.endswith(file_extension):
-            with open(os.path.join(folder, file), 'rb') as f:
+            filepath = os.path.join(folder, file)
+            with open(filepath, 'rb') as f:
                 X, Y = pickle.load(f)
+                # اگر طول توالی با 70 مطابقت نداشت، پدینگ اعمال کن
+                if X.shape[1] != sequence_length:
+                    X = pad_sequences(X, maxlen=sequence_length, padding='post', dtype='float32')
                 X_batches.append(X)
                 Y_batches.append(Y)
     return np.vstack(X_batches), np.hstack(Y_batches)
+
 
 def getResultVulnarable(contract_name, target_vulnerability):
 
@@ -204,7 +205,6 @@ def getResultVulnarable(contract_name, target_vulnerability):
     return res, lines
 
 
-
 SENSITIVE_OPERATORS_REETRANCY = ['call', 'delegatecall', 'send', 'transfer', 'selfdestruct']
 
 def contains_sensitive_operator(function_body):
@@ -216,73 +216,6 @@ def contains_sensitive_operator(function_body):
             return True
     return False
 
-
-def save_to_file(data, file_prefix, cache_dir, batch_size, batch_index):
-    os.makedirs(cache_dir, exist_ok=True)  # اطمینان از وجود پوشه CACHE_DIR
-
-    # ذخیره داده‌ها به صورت فایل‌های جداگانه در CACHE_DIR
-    for i in range(0, len(data), batch_size):
-        batch = data[i:i + batch_size]
-        filename = f"{file_prefix}_batch_{batch_index}_{i // batch_size}.pkl"  # نام‌گذاری دسته‌بندی‌شده
-        filepath = os.path.join(cache_dir, filename)
-        with open(filepath, 'wb') as f:
-            pickle.dump(batch, f)
-        print(f"Saved batch to {filepath}")
-
-def extract_functions(code):
-    """
-    استخراج فانکشن‌ها از کد Solidity.
-    این تابع فانکشن‌هایی که با 'function' شروع می‌شوند را شناسایی کرده
-    و آنها را به صورت یک لیست برمی‌گرداند.
-
-    :param code: کد کامل قرارداد به عنوان یک رشته (string).
-    :return: لیستی از فانکشن‌ها که هرکدام به صورت یک رشته هستند.
-    """
-    functions = []
-
-    # الگوی regex برای شناسایی فانکشن‌ها
-    function_pattern = re.compile(
-        r'function\s+\w+\s*\(.*\)\s*(public|private|internal|external)*\s*(view|pure)*\s*(returns\s*\(.*\))?\s*{')
-
-    # جستجو برای تمام فانکشن‌ها
-    matches = function_pattern.finditer(code)
-
-    # پیدا کردن ابتدای هر فانکشن و استخراج آن
-    for match in matches:
-        function_start = match.start()
-        function_end = code.find('}', function_start) + 1
-
-        if function_end != -1:
-            functions.append(code[function_start:function_end])
-
-    return functions
-
-
-
-# تابعی برای توکن‌سازی کد Solidity
-def tokenize_solidity_code(code):
-    # الگوی اصلاح‌شده برای شناسایی علائم خاص از جمله '}'
-    pattern = r'\b(?:function|returns|uint256|internal|constant|assert|return|require|if|else|for|while)\b|[=<>!*&|()+\-;/\}]|\b[a-zA-Z_][a-zA-Z0-9_]*\b'
-
-    # یافتن تمام توکن‌ها با استفاده از الگو
-    tokens = re.findall(pattern, code)
-
-    return tokens
-
-def normalize_variables(tokens):
-    normalized_tokens = []
-    for token in tokens:
-        # اگر توکن یک متغیر باشد (که معمولاً با نام‌های متغیرهای غیرکلیدی شروع می‌شود)، آن را نرمال می‌کنیم
-        if re.match(r'[a-zA-Z_][a-zA-Z0-9_]*', token) and token not in ['function', 'returns', 'internal', 'constant', 'assert', 'return']:
-            normalized_tokens.append('VAR')  # به جای اسم متغیر، 'VAR' قرار می‌دهیم
-        elif token in ['}', '{', '(', ')', '[', ']', '.', ';', ',', '+', '-', '=', '!', '?', ':']:
-            # لیست نمادهای خاص که باید حفظ شوند
-            normalized_tokens.append(token)
-        elif token.strip() == '':  # برای جلوگیری از ذخیره کردن فضاهای خالی
-            continue  # هیچ کاری انجام ندهید اگر توکن خالی است
-        else:
-            normalized_tokens.append(token)
-    return normalized_tokens
 
 def extract_functions_with_bodies(contract_code):
     """
@@ -329,6 +262,18 @@ def extract_functions_with_bodies(contract_code):
 
     return functions
 
+
+# تابعی برای توکن‌سازی کد Solidity
+def tokenize_solidity_code(code):
+    # الگوی اصلاح‌شده برای شناسایی علائم خاص از جمله '}'
+    pattern = r'\b(?:function|returns|uint256|internal|constant|assert|return|require|if|else|for|while)\b|[=<>!*&|()+\-;/\}]|\b[a-zA-Z_][a-zA-Z0-9_]*\b'
+
+    # یافتن تمام توکن‌ها با استفاده از الگو
+    tokens = re.findall(pattern, code)
+
+    return tokens
+
+
 def vectorize_tokens(tokens):
     """
     تبدیل یک لیست از توکن‌ها به آرایه‌ای از بردارهای ویژگی.
@@ -357,11 +302,12 @@ def label_functions_by_vulnerable_lines(functions, vulnerable_lines):
         if any(func['start_line'] <= line <= func['end_line'] for line in vulnerable_lines):
             func['label'] = 1  # اگر خط آسیب‌پذیر در فانکشن باشد، لیبل ۱ می‌شود
 
+
 def process_batch_with_categorization(files, target_vulnerability, batch_size, batch_index):
     X_sensitive_negative, Y_sensitive_negative = [], []
     X_vulnerable, Y_vulnerable = [], []
     X_safe, Y_safe = [], []
-    max_function_length = 50
+    max_function_length = 70  # تغییر به 70
 
     sc_files = [f for f in files if f.endswith(".sol")]
     print(f"cont {sc_files.__len__()}")
@@ -402,53 +348,34 @@ def process_batch_with_categorization(files, target_vulnerability, batch_size, b
                             X_safe.append(padded_function)
                             Y_safe.append(label)
 
-    X_vulnerable = np.array(X_vulnerable, dtype='float32')
-    Y_vulnerable = np.array(Y_vulnerable, dtype='int32')
+    # ذخیره دسته‌ها
+    def save_batch(X, Y, prefix):
+        if len(X) > 0:
+            filepath = os.path.join(CACHE_DIR, f"{prefix}_batch_{batch_index}.pkl")
+            with open(filepath, 'wb') as f:
+                pickle.dump((np.array(X), np.array(Y)), f)
+            print(f"Saved {len(X)} samples to {filepath}")
 
-    X_sensitive_negative = np.array(X_sensitive_negative, dtype='float32')
-    Y_sensitive_negative = np.array(Y_sensitive_negative, dtype='int32')
-
-    X_safe = np.array(X_safe, dtype='float32')
-    Y_safe = np.array(Y_safe, dtype='int32')
-
-    batch_file_vulnerable = os.path.join(CACHE_DIR, f"vulnerable_batch_{batch_index}.pkl")
-    batch_file_sensitive_negative = os.path.join(CACHE_DIR, f"sensitive_negative_batch_{batch_index}.pkl")
-    batch_file_safe = os.path.join(CACHE_DIR, f"safe_batch_{batch_index}.pkl")
-
-    with open(batch_file_vulnerable, 'wb') as f:
-        pickle.dump((X_vulnerable, Y_vulnerable), f)
-
-    with open(batch_file_sensitive_negative, 'wb') as f:
-        pickle.dump((X_sensitive_negative, Y_sensitive_negative), f)
-
-    with open(batch_file_safe, 'wb') as f:
-        pickle.dump((X_safe, Y_safe), f)
-    print(f"Batch saved to {batch_file_vulnerable}, {batch_file_sensitive_negative}", {batch_file_safe})
+    save_batch(X_vulnerable, Y_vulnerable, "vulnerable")
+    save_batch(X_sensitive_negative, Y_sensitive_negative, "sensitive_negative")
+    save_batch(X_safe, Y_safe, "safe")
 
 
-def load_batches(folder, file_extension=".pkl"):
-    X_batches, Y_batches = [], []
-    for file in os.listdir(folder):
-        if file.endswith(file_extension):
-            with open(os.path.join(folder, file), 'rb') as f:
-                X, Y = pickle.load(f)
-                X_batches.append(X)
-                Y_batches.append(Y)
-    return np.vstack(X_batches), np.hstack(Y_batches)
-
-
-# بارگذاری داده‌ها
-X, Y = load_batches(CACHE_DIR, file_extension=".pkl")
-print(f"Shape of X: {X.shape}")
-print(f"Shape of Y: {Y.shape}")
-print("Distribution in Y:", np.unique(Y, return_counts=True))
+# اجرای پردازش دسته‌ای
+def run_preprocessing():
+    os.chdir(PATH)
+    files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
+    print(f"Found {len(files)} .sol files.")
+    for i in range(0, len(files), batch_size):
+        batch_files = files[i:i + batch_size]
+        process_batch_with_categorization(batch_files, target_vulnerability_reentrancy, batch_size, i // batch_size)
 
 
 def train_LSTM_UNET_improved():
     X, Y = load_batches(CACHE_DIR, file_extension=".pkl")
     print(f"Shape of X: {X.shape}")
     print(f"Shape of Y: {Y.shape}")
-    print(f"Distribution in Y: {np.unique(Y, return_counts=True)}")
+    print("Distribution in Y:", np.unique(Y, return_counts=True))
     X_train_full, X_test, Y_train_full, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
 
     # تعریف مدل
@@ -527,7 +454,7 @@ def train_LSTM_UNET_improved():
     conv8 = LeakyReLU(negative_slope=0.1)(conv8)
 
     unet_output = GlobalAveragePooling1D()(conv8)
-    unet_output = Dense(256, activation='relu')(unet_output)  # تغییر به 256
+    unet_output = Dense(256, activation='relu')(unet_output)
     unet_output_reshaped = Reshape((1, 256))(unet_output)
 
     # ترکیب با Cross-Attention
@@ -580,8 +507,9 @@ def train_LSTM_UNET_improved():
     print("Classification Report:")
     print(report)
 
+
 if __name__ == "__main__":
+    print("Starting preprocessing with sequence_length = 70...")
+    run_preprocessing()
+    print("Preprocessing completed. Starting training...")
     train_LSTM_UNET_improved()
-
-
-
