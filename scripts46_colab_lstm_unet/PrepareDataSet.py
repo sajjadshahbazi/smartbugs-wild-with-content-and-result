@@ -53,21 +53,21 @@ target_vulnerability_integer_underflow = 'Integer Underflow'  # sum safe smart c
 
 target_vulner = target_vulnerability_reentrancy
 
-ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-CACHE_DIR = os.path.join(ROOT, 'vectorcollections01')  # پوشه جدید
-os.makedirs(CACHE_DIR, exist_ok=True)
+# ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+# CACHE_DIR = os.path.join(ROOT, 'vectorcollections01')  # پوشه جدید
+# os.makedirs(CACHE_DIR, exist_ok=True)
 
-# ROOT = '/content/smartbugs-wild-with-content-and-result' # Linux
-# CACHE_DIR = os.path.join(ROOT, 'vectorcollections') # Linux
+ROOT = '/content/smartbugs-wild-with-content-and-result' # Linux
+CACHE_DIR = os.path.join(ROOT, 'vectorcollections01') # Linux
 
 cache_path = os.path.join(CACHE_DIR, 'tokenized_fragments.pkl')
 vulnerability_fd = open(os.path.join(ROOT, 'metadata', 'vulnerabilities.csv'), 'w', encoding='utf-8')
 
-PATH = f"{ROOT}\\contracts\\"  # main data set
+# PATH = f"{ROOT}\\contracts\\"  # main data set
 # PATH = f"{ROOT}\\contract\\"  # part of main data set
 # PATH = f"{ROOT}\\contra\\"  # one smart contract
 
-# PATH = os.path.join(ROOT, 'contracts') # Linux
+PATH = os.path.join(ROOT, 'contracts') # Linux
 os.chdir(PATH)
 
 final_df = pd.DataFrame(columns=['X', 'Y'])
