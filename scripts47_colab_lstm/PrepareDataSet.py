@@ -34,8 +34,9 @@ sequence_length = 70  # دقیقاً همون چیزی که خواستی
 vector_length = 300
 batch_size = 1000
 CACHE_DIR = '/content/vectorcollections01'  # فضای داخلی Colab Pro
-PATH = '/content/contracts'
+# PATH = '/content/contracts'
 ROOT = '/content/smartbugs-wild-with-content-and-result'  # مسیر دیتاست SmartBugs-Wild
+PATH = os.path.join(ROOT, 'contracts')
 output_name = 'icse20'
 
 os.makedirs(CACHE_DIR, exist_ok=True)
