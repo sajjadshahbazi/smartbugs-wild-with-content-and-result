@@ -7,21 +7,6 @@ from pathlib import Path
 import PreProcessTools
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from sklearn.model_selection import train_test_split
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Bidirectional, LSTM, Dense, Dropout
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
-from sklearn.metrics import accuracy_score, classification_report
-
-import os
-import re
-import json
-import pickle
-import numpy as np
-from pathlib import Path
-import PreProcessTools
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
 from tensorflow.keras.optimizers import Adam
@@ -30,16 +15,31 @@ from sklearn.metrics import accuracy_score, classification_report
 import matplotlib.pyplot as plt
 
 # ==================== تنظیمات اصلی ====================
-sequence_length = 70  # دقیقاً همون چیزی که خواستی
+ROOT = '/content/smartbugs-wild-with-content-and-result'  # دیتاست اصلی
+PATH = os.path.join(ROOT, 'contracts')  # فایل‌های .sol
+CACHE_DIR = '/content/vectorcollections01'  # کش سریع در فضای داخلی Colab
+output_name = 'icse20'
+sequence_length = 70
 vector_length = 300
 batch_size = 1000
-CACHE_DIR = '/content/vectorcollections01'  # فضای داخلی Colab Pro
-# PATH = '/content/contracts'
-ROOT = '/content/smartbugs-wild-with-content-and-result'  # مسیر دیتاست SmartBugs-Wild
-PATH = os.path.join(ROOT, 'contracts')
-output_name = 'icse20'
 
+# ساخت پوشه کش
 os.makedirs(CACHE_DIR, exist_ok=True)
+
+# چک کردن وجود دیتاست
+if not os.path.exists(PATH):
+    raise FileNotFoundError(f"""
+    پوشه قراردادها پیدا نشد!
+    مسیر مورد انتظار: {PATH}
+
+    لطفاً این کار رو انجام بده:
+    1. فایل دیتاست رو آپلود کن به /content/
+    2. یا از درایو unzip کن:
+       !unzip /content/drive/MyDrive/smartbugs-wild-with-content-and-result.zip -d /content/
+    """)
+
+print(f"دیتاست پیدا شد: {len([f for f in os.listdir(PATH) if f.endswith('.sol')])} قرارداد هوشمند")
+print(f"کش ذخیره می‌شود در: {CACHE_DIR}")
 
 
 # ==================== تشخیص Reentrancy قوی ====================
@@ -49,17 +49,18 @@ def getResultVulnarable(contract_name):
     tools = ['mythril', 'slither', 'securify', 'smartcheck']
 
     for tool in tools:
-        path = os.path.join(ROOT, 'results', tool, output_name, contract_name, 'result.json')
-        if not os.path.exists(path):
+        result_path = os.path.join(ROOT, 'results', tool, output_name, contract_name, 'result.json')
+        if not os.path.exists(result_path):
             continue
         try:
-            with open(path, 'r', encoding='utf-8') as f:
+            with open(result_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
         except:
             continue
         if not data or data.get('analysis') is None:
             continue
 
+        # Mythril
         if tool == 'mythril':
             for issue in data['analysis'].get('issues', []):
                 title = str(issue.get('title', '')).lower()
@@ -68,6 +69,7 @@ def getResultVulnarable(contract_name):
                     if issue.get('lineno'):
                         lines.add(issue['lineno'])
 
+        # Slither — مهم‌ترین
         elif tool == 'slither':
             for result in data.get('analysis', []):
                 check = str(result.get('check', '')).lower()
@@ -78,6 +80,7 @@ def getResultVulnarable(contract_name):
                         if 'lines' in mapping:
                             lines.update(mapping['lines'])
 
+        # Securify
         elif tool == 'securify':
             for contract in data['analysis']:
                 results = data['analysis'][contract].get('results', {})
@@ -86,6 +89,7 @@ def getResultVulnarable(contract_name):
                         res = True
                         lines.update([l + 1 for l in results[vuln].get('violations', [])])
 
+        # Smartcheck
         elif tool == 'smartcheck':
             for issue in data['analysis']:
                 name = str(issue.get('name', '')).lower()
@@ -97,7 +101,7 @@ def getResultVulnarable(contract_name):
     return res, list(lines)
 
 
-# ==================== استخراج فانکشن‌ها با خطوط ====================
+# ==================== استخراج فانکشن + توکن‌سازی + وکتوریزه ====================
 def extract_functions_with_bodies(contract_code):
     functions = []
     pattern = re.compile(
@@ -129,7 +133,6 @@ def extract_functions_with_bodies(contract_code):
     return functions
 
 
-# ==================== توکن‌سازی و وکتوریزه ====================
 def tokenize_solidity_code(code):
     pattern = r'\b(?:function|returns|uint256|internal|constant|assert|return|require|if|else|for|while)\b|[=<>!*&|()+\-;/\}]|\b[a-zA-Z_][a-zA-Z0-9_]*\b'
     return re.findall(pattern, code)
@@ -140,19 +143,12 @@ def vectorize_tokens(tokens):
     if not tokens:
         return np.zeros((sequence_length, vector_length), dtype='float32')
     model = Word2Vec([tokens], vector_size=vector_length, window=5, min_count=1, workers=4)
-    vecs = []
-    for t in tokens:
-        if t in model.wv:
-            vecs.append(model.wv[t])
-        else:
-            vecs.append(np.zeros(vector_length))
-    # پدینگ
+    vecs = [model.wv[t] if t in model.wv else np.zeros(vector_length) for t in tokens]
     if len(vecs) < sequence_length:
         vecs += [np.zeros(vector_length)] * (sequence_length - len(vecs))
     return np.array(vecs[:sequence_length], dtype='float32')
 
 
-# ==================== لیبل‌گذاری و دسته‌بندی ====================
 def label_functions_by_vulnerable_lines(functions, vulnerable_lines):
     for func in functions:
         if vulnerable_lines and any(func['start_line'] <= line <= func['end_line'] for line in vulnerable_lines):
@@ -160,8 +156,8 @@ def label_functions_by_vulnerable_lines(functions, vulnerable_lines):
 
 
 def contains_sensitive_operator(body):
-    ops = ['call', 'delegatecall', 'send', 'transfer', 'selfdestruct']
-    return any(op in body for op in ops)
+    sensitive_ops = ['call', 'delegatecall', 'send', 'transfer', 'selfdestruct']
+    return any(op in body for op in sensitive_ops)
 
 
 # ==================== پردازش دسته‌ای ====================
@@ -169,6 +165,8 @@ def process_batch(files, batch_index):
     X_vul, Y_vul = [], []
     X_sens, Y_sens = [], []
     X_safe, Y_safe = [], []
+
+    print(f"پردازش دسته {batch_index + 1} — {len(files)} قرارداد")
 
     for file_path in files:
         if not file_path.endswith(".sol"):
@@ -216,11 +214,12 @@ def process_batch(files, batch_index):
             path = os.path.join(CACHE_DIR, f"{name}_batch_{batch_index}.pkl")
             with open(path, 'wb') as f:
                 pickle.dump((np.array(X_data), np.array(Y_data)), f)
-            print(f"ذخیره شد → {name}: {len(X_data)} نمونه → {path}")
+            print(f"ذخیره شد → {name}: {len(X_data)} نمونه")
 
 
-# ==================== آموزش LSTM خیلی ساده ====================
+# ==================== آموزش LSTM ساده ====================
 def train_simple_lstm():
+    print("بارگذاری داده‌های پیش‌پردازش شده...")
     X_list, Y_list = [], []
     for pkl_file in Path(CACHE_DIR).glob("*.pkl"):
         with open(pkl_file, 'rb') as f:
@@ -230,7 +229,7 @@ def train_simple_lstm():
 
     X = np.vstack(X_list)
     Y = np.hstack(Y_list)
-    print(f"\nداده بارگذاری شد → X.shape: {X.shape} | Vulnerable: {Y.sum()} ({Y.sum() / len(Y) * 100:.2f}%)")
+    print(f"دیتاست نهایی → X.shape: {X.shape} | Vulnerable: {Y.sum()} ({Y.sum() / len(Y) * 100:.2f}%)")
 
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42, stratify=Y)
 
@@ -241,11 +240,15 @@ def train_simple_lstm():
         Dense(1, activation='sigmoid')
     ])
 
-    model.compile(optimizer=Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
+    model.compile(
+        optimizer=Adam(learning_rate=0.001),
+        loss='binary_crossentropy',
+        metrics=['accuracy']
+    )
 
     early_stopping = EarlyStopping(monitor='val_accuracy', patience=8, restore_best_weights=True, mode='max')
 
-    print("شروع آموزش LSTM ساده...")
+    print("شروع آموزش LSTM ساده (Baseline برای مقایسه با U-Net+LSTM)...")
     history = model.fit(
         X_train, Y_train,
         epochs=100,
@@ -255,24 +258,27 @@ def train_simple_lstm():
         verbose=2
     )
 
+    # ارزیابی
     Y_pred = (model.predict(X_test) > 0.5).astype(int)
     acc = accuracy_score(Y_test, Y_pred)
     print(f"\nSimple LSTM Accuracy: {acc:.4f}")
     print(classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable']))
 
     model.save('/content/simple_lstm_baseline_70.h5')
-    print("مدل ساده ذخیره شد — آماده برای ترکیب با U-Net!")
+    print("مدل ذخیره شد: /content/simple_lstm_baseline_70.h5")
+    print("آماده برای ترکیب با U-Net و بهبود 8–10 درصدی!")
 
 
+# ==================== اجرا ====================
 if __name__ == "__main__":
     if any(Path(CACHE_DIR).glob("*.pkl")):
-
+        print("داده‌های پیش‌پردازش شده پیدا شد → مستقیم آموزش LSTM ساده")
         train_simple_lstm()
     else:
+        print("شروع پیش‌پردازش با sequence_length = 70")
         all_files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
         print(f"تعداد کل قراردادها: {len(all_files)}")
         for i in range(0, len(all_files), batch_size):
             batch_files = all_files[i:i + batch_size]
-            print(f"پردازش دسته {i // batch_size + 1} — {len(batch_files)} قرارداد")
             process_batch(batch_files, i // batch_size)
-        print("پیش‌پردازش تمام شد! دوباره اجرا کن تا مدل آموزش ببیند.")
+        print("پیش‌پردازش تمام شد! دوباره این سلول رو اجرا کن تا مدل آموزش ببیند.")
