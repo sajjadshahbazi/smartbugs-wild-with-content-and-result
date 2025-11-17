@@ -59,7 +59,8 @@ target_vulner = target_vulnerability_reentrancy
 
 ROOT = '/content/smartbugs-wild-with-content-and-result' # Linux
 # CACHE_DIR = os.path.join(ROOT, 'vectorcollections01') # Linux
-CACHE_DIR = '/content/drive/MyDrive/vectorcollections01'
+# CACHE_DIR = '/content/drive/MyDrive/vectorcollections01'
+CACHE_DIR = '/content/vectorcollections01'
 os.makedirs(CACHE_DIR, exist_ok=True)
 print(f"Cache directory created: {CACHE_DIR}")
 
