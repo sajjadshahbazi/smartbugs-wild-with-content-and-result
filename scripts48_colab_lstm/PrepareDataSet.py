@@ -21,7 +21,7 @@ ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 # پوشه vectorcollections01 در مسیر اصلی پروژه
 CACHE_DIR = os.path.join(ROOT, 'vectorcollections01')
 os.makedirs(CACHE_DIR, exist_ok=True)
-
+ROOT_PROJECT = '/content/smartbugs-wild-with-content-and-result'
 # مسیر قراردادها
 PATH = os.path.join(ROOT, 'contracts')
 if not os.path.exists(PATH):
