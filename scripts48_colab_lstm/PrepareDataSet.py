@@ -13,91 +13,43 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.metrics import accuracy_score, classification_report
 import matplotlib.pyplot as plt
+from sklearn.metrics import accuracy_score, classification_report, precision_score, recall_score, f1_score, confusion_matrix
 
 # ==================== تنظیمات اصلی ====================
+ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+
+# پوشه vectorcollections01 در مسیر اصلی پروژه
+CACHE_DIR = os.path.join(ROOT, 'vectorcollections01')
+os.makedirs(CACHE_DIR, exist_ok=True)
+
+# مسیر قراردادها
+PATH = os.path.join(ROOT, 'contracts')
+if not os.path.exists(PATH):
+    raise FileNotFoundError(f"پوشه قراردادها پیدا نشد: {PATH}\nلطفاً پوشه contracts رو در کنار این فایل قرار بده.")
+
+print(f"پروژه در: {ROOT}")
+print(f"کش در: {CACHE_DIR}")
+print(f"قراردادها در: {PATH}")
+
+# ==================== تنظیمات ====================
 sequence_length = 70
 vector_length = 300
 batch_size = 1000
-CACHE_DIR = '/content/vectorcollections01'
-ROOT = '/content/smartbugs-wild-with-content-and-result'
-PATH = os.path.join(ROOT, 'contracts')
 output_name = 'icse20'
 
-os.makedirs(CACHE_DIR, exist_ok=True)
 
-# ==================== اضافه شده: مدل Word2Vec جهانی (فقط یک بار ساخته میشه) ====================
-global_word2vec_model = None  # مدل جهانی
-
-
-def build_global_word2vec_once():
-    global global_word2vec_model
-    if global_word2vec_model is not None:
-        return  # اگر قبلاً ساخته شده، دیگه نساز
-
-    print("در حال ساخت مدل Word2Vec جهانی (فقط یک بار)...")
-    all_tokens = []
-    sample_files = list(Path(PATH).glob("*.sol"))[:5000]  # فقط 5000 قرارداد برای سرعت (کافیه!)
-    for file_path in sample_files:
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                code = f.read()
-            fragments = PreProcessTools.get_fragments(code)
-            for frag in fragments:
-                if frag.strip():
-                    tokens = tokenize_solidity_code(frag)
-                    if tokens:
-                        all_tokens.append(tokens)
-        except:
-            continue
-
-    from gensim.models import Word2Vec
-    global_word2vec_model = Word2Vec(
-        sentences=all_tokens,
-        vector_size=vector_length,
-        window=7,
-        min_count=1,
-        workers=8,
-        epochs=5
-    )
-    print(f"مدل Word2Vec جهانی ساخته شد! واژگان: {len(global_word2vec_model.wv)}")
-
-
-# فراخوانی یک بار در ابتدای پردازش
-build_global_word2vec_once()  # فقط یک بار اجرا میشه
-
-
-# ==================== تابع vectorize_tokens اصلاح شده (سریع و درست) ====================
-def vectorize_tokens(tokens):
-    if not tokens:
-        return np.zeros((sequence_length, vector_length), dtype='float32')
-
-    vecs = []
-    for t in tokens:
-        if t in global_word2vec_model.wv:
-            vecs.append(global_word2vec_model.wv[t])
-        else:
-            vecs.append(np.zeros(vector_length))
-
-    # پدینگ
-    if len(vecs) < sequence_length:
-        vecs += [np.zeros(vector_length)] * (sequence_length - len(vecs))
-    return np.array(vecs[:sequence_length], dtype='float32')
-
-
-# ==================== بقیه کد تو دقیقاً بدون تغییر ====================
-# (همه چیز مثل قبل کار می‌کنه، فقط vectorize_tokens حالا از مدل جهانی استفاده می‌کنه)
-
+# ==================== تشخیص Reentrancy قوی ====================
 def getResultVulnarable(contract_name):
     res = False
     lines = set()
     tools = ['mythril', 'slither', 'securify', 'smartcheck']
 
     for tool in tools:
-        path = os.path.join(ROOT, 'results', tool, output_name, contract_name, 'result.json')
-        if not os.path.exists(path):
+        result_path = os.path.join(ROOT, 'results', tool, output_name, contract_name, 'result.json')
+        if not os.path.exists(result_path):
             continue
         try:
-            with open(path, 'r', encoding='utf-8') as f:
+            with open(result_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
         except:
             continue
@@ -106,41 +58,32 @@ def getResultVulnarable(contract_name):
 
         if tool == 'mythril':
             for issue in data['analysis'].get('issues', []):
-                title = str(issue.get('title', '')).lower()
-                if 'reentrancy' in title or 'reentrant' in title:
+                if 'reentrancy' in str(issue.get('title', '')).lower():
                     res = True
                     if issue.get('lineno'):
                         lines.add(issue['lineno'])
-
         elif tool == 'slither':
             for result in data.get('analysis', []):
-                check = str(result.get('check', '')).lower()
-                if 'reentrancy' in check:
+                if 'reentrancy' in str(result.get('check', '')).lower():
                     res = True
                     for elem in result.get('elements', []):
-                        mapping = elem.get('source_mapping', {})
-                        if 'lines' in mapping:
-                            lines.update(mapping['lines'])
-
+                        lines.update(elem.get('source_mapping', {}).get('lines', []))
         elif tool == 'securify':
             for contract in data['analysis']:
-                results = data['analysis'][contract].get('results', {})
-                for vuln in results:
+                for vuln in data['analysis'][contract].get('results', {}):
                     if 'reentrancy' in vuln.lower():
                         res = True
-                        lines.update([l + 1 for l in results[vuln].get('violations', [])])
-
+                        lines.update([l + 1 for l in data['analysis'][contract]['results'][vuln].get('violations', [])])
         elif tool == 'smartcheck':
             for issue in data['analysis']:
-                name = str(issue.get('name', '')).lower()
-                if 'reentrancy' in name:
+                if 'reentrancy' in str(issue.get('name', '')).lower():
                     res = True
                     if issue.get('line'):
                         lines.add(issue['line'])
-
     return res, list(lines)
 
 
+# ==================== استخراج فانکشن‌ها ====================
 def extract_functions_with_bodies(contract_code):
     functions = []
     pattern = re.compile(
@@ -172,9 +115,20 @@ def extract_functions_with_bodies(contract_code):
     return functions
 
 
+# ==================== توکن‌سازی و وکتوریزه ====================
 def tokenize_solidity_code(code):
     pattern = r'\b(?:function|returns|uint256|internal|constant|assert|return|require|if|else|for|while)\b|[=<>!*&|()+\-;/\}]|\b[a-zA-Z_][a-zA-Z0-9_]*\b'
     return re.findall(pattern, code)
+
+
+def vectorize_tokens(tokens):
+    from gensim.models import Word2Vec
+    if not tokens:
+        return np.zeros((sequence_length, vector_length), dtype='float32')
+    model = Word2Vec([tokens], vector_size=vector_length, window=5, min_count=1, workers=4)
+    vecs = [model.wv[t] if t in model.wv else np.zeros(vector_length) for t in tokens]
+    vecs += [np.zeros(vector_length)] * (sequence_length - len(vecs))
+    return np.array(vecs[:sequence_length], dtype='float32')
 
 
 def label_functions_by_vulnerable_lines(functions, vulnerable_lines):
@@ -184,20 +138,22 @@ def label_functions_by_vulnerable_lines(functions, vulnerable_lines):
 
 
 def contains_sensitive_operator(body):
-    ops = ['call', 'delegatecall', 'send', 'transfer', 'selfdestruct']
-    return any(op in body for op in ops)
+    return any(op in body for op in ['call', 'delegatecall', 'send', 'transfer', 'selfdestruct'])
 
 
+# ==================== پردازش دسته‌ای ====================
 def process_batch(files, batch_index):
     X_vul, Y_vul = [], []
     X_sens, Y_sens = [], []
     X_safe, Y_safe = [], []
 
+    print(f"پردازش دسته {batch_index + 1} — {len(files)} قرارداد")
+
     for file_path in files:
         if not file_path.endswith(".sol"):
             continue
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                 code = f.read()
         except:
             continue
@@ -214,7 +170,7 @@ def process_batch(files, batch_index):
                 if frag.strip():
                     tokens = tokenize_solidity_code(frag)
                     if tokens:
-                        vecs = vectorize_tokens(tokens)  # حالا از مدل جهانی استفاده می‌کنه
+                        vecs = vectorize_tokens(tokens)
                         func_vectors.extend(vecs)
             if func_vectors:
                 padded = pad_sequences([func_vectors], maxlen=sequence_length, padding='post', dtype='float32')[0]
@@ -229,6 +185,7 @@ def process_batch(files, batch_index):
                     X_safe.append(padded)
                     Y_safe.append(0)
 
+    # ذخیره در vectorcollections01 (مسیر اصلی پروژه)
     for name, X_data, Y_data in [
         ("vulnerable", X_vul, Y_vul),
         ("sensitive_negative", X_sens, Y_sens),
@@ -241,19 +198,26 @@ def process_batch(files, batch_index):
             print(f"ذخیره شد → {name}: {len(X_data)} نمونه → {path}")
 
 
-def train_simple_lstm():
-    X_list, Y_list = [], []
-    for pkl_file in Path(CACHE_DIR).glob("*.pkl"):
-        with open(pkl_file, 'rb') as f:
-            X_batch, Y_batch = pickle.load(f)
-            X_list.append(X_batch)
-            Y_list.append(Y_batch)
+def load_batches(folder, file_extension=".pkl"):
+    X_batches, Y_batches = [], []
+    for file in os.listdir(folder):
+        if file.endswith(file_extension):
+            with open(os.path.join(folder, file), 'rb') as f:
+                X, Y = pickle.load(f)
+                if X.shape[1] != sequence_length:
+                    X = pad_sequences(X, maxlen=sequence_length, padding='post', dtype='float32')
+                X_batches.append(X)
+                Y_batches.append(Y)
+    return np.vstack(X_batches), np.hstack(Y_batches)
 
-    X = np.vstack(X_list)
-    Y = np.hstack(Y_list)
-    print(f"\nداده بارگذاری شد → X.shape: {X.shape} | Vulnerable: {Y.sum()} ({Y.sum() / len(Y) * 100:.2f}%)")
 
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42, stratify=Y)
+def train_LSTM():
+    X, Y = load_batches(CACHE_DIR, file_extension=".pkl")
+    print(f"Shape of X: {X.shape}")
+    print(f"Shape of Y: {Y.shape}")
+    print("Distribution in Y:", np.unique(Y, return_counts=True))
+
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
 
     model = Sequential([
         Input(shape=(sequence_length, vector_length)),
@@ -262,38 +226,59 @@ def train_simple_lstm():
         Dense(1, activation='sigmoid')
     ])
 
-    model.compile(optimizer=Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=Adam(0.001), loss='binary_crossentropy', metrics=['accuracy'])
 
-    early_stopping = EarlyStopping(monitor='val_accuracy', patience=8, restore_best_weights=True, mode='max')
+    early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
 
-    print("شروع آموزش LSTM ساده...")
-    history = model.fit(
-        X_train, Y_train,
-        epochs=100,
-        batch_size=128,
-        validation_split=0.2,
-        callbacks=[early_stopping],
-        verbose=2
-    )
+    print("آموزش LSTM ساده شروع شد...")
+    history = model.fit(X_train, Y_train, epochs=100, batch_size=128, validation_split=0.2,
+                        callbacks=[early_stopping], verbose=2)
 
-    Y_pred = (model.predict(X_test) > 0.5).astype(int)
-    acc = accuracy_score(Y_test, Y_pred)
-    print(f"\nSimple LSTM Accuracy: {acc:.4f}")
-    print(classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable']))
+    # ==================== رسم و ذخیره نمودار در مسیر اصلی پروژه ====================
+    plot_path = os.path.join(ROOT, 'lstm_training_plot.png')  # ذخیره در root پروژه
+    plt.figure(figsize=(12, 8))
+    plt.plot(history.history['accuracy'], label='Train Accuracy', color='blue', linewidth=2.5)
+    plt.plot(history.history['val_accuracy'], label='Validation Accuracy', color='orange', linewidth=2.5)
+    plt.plot(history.history['loss'], label='Train Loss', color='red', linewidth=2.5)
+    plt.plot(history.history['val_loss'], label='Validation Loss', color='green', linewidth=2.5)
+    plt.title('LSTM Model - Training & Validation Metrics', fontsize=16, fontweight='bold')
+    plt.xlabel('Epochs', fontsize=14)
+    plt.ylabel('Value', fontsize=14)
+    plt.legend(fontsize=12)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+    plt.show()
+    print(f"نمودار با موفقیت ذخیره شد در:\n   {plot_path}")
 
-    model.save('/content/simple_lstm_baseline_70.h5')
-    print("مدل ساده ذخیره شد — آماده برای ترکیب با U-Net!")
+    # ==================== پیش‌بینی و محاسبه معیارها ====================
+    Y_pred_proba = model.predict(X_test)
+    Y_pred = (Y_pred_proba > 0.5).astype(int).flatten()
 
+    accuracy = accuracy_score(Y_test, Y_pred)
+    precision = precision_score(Y_test, Y_pred)
+    recall = recall_score(Y_test, Y_pred)
+    f1 = f1_score(Y_test, Y_pred)
+    cm = confusion_matrix(Y_test, Y_pred)
+
+    print("\n" + "="*70)
+    print("                نتایج نهایی مدل LSTM ساده")
+    print("="*70)
+    print(f"Accuracy           : {accuracy:.4f}")
+    print(f"Precision          : {precision:.4f}")
+    print(f"Recall             : {recall:.4f}")
+    print(f"F1-Score           : {f1:.4f}")
+    print("="*70)
+    print(classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable'], digits=4))
+    print("="*70)
+    print("Confusion Matrix:")
+    print(cm)
+    print("="*70)
+
+    # ذخیره مدل
+    model_path = os.path.join(ROOT, 'simple_lstm_model.h5')
+    model.save(model_path)
+    print(f"مدل ذخیره شد در:\n   {model_path}")
 
 if __name__ == "__main__":
-    if any(Path(CACHE_DIR).glob("*.pkl")):
-        print("داده‌های پیش‌پردازش شده موجوده → مستقیم آموزش شروع میشه")
-        train_simple_lstm()
-    else:
-        all_files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
-        print(f"تعداد کل قراردادها: {len(all_files)}")
-        for i in range(0, len(all_files), batch_size):
-            batch_files = all_files[i:i + batch_size]
-            print(f"پردازش دسته {i // batch_size + 1} — {len(batch_files)} قرارداد")
-            process_batch(batch_files, i // batch_size)
-        print("پیش‌پردازش تمام شد! دوباره اجرا کن تا مدل آموزش ببینه.")
+    train_LSTM()
