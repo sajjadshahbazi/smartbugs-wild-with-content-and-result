@@ -198,87 +198,91 @@ def process_batch(files, batch_index):
             print(f"ذخیره شد → {name}: {len(X_data)} نمونه → {path}")
 
 
-def load_batches(folder, file_extension=".pkl"):
-    X_batches, Y_batches = [], []
-    for file in os.listdir(folder):
-        if file.endswith(file_extension):
-            with open(os.path.join(folder, file), 'rb') as f:
-                X, Y = pickle.load(f)
-                if X.shape[1] != sequence_length:
-                    X = pad_sequences(X, maxlen=sequence_length, padding='post', dtype='float32')
-                X_batches.append(X)
-                Y_batches.append(Y)
-    return np.vstack(X_batches), np.hstack(Y_batches)
+def load_all_data():
+    X_list, Y_list = [], []
+    print("در حال بارگذاری دیتاست...")
 
+    # بارگذاری vulnerable_batch_0 تا vulnerable_batch_47
+    for i in range(48):
+        file = Path(CACHE_DIR) / f"vulnerable_batch_{i}.pkl"
+        if file.exists():
+            with open(file, 'rb') as f:
+                X_batch, Y_batch = pickle.load(f)
+                X_list.append(X_batch)
+                Y_list.append(Y_batch)
+        else:
+            print(f"فایل {file.name} پیدا نشد!")
 
-def train_LSTM():
-    X, Y = load_batches(CACHE_DIR, file_extension=".pkl")
-    print(f"Shape of X: {X.shape}")
-    print(f"Shape of Y: {Y.shape}")
-    print("Distribution in Y:", np.unique(Y, return_counts=True))
+    # بارگذاری sensitive_negative_batch
+    for file in Path(CACHE_DIR).glob("sensitive_negative_batch_*.pkl"):
+        with open(file, 'rb') as f:
+            X_batch, Y_batch = pickle.load(f)
+            X_list.append(X_batch)
+            Y_list.append(Y_batch)
 
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+    X = np.vstack(X_list)
+    Y = np.hstack(Y_list)
+    print(f"دیتاست بارگذاری شد → X.shape: {X.shape}")
+    print(f"Vulnerable: {Y.sum()} ({Y.sum()/len(Y)*100:.2f}%)")
+    return X, Y
+
+def train_simple_lstm():
+    X, Y = load_all_data()
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42, stratify=Y)
 
     model = Sequential([
-        Input(shape=(sequence_length, vector_length)),
+        Input(shape=(70, 300)),
         LSTM(64),
         Dropout(0.5),
         Dense(1, activation='sigmoid')
     ])
 
     model.compile(optimizer=Adam(0.001), loss='binary_crossentropy', metrics=['accuracy'])
+    early = EarlyStopping(monitor='val_accuracy', patience=10, restore_best_weights=True, mode='max')
 
-    early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+    print("\nآموزش LSTM ساده شروع شد...")
+    history = model.fit(X_train, Y_train, epochs=100, batch_size=128,
+                        validation_split=0.2, callbacks=[early], verbose=2)
 
-    print("آموزش LSTM ساده شروع شد...")
-    history = model.fit(X_train, Y_train, epochs=100, batch_size=128, validation_split=0.2,
-                        callbacks=[early_stopping], verbose=2)
-
-    # ==================== رسم و ذخیره نمودار در مسیر اصلی پروژه ====================
-    plot_path = os.path.join(ROOT, 'lstm_training_plot.png')  # ذخیره در root پروژه
+    # ذخیره نمودار در مسیر اصلی پروژه
+    plot_path = os.path.join(ROOT_PROJECT, 'lstm_training_plot.png')
     plt.figure(figsize=(12, 8))
-    plt.plot(history.history['accuracy'], label='Train Accuracy', color='blue', linewidth=2.5)
-    plt.plot(history.history['val_accuracy'], label='Validation Accuracy', color='orange', linewidth=2.5)
-    plt.plot(history.history['loss'], label='Train Loss', color='red', linewidth=2.5)
-    plt.plot(history.history['val_loss'], label='Validation Loss', color='green', linewidth=2.5)
-    plt.title('LSTM Model - Training & Validation Metrics', fontsize=16, fontweight='bold')
-    plt.xlabel('Epochs', fontsize=14)
-    plt.ylabel('Value', fontsize=14)
+    plt.plot(history.history['accuracy'], label='Train Accuracy', linewidth=3)
+    plt.plot(history.history['val_accuracy'], label='Validation Accuracy', linewidth=3)
+    plt.plot(history.history['loss'], label='Train Loss', linewidth=3)
+    plt.plot(history.history['val_loss'], label='Validation Loss', linewidth=3)
+    plt.title('Simple LSTM - Training & Validation', fontsize=16, fontweight='bold')
+    plt.xlabel('Epoch')
+    plt.ylabel('Value')
     plt.legend(fontsize=12)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(plot_path, dpi=300, bbox_inches='tight')
     plt.show()
-    print(f"نمودار با موفقیت ذخیره شد در:\n   {plot_path}")
+    print(f"نمودار ذخیره شد: {plot_path}")
 
-    # ==================== پیش‌بینی و محاسبه معیارها ====================
-    Y_pred_proba = model.predict(X_test)
-    Y_pred = (Y_pred_proba > 0.5).astype(int).flatten()
+    # پیش‌بینی و ارزیابی
+    Y_pred = (model.predict(X_test) > 0.5).astype(int).flatten()
 
     accuracy = accuracy_score(Y_test, Y_pred)
     precision = precision_score(Y_test, Y_pred)
     recall = recall_score(Y_test, Y_pred)
     f1 = f1_score(Y_test, Y_pred)
-    cm = confusion_matrix(Y_test, Y_pred)
 
     print("\n" + "="*70)
-    print("                نتایج نهایی مدل LSTM ساده")
+    print("                 نتایج نهایی مدل LSTM ساده")
     print("="*70)
     print(f"Accuracy           : {accuracy:.4f}")
     print(f"Precision          : {precision:.4f}")
     print(f"Recall             : {recall:.4f}")
     print(f"F1-Score           : {f1:.4f}")
     print("="*70)
-    print(classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable'], digits=4))
-    print("="*70)
-    print("Confusion Matrix:")
-    print(cm)
+    print(classification_report(Y_test, Y_pred, target_names=['Non-Vulnerable', 'Vulnerable'], digits=4))
     print("="*70)
 
-    # ذخیره مدل
-    model_path = os.path.join(ROOT, 'simple_lstm_model.h5')
-    model.save(model_path)
-    print(f"مدل ذخیره شد در:\n   {model_path}")
+    model.save(os.path.join(ROOT_PROJECT, 'simple_lstm_final.h5'))
+    print(f"مدل ذخیره شد در: {os.path.join(ROOT_PROJECT, 'simple_lstm_final.h5')}")
 
+# اجرا
 if __name__ == "__main__":
-    train_LSTM()
+    train_simple_lstm()
