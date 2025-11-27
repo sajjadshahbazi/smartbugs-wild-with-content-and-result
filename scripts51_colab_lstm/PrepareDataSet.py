@@ -57,7 +57,7 @@ target_vulner = target_vulnerability_reentrancy
 # CACHE_DIR = os.path.join(ROOT, 'vectorcollections')
 
 ROOT = '/content/smartbugs-wild-with-content-and-result' # Linux
-CACHE_DIR = os.path.join(ROOT, 'vectorcollections02') # Linux
+CACHE_DIR = os.path.join(ROOT, 'vectorcollections') # Linux
 
 cache_path = os.path.join(CACHE_DIR, 'tokenized_fragments.pkl')
 vulnerability_fd = open(os.path.join(ROOT, 'metadata', 'vulnerabilities.csv'), 'w', encoding='utf-8')
@@ -219,7 +219,7 @@ def save_to_file(data, file_prefix, cache_dir, batch_size, batch_index):
 
     # ذخیره داده‌ها به صورت فایل‌های جداگانه در CACHE_DIR
     for i in range(0, len(data), batch_size):
-        batch = data[i:i + batch_size]
+        batch = data[i:i + batch_size)
         filename = f"{file_prefix}_batch_{batch_index}_{i // batch_size}.pkl"  # نام‌گذاری دسته‌بندی‌شده
         filepath = os.path.join(cache_dir, filename)
         with open(filepath, 'wb') as f:
