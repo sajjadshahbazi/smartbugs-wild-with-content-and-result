@@ -219,7 +219,7 @@ def save_to_file(data, file_prefix, cache_dir, batch_size, batch_index):
 
     # ذخیره داده‌ها به صورت فایل‌های جداگانه در CACHE_DIR
     for i in range(0, len(data), batch_size):
-        batch = data[i:i + batch_size)
+        batch = data[i:i + batch_size]
         filename = f"{file_prefix}_batch_{batch_index}_{i // batch_size}.pkl"  # نام‌گذاری دسته‌بندی‌شده
         filepath = os.path.join(cache_dir, filename)
         with open(filepath, 'wb') as f:
