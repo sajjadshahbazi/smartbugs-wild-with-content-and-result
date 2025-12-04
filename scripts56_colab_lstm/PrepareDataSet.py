@@ -3,7 +3,8 @@ import re
 import os
 from pathlib import Path
 
-import sns
+import seaborn as sns
+
 from imblearn.over_sampling import SMOTE
 import pandas as pd
 from tensorflow.keras.preprocessing.sequence import pad_sequences
