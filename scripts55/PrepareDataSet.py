@@ -24,7 +24,15 @@ from tensorflow.keras.optimizers import Adam
 import tensorflow as tf
 from tensorflow.python.platform import build_info as tf_build_info
 from tensorflow.keras.layers import Input
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, UpSampling2D, concatenate, Flatten, Dense, Bidirectional, LSTM, Input
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import EarlyStopping
 import matplotlib.pyplot as plt
+from sklearn.metrics import classification_report, accuracy_score
+
+
+
 
 duration_stat = {}
 count = {}
@@ -41,7 +49,7 @@ tool_stat = {}
 tool_category_stat = {}
 total_duration = 0
 contract_vulnerabilities = {}
-sequence_length = 10
+sequence_length = 70
 vulnerability_mapping = {}
 
 tools = ['mythril', 'slither', 'osiris', 'smartcheck', 'manticore', 'maian', 'securify',
@@ -58,10 +66,6 @@ target_vulner = target_vulnerability_reentrancy
 
 ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 CACHE_DIR = os.path.join(ROOT, 'vectorcollections')
-
-# ROOT = '/content/smartbugs-wild-with-content-and-result' # Linux
-# CACHE_DIR = os.path.join(ROOT, 'vectorcollections') # Linux
-
 cache_path = os.path.join(CACHE_DIR, 'tokenized_fragments.pkl')
 vulnerability_fd = open(os.path.join(ROOT, 'metadata', 'vulnerabilities.csv'), 'w', encoding='utf-8')
 
@@ -69,11 +73,20 @@ PATH = f"{ROOT}\\contracts\\"  # main data set
 # PATH = f"{ROOT}\\contract\\"  # part of main data set
 # PATH = f"{ROOT}\\contra\\"  # one smart contract
 
-# PATH = os.path.join(ROOT, 'contracts') # linux
+# PATH = os.path.join(ROOT, 'contract') # linux
 os.chdir(PATH)
 
 final_df = pd.DataFrame(columns=['X', 'Y'])
 
+
+def focal_loss(alpha=0.25, gamma=2.0):
+    def loss(y_true, y_pred):
+        epsilon = K.epsilon()  # جلوگیری از log(0)
+        y_pred = K.clip(y_pred, epsilon, 1. - epsilon)
+        pt = y_true * y_pred + (1 - y_true) * (1 - y_pred)  # احتمال پیش‌بینی صحیح
+        return -K.mean(alpha * K.pow(1. - pt, gamma) * K.log(pt))  # فرمول Focal Loss
+
+    return loss
 
 
 def is_sentence_in_text(sentence, text):
@@ -82,8 +95,6 @@ def is_sentence_in_text(sentence, text):
     text = re.sub(r'[^a-z ]', '', text)
     flg = sentence in text
     return flg
-
-
 
 def load_batches(folder, file_extension=".pkl"):
     X_batches, Y_batches = [], []
@@ -101,8 +112,8 @@ def getResultVulnarable(contract_name, target_vulnerability):
     res = False
     lines = []
     for tool in tools:
-        # path_result = os.path.join(f"{ROOT}\\results\\", tool, output_name, contract_name, 'result.json')
-        path_result = os.path.join(f"{ROOT}results", tool, output_name, contract_name, 'result.json') # Linux
+        path_result = os.path.join(f"{ROOT}\\results\\", tool, output_name, contract_name, 'result.json')
+        # path_result = os.path.join(f"{ROOT}results", tool, output_name, contract_name, 'result.json') Linux
         if not os.path.exists(path_result):
             continue
         with open(path_result, 'r', encoding='utf-8') as fd:
@@ -208,9 +219,6 @@ def getResultVulnarable(contract_name, target_vulnerability):
 SENSITIVE_OPERATORS_REETRANCY = ['call', 'delegatecall', 'send', 'transfer', 'selfdestruct']
 
 def contains_sensitive_operator(function_body):
-    """
-    بررسی می‌کند که آیا فانکشن شامل عملگرهای حساس است یا خیر.
-    """
     for operator in SENSITIVE_OPERATORS_REETRANCY:
         if operator in function_body:
             return True
@@ -219,8 +227,6 @@ def contains_sensitive_operator(function_body):
 
 def save_to_file(data, file_prefix, cache_dir, batch_size, batch_index):
     os.makedirs(cache_dir, exist_ok=True)  # اطمینان از وجود پوشه CACHE_DIR
-
-    # ذخیره داده‌ها به صورت فایل‌های جداگانه در CACHE_DIR
     for i in range(0, len(data), batch_size):
         batch = data[i:i + batch_size]
         filename = f"{file_prefix}_batch_{batch_index}_{i // batch_size}.pkl"  # نام‌گذاری دسته‌بندی‌شده
@@ -230,69 +236,42 @@ def save_to_file(data, file_prefix, cache_dir, batch_size, batch_index):
         print(f"Saved batch to {filepath}")
 
 def extract_functions(code):
-    """
-    استخراج فانکشن‌ها از کد Solidity.
-    این تابع فانکشن‌هایی که با 'function' شروع می‌شوند را شناسایی کرده
-    و آنها را به صورت یک لیست برمی‌گرداند.
-
-    :param code: کد کامل قرارداد به عنوان یک رشته (string).
-    :return: لیستی از فانکشن‌ها که هرکدام به صورت یک رشته هستند.
-    """
     functions = []
 
     # الگوی regex برای شناسایی فانکشن‌ها
     function_pattern = re.compile(
         r'function\s+\w+\s*\(.*\)\s*(public|private|internal|external)*\s*(view|pure)*\s*(returns\s*\(.*\))?\s*{')
 
-    # جستجو برای تمام فانکشن‌ها
     matches = function_pattern.finditer(code)
-
-    # پیدا کردن ابتدای هر فانکشن و استخراج آن
     for match in matches:
         function_start = match.start()
         function_end = code.find('}', function_start) + 1
 
         if function_end != -1:
             functions.append(code[function_start:function_end])
-
     return functions
 
 
-
-# تابعی برای توکن‌سازی کد Solidity
 def tokenize_solidity_code(code):
-    # الگوی اصلاح‌شده برای شناسایی علائم خاص از جمله '}'
     pattern = r'\b(?:function|returns|uint256|internal|constant|assert|return|require|if|else|for|while)\b|[=<>!*&|()+\-;/\}]|\b[a-zA-Z_][a-zA-Z0-9_]*\b'
-
-    # یافتن تمام توکن‌ها با استفاده از الگو
     tokens = re.findall(pattern, code)
-
     return tokens
 
 def normalize_variables(tokens):
     normalized_tokens = []
     for token in tokens:
-        # اگر توکن یک متغیر باشد (که معمولاً با نام‌های متغیرهای غیرکلیدی شروع می‌شود)، آن را نرمال می‌کنیم
         if re.match(r'[a-zA-Z_][a-zA-Z0-9_]*', token) and token not in ['function', 'returns', 'internal', 'constant', 'assert', 'return']:
             normalized_tokens.append('VAR')  # به جای اسم متغیر، 'VAR' قرار می‌دهیم
         elif token in ['}', '{', '(', ')', '[', ']', '.', ';', ',', '+', '-', '=', '!', '?', ':']:
-            # لیست نمادهای خاص که باید حفظ شوند
             normalized_tokens.append(token)
-        elif token.strip() == '':  # برای جلوگیری از ذخیره کردن فضاهای خالی
-            continue  # هیچ کاری انجام ندهید اگر توکن خالی است
+        elif token.strip() == '':
+            continue
         else:
             normalized_tokens.append(token)
     return normalized_tokens
 
 def extract_functions_with_bodies(contract_code):
-    """
-    استخراج فانکشن‌ها از کد Solidity به همراه بدنه و شماره خط شروع و پایان.
-    :param contract_code: متن قرارداد به عنوان یک رشته
-    :return: لیستی از دیکشنری‌ها شامل فانکشن، بدنه، خط شروع و پایان
-    """
     functions = []
-
-    # الگوی regex برای شناسایی تعریف فانکشن‌ها
     function_pattern = re.compile(
         r'function\s+\w+\s*\(.*?\)\s*(public|private|internal|external)?\s*(view|pure)?\s*(returns\s*\(.*?\))?\s*{')
 
@@ -303,7 +282,6 @@ def extract_functions_with_bodies(contract_code):
     start_line = 0
 
     for i, line in enumerate(lines):
-        # اگر در فانکشن نیستیم به دنبال شروع فانکشن بگرد
         if not in_function:
             match = function_pattern.search(line)
             if match:
@@ -315,8 +293,6 @@ def extract_functions_with_bodies(contract_code):
             function_body.append(line)
             open_brackets += line.count('{')
             open_brackets -= line.count('}')
-
-            # اگر تمام براکت‌ها بسته شد، فانکشن پایان یافته است
             if open_brackets == 0:
                 end_line = i + 1  # ثبت شماره خط پایان
                 functions.append({
@@ -330,51 +306,34 @@ def extract_functions_with_bodies(contract_code):
     return functions
 
 def vectorize_tokens(tokens):
-    """
-    تبدیل یک لیست از توکن‌ها به آرایه‌ای از بردارهای ویژگی.
-
-    :param tokens: لیست تک‌بعدی از توکن‌ها
-    :return: آرایه دو‌بعدی (تعداد توکن‌ها × اندازه بردار)
-    """
-    # ایجاد مدل Word2Vec
     word2vec_model = Word2Vec(sentences=[tokens], vector_size=vector_length, window=5, min_count=1, workers=4)
-
-    # تبدیل توکن‌ها به بردارهای Word2Vec
     embeddings = [
         word2vec_model.wv[word] if word in word2vec_model.wv else np.zeros(vector_length)
         for word in tokens
     ]
-
-    # اعمال پدینگ در صورت نیاز
     embeddings = embeddings[:sequence_length] + [np.zeros(vector_length)] * max(0, sequence_length - len(embeddings))
-
-    # تبدیل به آرایه NumPy
     return np.array(embeddings, dtype='float32')
 
 
 def label_functions_by_vulnerable_lines(functions, vulnerable_lines):
     for func in functions:
         if any(func['start_line'] <= line <= func['end_line'] for line in vulnerable_lines):
-            func['label'] = 1  # اگر خط آسیب‌پذیر در فانکشن باشد، لیبل ۱ می‌شود
+            func['label'] = 1
+
 
 def process_batch_with_categorization(files, target_vulnerability, batch_size, batch_index):
     X_sensitive_negative, Y_sensitive_negative = [], []
     X_vulnerable, Y_vulnerable = [], []
     X_safe, Y_safe = [], []
-    max_function_length = 50
 
     sc_files = [f for f in files if f.endswith(".sol")]
     print(f"cont {sc_files.__len__()}")
     for file in sc_files:
         with (open(file, encoding="utf8") as f):
             contract_content = f.read()
-
-            # استخراج فانکشن‌ها و خطوط آسیب‌پذیر
             functions = extract_functions_with_bodies(contract_content)
             name = Path(file).stem
             res, vulnerable_lines = getResultVulnarable(name, target_vulnerability)
-
-            # لیبل‌گذاری
             label_functions_by_vulnerable_lines(functions, vulnerable_lines)
             for func in functions:
                 fragments = PreProcessTools.get_fragments(func['function_body'])
@@ -388,7 +347,7 @@ def process_batch_with_categorization(files, target_vulnerability, batch_size, b
                             vectors = vectorize_tokens(tokens)
                             func_vectors.extend(vectors)
                 if func_vectors:
-                    padded_function = pad_sequences([func_vectors], maxlen=max_function_length, padding='post', dtype='float32')[0]
+                    padded_function = pad_sequences([func_vectors], maxlen=sequence_length, padding='post', dtype='float32')[0]
                     # دسته‌بندی توابع
 
                     if label == 1:
@@ -426,74 +385,233 @@ def process_batch_with_categorization(files, target_vulnerability, batch_size, b
     print(f"Batch saved to {batch_file_vulnerable}, {batch_file_sensitive_negative}", {batch_file_safe})
 
 
-def train_LSTM():
+# def train_LSTM():
+#     X, Y = load_batches(CACHE_DIR, file_extension=".pkl")
+#     print(f"Shape of X: {X.shape}")  # باید (samples, max_function_length, vector_length) باشد
+#     print(f"Shape of Y: {Y.shape}")  # باید (samples,) باشد
+#     print("Distribution in Y:", np.unique(Y, return_counts=True))
+#
+#     # تقسیم داده‌ها به آموزش و تست
+#     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+#     print("Distribution in Y_test:", np.unique(Y_test, return_counts=True))
+#
+#     model = Sequential([
+#         Input(shape=(X_train.shape[1], X_train.shape[2])),
+#         Bidirectional(LSTM(128, return_sequences=True)),
+#         Bidirectional(LSTM(64)),
+#         Dense(1, activation='sigmoid')
+#     ])
+#
+#     model.compile(
+#         optimizer=Adam(learning_rate=0.001),
+#         loss="binary_crossentropy",
+#         metrics=['accuracy']
+#     )
+#
+#     early_stopping = EarlyStopping(
+#         monitor='val_loss',
+#         patience=10,
+#         restore_best_weights=True
+#     )
+#
+#     history = model.fit(
+#         X_train, Y_train,
+#         epochs=50,
+#         batch_size=32,
+#         validation_split=0.2,
+#         callbacks=[early_stopping],  # اضافه کردن Early Stopping
+#         verbose=2
+#     )
+#
+#     plt.figure(figsize=(10, 6))
+#
+#     plt.plot(history.history['accuracy'], label='train acc', color='blue')
+#     plt.plot(history.history['val_accuracy'], label='val acc', color='yellow')
+#
+#     plt.plot(history.history['loss'], label='train loss', color='red')
+#     plt.plot(history.history['val_loss'], label='val loss', color='green')
+#
+#     plt.title('Model Accuracy and Loss')
+#     plt.xlabel('Epochs')
+#     plt.ylabel('Accuracy / Loss')
+#     plt.legend(loc='best')
+#     plt.grid()
+#
+#
+#     output_image_path = "training_plot_lstm.png"
+#     plt.savefig(output_image_path, dpi=300, bbox_inches='tight')
+#     print(f"Plot saved to {output_image_path}")
+#
+#     plt.show()
+#
+#     Y_pred = (model.predict(X_test) > 0.5).astype("int32")
+#
+#     # محاسبه معیارها
+#     accuracy = accuracy_score(Y_test, Y_pred)
+#     report = classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable'], labels=[0, 1])
+#
+#     print(f"Accuracy: {accuracy}")
+#     print("Classification Report:")
+#     print(report)
+#
+#     # ذخیره مدل
+#     model.save('final_LSTM_model.h5')
+#     print("Training complete with LSTM.")
+
+
+def build_unet(input_shape):
+    """
+    ساختار U-Net برای استخراج ویژگی‌ها
+    """
+    inputs = Input(input_shape)
+
+    # Encoder
+    conv1 = Conv2D(64, (3, 3), activation='relu', padding='same')(inputs)
+    pool1 = MaxPooling2D((2, 2))(conv1)
+
+    conv2 = Conv2D(128, (3, 3), activation='relu', padding='same')(pool1)
+    pool2 = MaxPooling2D((2, 2))(conv2)
+
+    # Bottleneck
+    conv3 = Conv2D(256, (3, 3), activation='relu', padding='same')(pool2)
+
+    # Decoder
+    up1 = UpSampling2D((2, 2))(conv3)
+    concat1 = concatenate([conv2, up1])
+    conv4 = Conv2D(128, (3, 3), activation='relu', padding='same')(concat1)
+
+    up2 = UpSampling2D((2, 2))(conv4)
+    concat2 = concatenate([conv1, up2])
+    conv5 = Conv2D(64, (3, 3), activation='relu', padding='same')(concat2)
+
+    outputs = Conv2D(1, (1, 1), activation='sigmoid')(conv5)
+
+    return Model(inputs, outputs)
+
+
+def prepare_data_for_unet(X, target_shape=(64, 64)):
+    """
+    تبدیل داده‌های سه‌بعدی به ماتریس‌های دوبعدی برای U-Net
+    """
+    n_samples = X.shape[0]
+    total_elements = target_shape[0] * target_shape[1]
+
+    reshaped_data = []
+    for sample in X:
+        flat_sample = sample.flatten()
+
+        if len(flat_sample) > total_elements:
+            flat_sample = flat_sample[:total_elements]
+        else:
+            flat_sample = np.pad(flat_sample, (0, total_elements - len(flat_sample)), mode='constant')
+
+        reshaped_data.append(flat_sample.reshape(target_shape))
+
+    reshaped_data = np.array(reshaped_data).reshape(n_samples, target_shape[0], target_shape[1], 1)
+    return reshaped_data
+
+
+def build_unet(input_shape):
+    """
+    ساختار U-Net
+    """
+    inputs = Input(input_shape)
+
+    # Encoder
+    conv1 = Conv2D(64, (3, 3), activation='relu', padding='same')(inputs)
+    pool1 = MaxPooling2D((2, 2))(conv1)
+
+    conv2 = Conv2D(128, (3, 3), activation='relu', padding='same')(pool1)
+    pool2 = MaxPooling2D((2, 2))(conv2)
+
+    # Bottleneck
+    conv3 = Conv2D(256, (3, 3), activation='relu', padding='same')(pool2)
+
+    # Decoder
+    up1 = UpSampling2D((2, 2))(conv3)
+    concat1 = concatenate([conv2, up1])
+    conv4 = Conv2D(128, (3, 3), activation='relu', padding='same')(concat1)
+
+    up2 = UpSampling2D((2, 2))(conv4)
+    concat2 = concatenate([conv1, up2])
+    conv5 = Conv2D(64, (3, 3), activation='relu', padding='same')(concat2)
+
+    outputs = Conv2D(1, (1, 1), activation='sigmoid')(conv5)
+
+    return Model(inputs, outputs)
+
+
+def build_unet_lstm(input_shape_unet, input_shape_lstm):
+    """
+    ترکیب U-Net و LSTM
+    """
+    # ساخت مدل U-Net
+    unet_model = build_unet(input_shape_unet)
+
+    # Flatten کردن خروجی U-Net
+    unet_output = Flatten()(unet_model.output)
+
+    # LSTM
+    lstm_input = Input(shape=input_shape_lstm)
+    lstm_output = Bidirectional(LSTM(128, return_sequences=True))(lstm_input)
+    lstm_output = Bidirectional(LSTM(64))(lstm_output)
+
+    # ادغام U-Net و LSTM
+    combined_features = concatenate([unet_output, lstm_output])
+
+    # لایه‌های Dense برای طبقه‌بندی
+    dense1 = Dense(128, activation='relu')(combined_features)
+    dense2 = Dense(64, activation='relu')(dense1)
+    outputs = Dense(1, activation='sigmoid')(dense2)
+
+    return Model(inputs=[unet_model.input, lstm_input], outputs=outputs)
+
+
+
+def train_unet_lstm():
     # بارگذاری داده‌ها
     X, Y = load_batches(CACHE_DIR, file_extension=".pkl")
-    print(f"Shape of X: {X.shape}")  # باید (samples, max_function_length, vector_length) باشد
-    print(f"Shape of Y: {Y.shape}")  # باید (samples,) باشد
-    print("Distribution in Y:", np.unique(Y, return_counts=True))
+
+    # آماده‌سازی داده‌ها برای U-Net
+    X_unet = prepare_data_for_unet(X, target_shape=(64, 64))
 
     # تقسیم داده‌ها به آموزش و تست
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
-    print("Distribution in Y_test:", np.unique(Y_test, return_counts=True))
-
-    model = Sequential([
-        Input(shape=(X_train.shape[1], X_train.shape[2])),
-        Bidirectional(LSTM(128, return_sequences=True)),
-        Bidirectional(LSTM(64)),
-        Dense(1, activation='sigmoid')
-    ])
-
-    model.compile(
-        optimizer=Adam(learning_rate=0.001),
-        loss="binary_crossentropy",
-        metrics=['accuracy']
+    X_train_lstm, X_test_lstm, X_train_unet, X_test_unet, Y_train, Y_test = train_test_split(
+        X, X_unet, Y, test_size=0.2, random_state=42
     )
 
-    early_stopping = EarlyStopping(
-        monitor='val_loss',  # پایش بر اساس val_loss
-        patience=10,  # اگر val_loss برای 10 epoch متوالی بهبود نیافت، توقف شود
-        restore_best_weights=True  # بهترین وزن‌ها را بازیابی کن
-    )
+    # ساخت مدل
+    model = build_unet_lstm((64, 64, 1), (X.shape[1], X.shape[2]))
 
-    # آموزش مدل و ذخیره تاریخچه
+    # کامپایل مدل
+    model.compile(optimizer=Adam(learning_rate=0.001), loss="binary_crossentropy", metrics=['accuracy'])
+
+    # Callback برای توقف زودهنگام
+    early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+
+    # آموزش مدل
     history = model.fit(
-        X_train, Y_train,
-        epochs=50,
-        batch_size=32,
-        validation_split=0.2,
-        callbacks=[early_stopping],  # اضافه کردن Early Stopping
-        verbose=2
+        [X_train_unet, X_train_lstm], Y_train,
+        epochs=50, batch_size=32, validation_split=0.2, verbose=2,
+        callbacks=[early_stopping]
     )
 
-    # رسم نمودار دقت و خطا
+    # نمایش گراف‌های دقت و خطا
     plt.figure(figsize=(10, 6))
-
-    # رسم دقت
-    plt.plot(history.history['accuracy'], label='train acc', color='blue')
-    plt.plot(history.history['val_accuracy'], label='val acc', color='yellow')
-
-    # رسم خطا
-    plt.plot(history.history['loss'], label='train loss', color='red')
-    plt.plot(history.history['val_loss'], label='val loss', color='green')
-
-    plt.title('Model Accuracy and Loss')
+    plt.plot(history.history['accuracy'], label='Train Accuracy', color='blue')
+    plt.plot(history.history['val_accuracy'], label='Validation Accuracy', color='orange')
+    plt.plot(history.history['loss'], label='Train Loss', color='red')
+    plt.plot(history.history['val_loss'], label='Validation Loss', color='green')
+    plt.title('Training and Validation Metrics')
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy / Loss')
-    plt.legend(loc='best')
+    plt.legend()
     plt.grid()
-
-
-    output_image_path = "training_plot_lstm.png"
-    plt.savefig(output_image_path, dpi=300, bbox_inches='tight')
-    print(f"Plot saved to {output_image_path}")
-
+    plt.savefig("training_plot_unet_lstm.png", dpi=300, bbox_inches='tight')
     plt.show()
 
-    # پیش‌بینی روی داده‌های تست
-    Y_pred = (model.predict(X_test) > 0.5).astype("int32")
-
-    # محاسبه معیارها
+    # پیش‌بینی و ارزیابی
+    Y_pred = (model.predict([X_test_unet, X_test_lstm]) > 0.5).astype("int32")
     accuracy = accuracy_score(Y_test, Y_pred)
     report = classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable'], labels=[0, 1])
 
@@ -502,9 +620,8 @@ def train_LSTM():
     print(report)
 
     # ذخیره مدل
-    model.save('final_LSTM_model.h5')
-    print("Training complete with LSTM.")
-
+    model.save('final_unet_lstm_model.h5')
+    print("Model training completed and saved.")
 
 if __name__ == "__main__":
     files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
@@ -515,96 +632,36 @@ if __name__ == "__main__":
         process_batch_with_categorization(batch_files, target_vulner, batch_size, batch_index)
 
 
-    # train_LSTM()
-
-
-
-# Epoch 1/50
-# I0000 00:00:1738240697.911710    7338 cuda_dnn.cc:529] Loaded cuDNN version 90300
-# 1211/1211 - 23s - 19ms/step - accuracy: 0.7384 - loss: 0.5305 - val_accuracy: 0.7660 - val_loss: 0.4849
+    # train_unet_lstm()
+# 1211/1211 - 609s - 503ms/step - accuracy: 0.6970 - loss: 0.5702 - val_accuracy: 0.7184 - val_loss: 0.5403
 # Epoch 2/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.7723 - loss: 0.4746 - val_accuracy: 0.7799 - val_loss: 0.4494
+# 1211/1211 - 597s - 493ms/step - accuracy: 0.7174 - loss: 0.5405 - val_accuracy: 0.7060 - val_loss: 0.5354
 # Epoch 3/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.7789 - loss: 0.4414 - val_accuracy: 0.7950 - val_loss: 0.4158
+# 1211/1211 - 596s - 492ms/step - accuracy: 0.7547 - loss: 0.4953 - val_accuracy: 0.7650 - val_loss: 0.4614
 # Epoch 4/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.7913 - loss: 0.4173 - val_accuracy: 0.7981 - val_loss: 0.4137
+# 1211/1211 - 602s - 497ms/step - accuracy: 0.7695 - loss: 0.4552 - val_accuracy: 0.7874 - val_loss: 0.4305
 # Epoch 5/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.7977 - loss: 0.4064 - val_accuracy: 0.8095 - val_loss: 0.3981
+# 1211/1211 - 601s - 496ms/step - accuracy: 0.7836 - loss: 0.4291 - val_accuracy: 0.7888 - val_loss: 0.4198
 # Epoch 6/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8006 - loss: 0.3990 - val_accuracy: 0.7916 - val_loss: 0.4069
+# 1211/1211 - 584s - 482ms/step - accuracy: 0.7870 - loss: 0.4154 - val_accuracy: 0.7913 - val_loss: 0.4035
 # Epoch 7/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8070 - loss: 0.3881 - val_accuracy: 0.8115 - val_loss: 0.3841
+# 1211/1211 - 1386s - 1s/step - accuracy: 0.7972 - loss: 0.4031 - val_accuracy: 0.7886 - val_loss: 0.4169
 # Epoch 8/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8119 - loss: 0.3806 - val_accuracy: 0.8172 - val_loss: 0.3744
+# 1211/1211 - 2181s - 2s/step - accuracy: 0.8009 - loss: 0.3936 - val_accuracy: 0.7991 - val_loss: 0.4049
 # Epoch 9/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8166 - loss: 0.3721 - val_accuracy: 0.8029 - val_loss: 0.3921
+# 1211/1211 - 2383s - 2s/step - accuracy: 0.8095 - loss: 0.3838 - val_accuracy: 0.8081 - val_loss: 0.3786
 # Epoch 10/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8184 - loss: 0.3681 - val_accuracy: 0.8173 - val_loss: 0.3714
+# 1211/1211 - 1034s - 854ms/step - accuracy: 0.8141 - loss: 0.3747 - val_accuracy: 0.8046 - val_loss: 0.3834
 # Epoch 11/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8226 - loss: 0.3619 - val_accuracy: 0.8190 - val_loss: 0.3639
+# 1211/1211 - 22856s - 19s/step - accuracy: 0.8178 - loss: 0.3664 - val_accuracy: 0.8126 - val_loss: 0.3679
 # Epoch 12/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8291 - loss: 0.3532 - val_accuracy: 0.8224 - val_loss: 0.3621
+# 1211/1211 - 567s - 468ms/step - accuracy: 0.8205 - loss: 0.3611 - val_accuracy: 0.8168 - val_loss: 0.3666
 # Epoch 13/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8329 - loss: 0.3478 - val_accuracy: 0.8216 - val_loss: 0.3627
+# 1211/1211 - 570s - 470ms/step - accuracy: 0.8241 - loss: 0.3550 - val_accuracy: 0.8184 - val_loss: 0.3655
 # Epoch 14/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8365 - loss: 0.3424 - val_accuracy: 0.8298 - val_loss: 0.3546
+# 1211/1211 - 578s - 477ms/step - accuracy: 0.8298 - loss: 0.3485 - val_accuracy: 0.8097 - val_loss: 0.3704
 # Epoch 15/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8410 - loss: 0.3352 - val_accuracy: 0.8274 - val_loss: 0.3511
+# 1211/1211 - 575s - 475ms/step - accuracy: 0.8316 - loss: 0.3423 - val_accuracy: 0.8100 - val_loss: 0.3747
 # Epoch 16/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8428 - loss: 0.3297 - val_accuracy: 0.8311 - val_loss: 0.3485
+# 1211/1211 - 573s - 474ms/step - accuracy: 0.8368 - loss: 0.3367 - val_accuracy: 0.8227 - val_loss: 0.3532
 # Epoch 17/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8479 - loss: 0.3243 - val_accuracy: 0.8362 - val_loss: 0.3441
-# Epoch 18/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8502 - loss: 0.3175 - val_accuracy: 0.8385 - val_loss: 0.3398
-# Epoch 19/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8541 - loss: 0.3124 - val_accuracy: 0.8398 - val_loss: 0.3403
-# Epoch 20/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8592 - loss: 0.3057 - val_accuracy: 0.8416 - val_loss: 0.3405
-# Epoch 21/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8618 - loss: 0.3028 - val_accuracy: 0.8472 - val_loss: 0.3374
-# Epoch 22/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8668 - loss: 0.2947 - val_accuracy: 0.8391 - val_loss: 0.3503
-# Epoch 23/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8708 - loss: 0.2893 - val_accuracy: 0.8445 - val_loss: 0.3387
-# Epoch 24/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8729 - loss: 0.2852 - val_accuracy: 0.8463 - val_loss: 0.3358
-# Epoch 25/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8769 - loss: 0.2787 - val_accuracy: 0.8499 - val_loss: 0.3400
-# Epoch 26/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8781 - loss: 0.2731 - val_accuracy: 0.8513 - val_loss: 0.3274
-# Epoch 27/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8807 - loss: 0.2709 - val_accuracy: 0.8504 - val_loss: 0.3286
-# Epoch 28/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8850 - loss: 0.2634 - val_accuracy: 0.8508 - val_loss: 0.3377
-# Epoch 29/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8855 - loss: 0.2612 - val_accuracy: 0.8521 - val_loss: 0.3310
-# Epoch 30/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8889 - loss: 0.2566 - val_accuracy: 0.8508 - val_loss: 0.3344
-# Epoch 31/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8932 - loss: 0.2479 - val_accuracy: 0.8534 - val_loss: 0.3344
-# Epoch 32/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8943 - loss: 0.2468 - val_accuracy: 0.8538 - val_loss: 0.3359
-# Epoch 33/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8962 - loss: 0.2439 - val_accuracy: 0.8573 - val_loss: 0.3355
-# Epoch 34/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8991 - loss: 0.2385 - val_accuracy: 0.8579 - val_loss: 0.3381
-# Epoch 35/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.9009 - loss: 0.2349 - val_accuracy: 0.8602 - val_loss: 0.3334
-# Epoch 36/50
-# 1211/1211 - 17s - 14ms/step - accuracy: 0.8995 - loss: 0.2373 - val_accuracy: 0.8586 - val_loss: 0.3344
-# Plot saved to training_plot_lstm.png
-# Figure(1000x600)
-# 379/379 ━━━━━━━━━━━━━━━━━━━━ 2s 6ms/step
-# Accuracy: 0.8472910472414932
-# Classification Report:
-#               precision    recall  f1-score   support
-#
-#         Safe       0.87      0.91      0.89      8300
-#   Vulnerable       0.78      0.71      0.75      3808
-#
-#     accuracy                           0.85     12108
-#    macro avg       0.83      0.81      0.82     12108
-# weighted avg       0.84      0.85      0.85     12108
-#
-# WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`.
-# Training complete with LSTM.
