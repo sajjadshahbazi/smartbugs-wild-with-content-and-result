@@ -84,7 +84,6 @@ def load_all_data():
     for file in os.listdir(CACHE_DIR):
         if file.endswith(".pkl"):
             path = os.path.join(CACHE_DIR, file)
-            print(f"  Loading {file} ...")
             with open(path, 'rb') as f:
                 X_batch, y_batch = pickle.load(f)
                 X_list.append(X_batch)
