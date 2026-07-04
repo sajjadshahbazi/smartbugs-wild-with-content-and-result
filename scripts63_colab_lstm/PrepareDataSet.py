@@ -959,3 +959,150 @@ if __name__ == "__main__":
     # train_LSTM()
     train_UNET_LSTM()
 
+# 2026-07-04 23:12:47.109112: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+# 2026-07-04 23:12:47.178873: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+# To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+# size files 47398
+# Shape of X_att (attention map): (47619, 100, 100, 1)
+# Shape of X_emb (embedding): (47619, 100, 300)
+# Shape of Y: (47619,)
+# Distribution in Y: (array([0, 1], dtype=int32), array([28520, 19099]))
+# Distribution in Y_test: (array([0, 1], dtype=int32), array([5683, 3841]))
+# 2026-07-04 23:13:02.030243: W tensorflow/core/common_runtime/gpu/gpu_bfc_allocator.cc:47] Overriding orig_value setting because the TF_FORCE_GPU_ALLOW_GROWTH environment variable is set. Original config value was 0.
+# WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+# I0000 00:00:1783206782.031370    4944 gpu_device.cc:2020] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 79188 MB memory:  -> device: 0, name: NVIDIA A100-SXM4-80GB, pci bus id: 0000:00:05.0, compute capability: 8.0
+# Model: "functional"
+# ┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┓
+# ┃ Layer (type)        ┃ Output Shape      ┃    Param # ┃ Connected to      ┃
+# ┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━┩
+# │ attention_map_input │ (None, 100, 100,  │          0 │ -                 │
+# │ (InputLayer)        │ 1)                │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ conv2d (Conv2D)     │ (None, 100, 100,  │        640 │ attention_map_in… │
+# │                     │ 64)               │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ max_pooling2d       │ (None, 50, 50,    │          0 │ conv2d[0][0]      │
+# │ (MaxPooling2D)      │ 64)               │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ conv2d_1 (Conv2D)   │ (None, 50, 50,    │     73,856 │ max_pooling2d[0]… │
+# │                     │ 128)              │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ max_pooling2d_1     │ (None, 25, 25,    │          0 │ conv2d_1[0][0]    │
+# │ (MaxPooling2D)      │ 128)              │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ conv2d_2 (Conv2D)   │ (None, 25, 25,    │    295,168 │ max_pooling2d_1[… │
+# │                     │ 256)              │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ up_sampling2d       │ (None, 50, 50,    │          0 │ conv2d_2[0][0]    │
+# │ (UpSampling2D)      │ 256)              │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ concatenate         │ (None, 50, 50,    │          0 │ conv2d_1[0][0],   │
+# │ (Concatenate)       │ 384)              │            │ up_sampling2d[0]… │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ conv2d_3 (Conv2D)   │ (None, 50, 50,    │    442,496 │ concatenate[0][0] │
+# │                     │ 128)              │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ up_sampling2d_1     │ (None, 100, 100,  │          0 │ conv2d_3[0][0]    │
+# │ (UpSampling2D)      │ 128)              │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ concatenate_1       │ (None, 100, 100,  │          0 │ conv2d[0][0],     │
+# │ (Concatenate)       │ 192)              │            │ up_sampling2d_1[… │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ embedding_input     │ (None, 100, 300)  │          0 │ -                 │
+# │ (InputLayer)        │                   │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ conv2d_4 (Conv2D)   │ (None, 100, 100,  │    110,656 │ concatenate_1[0]… │
+# │                     │ 64)               │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ bidirectional       │ (None, 100, 256)  │    439,296 │ embedding_input[… │
+# │ (Bidirectional)     │                   │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ global_average_poo… │ (None, 64)        │          0 │ conv2d_4[0][0]    │
+# │ (GlobalAveragePool… │                   │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ dropout (Dropout)   │ (None, 100, 256)  │          0 │ bidirectional[0]… │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ dense (Dense)       │ (None, 128)       │      8,320 │ global_average_p… │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ bidirectional_1     │ (None, 128)       │    164,352 │ dropout[0][0]     │
+# │ (Bidirectional)     │                   │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ concatenate_2       │ (None, 256)       │          0 │ dense[0][0],      │
+# │ (Concatenate)       │                   │            │ bidirectional_1[… │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ dense_1 (Dense)     │ (None, 128)       │     32,896 │ concatenate_2[0]… │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ dense_2 (Dense)     │ (None, 64)        │      8,256 │ dense_1[0][0]     │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ dense_3 (Dense)     │ (None, 1)         │         65 │ dense_2[0][0]     │
+# └─────────────────────┴───────────────────┴────────────┴───────────────────┘
+#  Total params: 1,576,001 (6.01 MB)
+#  Trainable params: 1,576,001 (6.01 MB)
+#  Non-trainable params: 0 (0.00 B)
+# Epoch 1/50
+# 2026-07-04 23:13:15.773238: I external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:473] Loaded cuDNN version 91900
+# 239/239 - 36s - 150ms/step - accuracy: 0.6903 - loss: 0.0373 - val_accuracy: 0.7131 - val_loss: 0.0347
+# Epoch 2/50
+# 239/239 - 19s - 82ms/step - accuracy: 0.7695 - loss: 0.0304 - val_accuracy: 0.7766 - val_loss: 0.0303
+# Epoch 3/50
+# 239/239 - 20s - 82ms/step - accuracy: 0.7828 - loss: 0.0287 - val_accuracy: 0.7803 - val_loss: 0.0290
+# Epoch 4/50
+# 239/239 - 19s - 81ms/step - accuracy: 0.7911 - loss: 0.0276 - val_accuracy: 0.7817 - val_loss: 0.0280
+# Epoch 5/50
+# 239/239 - 19s - 81ms/step - accuracy: 0.7967 - loss: 0.0269 - val_accuracy: 0.7874 - val_loss: 0.0283
+# Epoch 6/50
+# 239/239 - 20s - 82ms/step - accuracy: 0.8029 - loss: 0.0263 - val_accuracy: 0.7951 - val_loss: 0.0270
+# Epoch 7/50
+# 239/239 - 19s - 81ms/step - accuracy: 0.8077 - loss: 0.0257 - val_accuracy: 0.7997 - val_loss: 0.0268
+# Epoch 8/50
+# 239/239 - 19s - 81ms/step - accuracy: 0.8130 - loss: 0.0251 - val_accuracy: 0.8026 - val_loss: 0.0261
+# Epoch 9/50
+# 239/239 - 19s - 81ms/step - accuracy: 0.8204 - loss: 0.0245 - val_accuracy: 0.8033 - val_loss: 0.0257
+# Epoch 10/50
+# 239/239 - 19s - 81ms/step - accuracy: 0.8272 - loss: 0.0239 - val_accuracy: 0.7963 - val_loss: 0.0275
+# Epoch 11/50
+# 239/239 - 19s - 81ms/step - accuracy: 0.8363 - loss: 0.0232 - val_accuracy: 0.8159 - val_loss: 0.0253
+# Epoch 12/50
+# 239/239 - 19s - 81ms/step - accuracy: 0.8445 - loss: 0.0221 - val_accuracy: 0.8243 - val_loss: 0.0245
+# Epoch 13/50
+# 239/239 - 19s - 81ms/step - accuracy: 0.8550 - loss: 0.0212 - val_accuracy: 0.8059 - val_loss: 0.0261
+# Epoch 14/50
+# 239/239 - 20s - 82ms/step - accuracy: 0.8585 - loss: 0.0208 - val_accuracy: 0.8229 - val_loss: 0.0243
+# Epoch 15/50
+# 239/239 - 19s - 81ms/step - accuracy: 0.8693 - loss: 0.0197 - val_accuracy: 0.8355 - val_loss: 0.0232
+# Epoch 16/50
+# 239/239 - 19s - 82ms/step - accuracy: 0.8815 - loss: 0.0184 - val_accuracy: 0.8433 - val_loss: 0.0242
+# Epoch 17/50
+# 239/239 - 19s - 82ms/step - accuracy: 0.8893 - loss: 0.0173 - val_accuracy: 0.8369 - val_loss: 0.0248
+# Epoch 18/50
+# 239/239 - 19s - 81ms/step - accuracy: 0.8974 - loss: 0.0165 - val_accuracy: 0.8464 - val_loss: 0.0254
+# Epoch 19/50
+# 239/239 - 20s - 82ms/step - accuracy: 0.9080 - loss: 0.0154 - val_accuracy: 0.8512 - val_loss: 0.0253
+# Epoch 20/50
+# 239/239 - 19s - 81ms/step - accuracy: 0.9167 - loss: 0.0142 - val_accuracy: 0.8495 - val_loss: 0.0270
+# Epoch 21/50
+# 239/239 - 20s - 82ms/step - accuracy: 0.9225 - loss: 0.0134 - val_accuracy: 0.8497 - val_loss: 0.0273
+# Epoch 22/50
+# 239/239 - 19s - 81ms/step - accuracy: 0.9300 - loss: 0.0123 - val_accuracy: 0.8517 - val_loss: 0.0292
+# Epoch 23/50
+# 239/239 - 19s - 82ms/step - accuracy: 0.9317 - loss: 0.0121 - val_accuracy: 0.8590 - val_loss: 0.0270
+# Epoch 24/50
+# 239/239 - 19s - 81ms/step - accuracy: 0.9391 - loss: 0.0109 - val_accuracy: 0.8606 - val_loss: 0.0302
+# Epoch 25/50
+# 239/239 - 19s - 81ms/step - accuracy: 0.9402 - loss: 0.0106 - val_accuracy: 0.8611 - val_loss: 0.0279
+# Plot saved to training_plot_unet_attention_lstm.png
+# Figure(1000x600)
+# 298/298 ━━━━━━━━━━━━━━━━━━━━ 5s 14ms/step
+# Accuracy: 0.8371482570348593
+# Classification Report:
+#               precision    recall  f1-score   support
+#
+#         Safe       0.87      0.86      0.86      5683
+#   Vulnerable       0.79      0.81      0.80      3841
+#
+#     accuracy                           0.84      9524
+#    macro avg       0.83      0.83      0.83      9524
+# weighted avg       0.84      0.84      0.84      9524
+#
+# WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`.
+# Training complete with U-Net(AttentionMap) + BiLSTM.
