@@ -549,14 +549,28 @@ def process_batch_with_categorization(files, target_vulnerability, batch_size, b
 # جداگانه از هم بارگذاری کنیم، چون در یک پوشه (CACHE_DIR_UNET) کنار هم
 # ذخیره می‌شوند.
 # =============================================================================
+# def load_batches_by_prefix(folder, prefix, file_extension=".pkl"):
+#     X_batches, Y_batches = [], []
+#     for file in os.listdir(folder):
+#         if file.endswith(file_extension) and file.startswith(prefix):
+#             with open(os.path.join(folder, file), 'rb') as f:
+#                 X, Y = pickle.load(f)
+#                 X_batches.append(X)
+#                 Y_batches.append(Y)
+#     return np.vstack(X_batches), np.hstack(Y_batches)
+
+# Sorted
 def load_batches_by_prefix(folder, prefix, file_extension=".pkl"):
     X_batches, Y_batches = [], []
-    for file in os.listdir(folder):
-        if file.endswith(file_extension) and file.startswith(prefix):
-            with open(os.path.join(folder, file), 'rb') as f:
-                X, Y = pickle.load(f)
-                X_batches.append(X)
-                Y_batches.append(Y)
+    matched_files = sorted([
+        f for f in os.listdir(folder)
+        if f.endswith(file_extension) and f.startswith(prefix)
+    ])
+    for file in matched_files:
+        with open(os.path.join(folder, file), 'rb') as f:
+            X, Y = pickle.load(f)
+            X_batches.append(X)
+            Y_batches.append(Y)
     return np.vstack(X_batches), np.hstack(Y_batches)
 
 
