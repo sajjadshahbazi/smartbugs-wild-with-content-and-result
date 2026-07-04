@@ -1031,4 +1031,4 @@ if __name__ == "__main__":
     # =============================================================================
     # train_LSTM()
     # train_UNET_LSTM()
-    build_unet_only_model()
+    test_unet_branch_alone()()
