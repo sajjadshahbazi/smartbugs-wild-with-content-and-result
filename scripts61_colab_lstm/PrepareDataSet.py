@@ -941,3 +941,133 @@ if __name__ == "__main__":
     # =============================================================================
     train_LSTM()
     # train_UNET_LSTM()
+
+
+# 2026-07-04 17:58:07.484895: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+# 2026-07-04 17:58:07.554399: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+# To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+# size files 47398
+# Shape of X: (61192, 100, 300)
+# Shape of Y: (61192,)
+# Distribution in Y: (array([0, 1], dtype=int32), array([42093, 19099]))
+# Distribution in Y_test: (array([0, 1], dtype=int32), array([8412, 3827]))
+# 2026-07-04 17:58:21.214020: W tensorflow/core/common_runtime/gpu/gpu_bfc_allocator.cc:47] Overriding orig_value setting because the TF_FORCE_GPU_ALLOW_GROWTH environment variable is set. Original config value was 0.
+# WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+# I0000 00:00:1783187901.215160   31464 gpu_device.cc:2020] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 79188 MB memory:  -> device: 0, name: NVIDIA A100-SXM4-80GB, pci bus id: 0000:00:05.0, compute capability: 8.0
+# Epoch 1/50
+# 2026-07-04 17:58:32.351501: I external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:473] Loaded cuDNN version 91900
+# 306/306 - 16s - 52ms/step - accuracy: 0.7460 - loss: 0.0347 - val_accuracy: 0.7954 - val_loss: 0.0296
+# Epoch 2/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.7966 - loss: 0.0294 - val_accuracy: 0.8071 - val_loss: 0.0281
+# Epoch 3/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8042 - loss: 0.0284 - val_accuracy: 0.8122 - val_loss: 0.0276
+# Epoch 4/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8092 - loss: 0.0279 - val_accuracy: 0.8037 - val_loss: 0.0282
+# Epoch 5/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8114 - loss: 0.0274 - val_accuracy: 0.8123 - val_loss: 0.0272
+# Epoch 6/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8143 - loss: 0.0269 - val_accuracy: 0.8164 - val_loss: 0.0268
+# Epoch 7/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8151 - loss: 0.0266 - val_accuracy: 0.8219 - val_loss: 0.0264
+# Epoch 8/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8192 - loss: 0.0262 - val_accuracy: 0.8167 - val_loss: 0.0267
+# Epoch 9/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8195 - loss: 0.0259 - val_accuracy: 0.8218 - val_loss: 0.0261
+# Epoch 10/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8219 - loss: 0.0256 - val_accuracy: 0.8236 - val_loss: 0.0254
+# Epoch 11/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8249 - loss: 0.0253 - val_accuracy: 0.8241 - val_loss: 0.0255
+# Epoch 12/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8250 - loss: 0.0251 - val_accuracy: 0.8262 - val_loss: 0.0253
+# Epoch 13/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8277 - loss: 0.0249 - val_accuracy: 0.8246 - val_loss: 0.0254
+# Epoch 14/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8273 - loss: 0.0246 - val_accuracy: 0.8296 - val_loss: 0.0251
+# Epoch 15/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8305 - loss: 0.0244 - val_accuracy: 0.8304 - val_loss: 0.0247
+# Epoch 16/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8321 - loss: 0.0242 - val_accuracy: 0.8210 - val_loss: 0.0255
+# Epoch 17/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8343 - loss: 0.0239 - val_accuracy: 0.8271 - val_loss: 0.0247
+# Epoch 18/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8358 - loss: 0.0237 - val_accuracy: 0.8285 - val_loss: 0.0244
+# Epoch 19/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8372 - loss: 0.0235 - val_accuracy: 0.8328 - val_loss: 0.0241
+# Epoch 20/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8390 - loss: 0.0232 - val_accuracy: 0.8338 - val_loss: 0.0241
+# Epoch 21/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8397 - loss: 0.0229 - val_accuracy: 0.8289 - val_loss: 0.0247
+# Epoch 22/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8434 - loss: 0.0226 - val_accuracy: 0.8314 - val_loss: 0.0243
+# Epoch 23/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8450 - loss: 0.0224 - val_accuracy: 0.8350 - val_loss: 0.0236
+# Epoch 24/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8463 - loss: 0.0223 - val_accuracy: 0.8374 - val_loss: 0.0238
+# Epoch 25/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8466 - loss: 0.0222 - val_accuracy: 0.8365 - val_loss: 0.0234
+# Epoch 26/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8479 - loss: 0.0218 - val_accuracy: 0.8381 - val_loss: 0.0232
+# Epoch 27/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8506 - loss: 0.0216 - val_accuracy: 0.8347 - val_loss: 0.0235
+# Epoch 28/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8516 - loss: 0.0213 - val_accuracy: 0.8374 - val_loss: 0.0231
+# Epoch 29/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8545 - loss: 0.0210 - val_accuracy: 0.8391 - val_loss: 0.0232
+# Epoch 30/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8570 - loss: 0.0208 - val_accuracy: 0.8429 - val_loss: 0.0231
+# Epoch 31/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8581 - loss: 0.0206 - val_accuracy: 0.8419 - val_loss: 0.0232
+# Epoch 32/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8597 - loss: 0.0205 - val_accuracy: 0.8417 - val_loss: 0.0227
+# Epoch 33/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8611 - loss: 0.0201 - val_accuracy: 0.8410 - val_loss: 0.0230
+# Epoch 34/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8631 - loss: 0.0200 - val_accuracy: 0.8473 - val_loss: 0.0224
+# Epoch 35/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8646 - loss: 0.0197 - val_accuracy: 0.8453 - val_loss: 0.0224
+# Epoch 36/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8681 - loss: 0.0194 - val_accuracy: 0.8484 - val_loss: 0.0227
+# Epoch 37/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8690 - loss: 0.0191 - val_accuracy: 0.8489 - val_loss: 0.0229
+# Epoch 38/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8725 - loss: 0.0189 - val_accuracy: 0.8491 - val_loss: 0.0220
+# Epoch 39/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8744 - loss: 0.0186 - val_accuracy: 0.8533 - val_loss: 0.0217
+# Epoch 40/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8757 - loss: 0.0182 - val_accuracy: 0.8514 - val_loss: 0.0228
+# Epoch 41/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8766 - loss: 0.0183 - val_accuracy: 0.8502 - val_loss: 0.0225
+# Epoch 42/50
+# 306/306 - 8s - 25ms/step - accuracy: 0.8790 - loss: 0.0181 - val_accuracy: 0.8504 - val_loss: 0.0229
+# Epoch 43/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8816 - loss: 0.0179 - val_accuracy: 0.8531 - val_loss: 0.0223
+# Epoch 44/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8840 - loss: 0.0175 - val_accuracy: 0.8576 - val_loss: 0.0217
+# Epoch 45/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8852 - loss: 0.0174 - val_accuracy: 0.8532 - val_loss: 0.0223
+# Epoch 46/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8852 - loss: 0.0172 - val_accuracy: 0.8522 - val_loss: 0.0228
+# Epoch 47/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8910 - loss: 0.0167 - val_accuracy: 0.8556 - val_loss: 0.0229
+# Epoch 48/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8890 - loss: 0.0169 - val_accuracy: 0.8491 - val_loss: 0.0240
+# Epoch 49/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8881 - loss: 0.0169 - val_accuracy: 0.8626 - val_loss: 0.0215
+# Epoch 50/50
+# 306/306 - 8s - 26ms/step - accuracy: 0.8931 - loss: 0.0163 - val_accuracy: 0.8596 - val_loss: 0.0224
+# Plot saved to /content/smartbugs-wild-with-content-and-result/output/training_plot_lstm.png
+# Figure(1000x600)
+# 383/383 ━━━━━━━━━━━━━━━━━━━━ 3s 8ms/step
+# Accuracy: 0.8680447748999102
+# Classification Report:
+#               precision    recall  f1-score   support
+#
+#         Safe       0.90      0.92      0.91      8412
+#   Vulnerable       0.80      0.76      0.78      3827
+#
+#     accuracy                           0.87     12239
+#    macro avg       0.85      0.84      0.84     12239
+# weighted avg       0.87      0.87      0.87     12239
+#
+# WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`.
+# Training complete with LSTM.
