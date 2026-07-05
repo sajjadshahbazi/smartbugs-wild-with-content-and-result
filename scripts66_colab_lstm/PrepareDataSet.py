@@ -1114,9 +1114,9 @@ if __name__ == "__main__":
     #   ۴. check_ensemble_potential() → بررسی پتانسیل ensemble
     #      (نیازمند اجرای قبلی شماره ۱ و ۳ برای وجود فایل‌های مدل ذخیره‌شده)
     # =============================================================================
-    # train_LSTM()
+    train_LSTM()
     # train_UNET_LSTM()
-    test_unet_branch_alone()
+    # test_unet_branch_alone()
     # check_ensemble_potential()
 
 # LSTM :
