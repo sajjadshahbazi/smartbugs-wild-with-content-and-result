@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, UpSampling2D, concatenate, Flatten
 from tensorflow.keras.layers import GlobalAveragePooling2D
 from tensorflow.keras.models import Model
+from tensorflow.keras.models import load_model, Model as KerasModel
 
 duration_stat = {}
 count = {}
@@ -699,151 +700,61 @@ def build_unet_only_model(seq_len=sequence_length):
     return model
 
 
-def test_unet_branch_alone():
-    X_att, Y_att = load_batches_by_prefix(CACHE_DIR_UNET, prefix="att_")
-    print(f"Shape of X_att: {X_att.shape}")
-    print("Distribution in Y:", np.unique(Y_att, return_counts=True))
+# =============================================================================
+# اضافه شد: extract_penultimate_features
+# به‌جای حدس‌زدن نام دقیق لایه‌ها (که می‌تواند اشتباه باشد)، این تابع
+# به‌صورت خودکار لایه ماقبل‌آخر مدل را پیدا می‌کند - یعنی همان بردار
+# ویژگی قبل از Dense(1, sigmoid) نهایی. این برای هر دو مدل (LSTM و
+# U-Net) به یک شکل کار می‌کند چون هر دو دقیقاً یک لایه Dense(1,sigmoid)
+# در انتها دارند.
+# =============================================================================
+def extract_penultimate_features(model_path, X_data):
 
-    X_train, X_test, Y_train, Y_test = train_test_split(
-        X_att, Y_att, test_size=0.2, random_state=42
-    )
-
-    majority_baseline = max(np.mean(Y_test == 0), np.mean(Y_test == 1))
-    print(f"Majority-class baseline accuracy: {majority_baseline:.4f}")
-
-    model = build_unet_only_model()
-
-    model.compile(
-        optimizer=Adam(learning_rate=0.001),
-        loss=focal_loss(alpha=0.25, gamma=2.0),
-        metrics=['accuracy']
-    )
-
-    model.summary()
-
-    early_stopping = EarlyStopping(
-        monitor='val_loss',
-        patience=10,
-        restore_best_weights=True
-    )
-
-    history = model.fit(
-        X_train, Y_train,
-        epochs=50,
-        batch_size=128,
-        validation_split=0.2,
-        callbacks=[early_stopping],
-        verbose=2
-    )
-
-    os.makedirs(os.path.join(ROOT, 'output'), exist_ok=True)
-    plt.figure(figsize=(10, 6))
-    plt.plot(history.history['accuracy'], label='train acc', color='blue')
-    plt.plot(history.history['val_accuracy'], label='val acc', color='yellow')
-    plt.plot(history.history['loss'], label='train loss', color='red')
-    plt.plot(history.history['val_loss'], label='val loss', color='green')
-    plt.title('U-Net Only (Attention Map) - Accuracy and Loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy / Loss')
-    plt.legend(loc='best')
-    plt.grid()
-    output_image_path = os.path.join(ROOT, 'output', 'training_plot_unet_only.png')
-    plt.savefig(output_image_path, dpi=300, bbox_inches='tight')
-    print(f"Plot saved to {output_image_path}")
-    plt.show()
-
-    Y_pred = (model.predict(X_test) > 0.5).astype("int32")
-    accuracy = accuracy_score(Y_test, Y_pred)
-
-    print(f"\n{'='*50}")
-    print(f"U-Net-only accuracy:       {accuracy:.4f}")
-    print(f"Majority-class baseline:   {majority_baseline:.4f}")
-    print(f"Improvement over baseline: {(accuracy - majority_baseline) * 100:.2f}%")
-    print(f"{'='*50}\n")
-
-    print("Classification Report:")
-    print(classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable'], labels=[0, 1]))
-
-    model.save(os.path.join(ROOT, 'output', 'final_unet_only_model.h5'))
-    print(f"Model saved to {os.path.join(ROOT, 'output', 'final_unet_only_model.h5')}")
-
-
-def check_ensemble_potential():
-    from tensorflow.keras.models import load_model
-
-    X_att, Y_att = load_batches_by_prefix(CACHE_DIR_UNET, prefix="att_")
-    X_emb, Y_emb = load_batches_by_prefix(CACHE_DIR_UNET, prefix="emb_")
-
-    assert np.array_equal(Y_att, Y_emb), "ترتیب Y بین att و emb یکسان نیست - فایل‌ها را بررسی کنید"
-
-    indices = np.arange(len(Y_att))
-    train_idx, test_idx = train_test_split(indices, test_size=0.2, random_state=42)
-    X_att_test, X_emb_test = X_att[test_idx], X_emb[test_idx]
-    Y_test = Y_att[test_idx]
-
-    lstm_model = load_model(
-        os.path.join(ROOT, 'output', 'final_LSTM_model.h5'),
+    full_model = load_model(
+        model_path,
         custom_objects={'loss': focal_loss(alpha=0.25, gamma=2.0)}
     )
-    unet_model = load_model(
-        os.path.join(ROOT, 'output', 'final_unet_only_model.h5'),
-        custom_objects={'loss': focal_loss(alpha=0.25, gamma=2.0)}
+    # لایه ماقبل‌آخر = بردار ویژگی قبل از خروجی نهایی sigmoid
+    feature_layer = full_model.layers[-2]
+    feature_extractor = KerasModel(
+        inputs=full_model.input,
+        outputs=feature_layer.output
     )
-
-    p_lstm = lstm_model.predict(X_emb_test).flatten()
-    p_unet = unet_model.predict(X_att_test).flatten()
-
-    pred_lstm = (p_lstm > 0.5).astype(int)
-    pred_unet = (p_unet > 0.5).astype(int)
-
-    lstm_correct = (pred_lstm == Y_test)
-    unet_correct = (pred_unet == Y_test)
-
-    only_lstm_right = np.mean(lstm_correct & ~unet_correct)
-    only_unet_right = np.mean(~lstm_correct & unet_correct)
-    both_right = np.mean(lstm_correct & unet_correct)
-    both_wrong = np.mean(~lstm_correct & ~unet_correct)
-
-    print(f"فقط LSTM درست:  {only_lstm_right*100:.2f}%")
-    print(f"فقط U-Net درست: {only_unet_right*100:.2f}%")
-    print(f"هر دو درست:     {both_right*100:.2f}%")
-    print(f"هر دو غلط:      {both_wrong*100:.2f}%")
-    print(f"\nپتانسیل بهبود از ensemble: {(only_lstm_right + only_unet_right)*100:.2f}%")
+    features = feature_extractor.predict(X_data)
+    return features, feature_layer.output_shape[-1]
 
 
 # =============================================================================
-# اصلاح شد: build_stacking_meta_model
-# طبق پیشنهاد، ظرفیت meta-model افزایش یافت (16 -> Dropout -> 8 به‌جای فقط 8)
-# چون نتایج قبلی نشان داد train_accuracy در حدود 91.7% "فلت" شده بود که
-# نشانه‌ی رسیدن به سقف ظرفیت مدل با معماری قبلی بود.
-# همچنین ورودی از 2 به 4 ویژگی افزایش یافت (جزئیات در train_stacking_ensemble)
+# اضافه شد: build_feature_stacking_model
+# مدل fusion که روی بردارهای ویژگی میانی (نه احتمال نهایی) کار می‌کند.
+# چون این ویژگی‌ها اطلاعات بسیار غنی‌تری نسبت به یک عدد احتمال دارند،
+# مدل fusion می‌تواند الگوهای پیچیده‌تری بین دو شاخه یاد بگیرد.
 # =============================================================================
-def build_stacking_meta_model(n_features=4):
-    meta_input = Input(shape=(n_features,), name='meta_input')
-    x = Dense(16, activation='relu')(meta_input)
-    x = Dropout(0.2)(x)
-    x = Dense(8, activation='relu')(x)
+def build_feature_stacking_model(lstm_feat_dim, unet_feat_dim):
+    lstm_feat_input = Input(shape=(lstm_feat_dim,), name='lstm_features')
+    unet_feat_input = Input(shape=(unet_feat_dim,), name='unet_features')
+
+    combined = concatenate([lstm_feat_input, unet_feat_input])
+    x = Dense(32, activation='relu')(combined)
+    x = Dropout(0.3)(x)
+    x = Dense(16, activation='relu')(x)
     output = Dense(1, activation='sigmoid')(x)
-    model = Model(inputs=meta_input, outputs=output)
+
+    model = Model(inputs=[lstm_feat_input, unet_feat_input], outputs=output)
     return model
 
 
 # =============================================================================
-# اصلاح شد: train_stacking_ensemble
-# طبق پیشنهاد، دو ویژگی مشتق‌شده به ورودی meta-model اضافه شد:
-#   - |p_lstm - p_unet|  → میزان اختلاف نظر دو مدل (هرچه بیشتر، یعنی مدل‌ها
-#     مخالف‌اند و meta-model باید تصمیم بگیرد کدام را باور کند)
-#   - p_lstm * p_unet    → تقویت توافق (وقتی هر دو مطمئن به یک جهت باشند،
-#     این عدد بزرگ‌تر می‌شود و سیگنال قوی‌تری از "اتفاق‌نظر" می‌دهد)
-# این باعث می‌شود meta-model به‌جای فقط دیدن دو عدد خام، الگوی رابطه‌ی
-# بین دو مدل را هم مستقیماً به‌عنوان ورودی داشته باشد.
+# اضافه شد: train_feature_level_stacking
+# نکته کلیدی: مدل‌های LSTM و U-Net اینجا کاملاً منجمد (frozen) هستند -
+# فقط برای استخراج ویژگی استفاده می‌شوند و هیچ گرادیانی به آن‌ها
+# برنمی‌گردد. این دقیقاً همان چیزی است که مانع تکرار مشکل joint
+# training (train_UNET_LSTM) می‌شود.
 # =============================================================================
-def train_stacking_ensemble():
-    from tensorflow.keras.models import load_model
-
+def train_feature_level_stacking():
     X_att, Y_att = load_batches_by_prefix(CACHE_DIR_UNET, prefix="att_")
     X_emb, Y_emb = load_batches_by_prefix(CACHE_DIR_UNET, prefix="emb_")
-    assert np.array_equal(Y_att, Y_emb), "ترتیب Y بین att و emb یکسان نیست - فایل‌ها را بررسی کنید"
+    assert np.array_equal(Y_att, Y_emb), "ترتیب Y بین att و emb یکسان نیست"
 
     indices = np.arange(len(Y_att))
     train_idx, test_idx = train_test_split(indices, test_size=0.2, random_state=42)
@@ -852,52 +763,33 @@ def train_stacking_ensemble():
     X_emb_train, X_emb_test = X_emb[train_idx], X_emb[test_idx]
     Y_train, Y_test = Y_att[train_idx], Y_att[test_idx]
 
-    lstm_model = load_model(
-        os.path.join(ROOT, 'output', 'final_LSTM_model.h5'),
-        custom_objects={'loss': focal_loss(alpha=0.25, gamma=2.0)}
-    )
-    unet_model = load_model(
-        os.path.join(ROOT, 'output', 'final_unet_only_model.h5'),
-        custom_objects={'loss': focal_loss(alpha=0.25, gamma=2.0)}
-    )
+    lstm_path = os.path.join(ROOT, 'output', 'final_LSTM_model.h5')
+    unet_path = os.path.join(ROOT, 'output', 'final_unet_only_model.h5')
 
-    print("در حال پیش‌بینی با مدل‌های پایه روی داده train...")
-    p_lstm_train = lstm_model.predict(X_emb_train).flatten()
-    p_unet_train = unet_model.predict(X_att_train).flatten()
+    print("استخراج بردار ویژگی از LSTM (train)...")
+    lstm_feat_train, lstm_dim = extract_penultimate_features(lstm_path, X_emb_train)
+    print("استخراج بردار ویژگی از LSTM (test)...")
+    lstm_feat_test, _ = extract_penultimate_features(lstm_path, X_emb_test)
 
-    print("در حال پیش‌بینی با مدل‌های پایه روی داده test...")
-    p_lstm_test = lstm_model.predict(X_emb_test).flatten()
-    p_unet_test = unet_model.predict(X_att_test).flatten()
+    print("استخراج بردار ویژگی از U-Net (train)...")
+    unet_feat_train, unet_dim = extract_penultimate_features(unet_path, X_att_train)
+    print("استخراج بردار ویژگی از U-Net (test)...")
+    unet_feat_test, _ = extract_penultimate_features(unet_path, X_att_test)
 
-    # ساخت فیچرهای meta-model: دو احتمال خام + اختلاف + ضرب
-    meta_X_train = np.column_stack([
-        p_lstm_train,
-        p_unet_train,
-        np.abs(p_lstm_train - p_unet_train),   # میزان اختلاف نظر دو مدل
-        p_lstm_train * p_unet_train             # تقویت توافق
-    ])
-    meta_X_test = np.column_stack([
-        p_lstm_test,
-        p_unet_test,
-        np.abs(p_lstm_test - p_unet_test),
-        p_lstm_test * p_unet_test
-    ])
+    print(f"LSTM feature dim: {lstm_dim}, U-Net feature dim: {unet_dim}")
 
-    print(f"Shape of meta_X_train: {meta_X_train.shape}")
-
-    meta_model = build_stacking_meta_model(n_features=meta_X_train.shape[1])
-    meta_model.compile(
+    fusion_model = build_feature_stacking_model(lstm_dim, unet_dim)
+    fusion_model.compile(
         optimizer=Adam(learning_rate=0.001),
         loss=focal_loss(alpha=0.25, gamma=2.0),
         metrics=['accuracy']
     )
-
-    meta_model.summary()
+    fusion_model.summary()
 
     early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
 
-    history = meta_model.fit(
-        meta_X_train, Y_train,
+    history = fusion_model.fit(
+        [lstm_feat_train, unet_feat_train], Y_train,
         epochs=50,
         batch_size=128,
         validation_split=0.2,
@@ -911,32 +803,35 @@ def train_stacking_ensemble():
     plt.plot(history.history['val_accuracy'], label='val acc', color='yellow')
     plt.plot(history.history['loss'], label='train loss', color='red')
     plt.plot(history.history['val_loss'], label='val loss', color='green')
-    plt.title('Stacking Ensemble (4 features) - Accuracy and Loss')
+    plt.title('Feature-Level Stacking - Accuracy and Loss')
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy / Loss')
     plt.legend(loc='best')
     plt.grid()
-    output_image_path = os.path.join(ROOT, 'output', 'training_plot_stacking_ensemble.png')
+    output_image_path = os.path.join(ROOT, 'output', 'training_plot_feature_stacking.png')
     plt.savefig(output_image_path, dpi=300, bbox_inches='tight')
     print(f"Plot saved to {output_image_path}")
     plt.show()
 
-    Y_pred = (meta_model.predict(meta_X_test) > 0.5).astype("int32")
+    Y_pred = (fusion_model.predict([lstm_feat_test, unet_feat_test]) > 0.5).astype("int32")
     accuracy = accuracy_score(Y_test, Y_pred)
 
-    lstm_only_accuracy = accuracy_score(Y_test, (p_lstm_test > 0.5).astype("int32"))
+    # برای مقایسه منصفانه، دقت LSTM تنها را هم روی همین test set دوباره حساب می‌کنیم
+    lstm_model = load_model(lstm_path, custom_objects={'loss': focal_loss(alpha=0.25, gamma=2.0)})
+    lstm_only_pred = (lstm_model.predict(X_emb_test) > 0.5).astype("int32").flatten()
+    lstm_only_accuracy = accuracy_score(Y_test, lstm_only_pred)
 
     print(f"\n{'='*50}")
-    print(f"LSTM-only accuracy:          {lstm_only_accuracy:.4f}")
-    print(f"Stacking Ensemble Accuracy:  {accuracy:.4f}")
-    print(f"بهبود نسبت به LSTM تنها:     {(accuracy - lstm_only_accuracy) * 100:.2f} درصد")
+    print(f"LSTM-only accuracy:              {lstm_only_accuracy:.4f}")
+    print(f"Feature-Level Stacking Accuracy: {accuracy:.4f}")
+    print(f"بهبود نسبت به LSTM تنها:          {(accuracy - lstm_only_accuracy) * 100:.2f} درصد")
     print(f"{'='*50}\n")
     print("Classification Report:")
     print(classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable'], labels=[0, 1]))
 
-    os.makedirs(os.path.join(ROOT, 'output'), exist_ok=True)
-    meta_model.save(os.path.join(ROOT, 'output', 'final_stacking_ensemble.h5'))
-    print(f"Model saved to {os.path.join(ROOT, 'output', 'final_stacking_ensemble.h5')}")
+    fusion_model.save(os.path.join(ROOT, 'output', 'final_feature_stacking.h5'))
+    print(f"Model saved to {os.path.join(ROOT, 'output', 'final_feature_stacking.h5')}")
+
 
 
 if __name__ == "__main__":
@@ -953,4 +848,4 @@ if __name__ == "__main__":
     # train_UNET_LSTM()
     # test_unet_branch_alone()
     # check_ensemble_potential()
-    train_stacking_ensemble()
+    train_feature_level_stacking()
