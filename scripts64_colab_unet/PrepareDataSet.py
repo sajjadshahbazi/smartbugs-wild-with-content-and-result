@@ -1031,4 +1031,202 @@ if __name__ == "__main__":
     # =============================================================================
     # train_LSTM()
     # train_UNET_LSTM()
-    test_unet_branch_alone()()
+    test_unet_branch_alone()
+
+
+
+# 2026-07-04 23:52:44.045450: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+# 2026-07-04 23:52:44.115236: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+# To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+# size files 47398
+# Shape of X_att: (47619, 100, 100, 1)
+# Distribution in Y: (array([0, 1], dtype=int32), array([28520, 19099]))
+# Majority-class baseline accuracy: 0.5967
+# 2026-07-04 23:52:50.546284: W tensorflow/core/common_runtime/gpu/gpu_bfc_allocator.cc:47] Overriding orig_value setting because the TF_FORCE_GPU_ALLOW_GROWTH environment variable is set. Original config value was 0.
+# WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+# I0000 00:00:1783209170.547424   17119 gpu_device.cc:2020] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 79188 MB memory:  -> device: 0, name: NVIDIA A100-SXM4-80GB, pci bus id: 0000:00:05.0, compute capability: 8.0
+# Model: "functional"
+# ┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┓
+# ┃ Layer (type)        ┃ Output Shape      ┃    Param # ┃ Connected to      ┃
+# ┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━┩
+# │ attention_map_input │ (None, 100, 100,  │          0 │ -                 │
+# │ (InputLayer)        │ 1)                │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ conv2d (Conv2D)     │ (None, 100, 100,  │        640 │ attention_map_in… │
+# │                     │ 64)               │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ max_pooling2d       │ (None, 50, 50,    │          0 │ conv2d[0][0]      │
+# │ (MaxPooling2D)      │ 64)               │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ conv2d_1 (Conv2D)   │ (None, 50, 50,    │     73,856 │ max_pooling2d[0]… │
+# │                     │ 128)              │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ max_pooling2d_1     │ (None, 25, 25,    │          0 │ conv2d_1[0][0]    │
+# │ (MaxPooling2D)      │ 128)              │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ conv2d_2 (Conv2D)   │ (None, 25, 25,    │    295,168 │ max_pooling2d_1[… │
+# │                     │ 256)              │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ up_sampling2d       │ (None, 50, 50,    │          0 │ conv2d_2[0][0]    │
+# │ (UpSampling2D)      │ 256)              │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ concatenate         │ (None, 50, 50,    │          0 │ conv2d_1[0][0],   │
+# │ (Concatenate)       │ 384)              │            │ up_sampling2d[0]… │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ conv2d_3 (Conv2D)   │ (None, 50, 50,    │    442,496 │ concatenate[0][0] │
+# │                     │ 128)              │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ up_sampling2d_1     │ (None, 100, 100,  │          0 │ conv2d_3[0][0]    │
+# │ (UpSampling2D)      │ 128)              │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ concatenate_1       │ (None, 100, 100,  │          0 │ conv2d[0][0],     │
+# │ (Concatenate)       │ 192)              │            │ up_sampling2d_1[… │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ conv2d_4 (Conv2D)   │ (None, 100, 100,  │    110,656 │ concatenate_1[0]… │
+# │                     │ 64)               │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ global_average_poo… │ (None, 64)        │          0 │ conv2d_4[0][0]    │
+# │ (GlobalAveragePool… │                   │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ dense (Dense)       │ (None, 128)       │      8,320 │ global_average_p… │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ dense_1 (Dense)     │ (None, 64)        │      8,256 │ dense[0][0]       │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ dense_2 (Dense)     │ (None, 1)         │         65 │ dense_1[0][0]     │
+# └─────────────────────┴───────────────────┴────────────┴───────────────────┘
+#  Total params: 939,457 (3.58 MB)
+#  Trainable params: 939,457 (3.58 MB)
+#  Non-trainable params: 0 (0.00 B)
+# Epoch 1/50
+# 2026-07-04 23:52:55.306992: I external/local_xla/xla/service/service.cc:163] XLA service 0x7b2580015ea0 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
+# 2026-07-04 23:52:55.307024: I external/local_xla/xla/service/service.cc:171]   StreamExecutor device (0): NVIDIA A100-SXM4-80GB, Compute Capability 8.0
+# 2026-07-04 23:52:55.380856: I tensorflow/compiler/mlir/tensorflow/utils/dump_mlir_util.cc:269] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
+# 2026-07-04 23:52:55.780073: I external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:473] Loaded cuDNN version 91900
+# 2026-07-04 23:52:55.851196: I external/local_xla/xla/service/gpu/autotuning/dot_search_space.cc:208] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+# 2026-07-04 23:52:55.851243: I external/local_xla/xla/service/gpu/autotuning/dot_search_space.cc:208] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+# 2026-07-04 23:52:55.851272: I external/local_xla/xla/service/gpu/autotuning/dot_search_space.cc:208] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+# 2026-07-04 23:52:55.851293: I external/local_xla/xla/service/gpu/autotuning/dot_search_space.cc:208] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+# 2026-07-04 23:52:55.851311: I external/local_xla/xla/service/gpu/autotuning/dot_search_space.cc:208] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+# 2026-07-04 23:52:55.851330: I external/local_xla/xla/service/gpu/autotuning/dot_search_space.cc:208] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+# 2026-07-04 23:52:57.126508: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_546', 108 bytes spill stores, 108 bytes spill loads
+#
+# 2026-07-04 23:52:57.440471: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_798', 16 bytes spill stores, 16 bytes spill loads
+#
+# 2026-07-04 23:52:57.489244: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_553', 120 bytes spill stores, 120 bytes spill loads
+#
+# 2026-07-04 23:52:59.589127: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_834', 76 bytes spill stores, 76 bytes spill loads
+#
+# 2026-07-04 23:53:00.122956: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_836', 8 bytes spill stores, 8 bytes spill loads
+#
+# 2026-07-04 23:53:00.152071: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_836', 156 bytes spill stores, 156 bytes spill loads
+#
+# 2026-07-04 23:53:00.455237: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_834', 112 bytes spill stores, 112 bytes spill loads
+#
+# 2026-07-04 23:53:00.482798: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_798', 120 bytes spill stores, 120 bytes spill loads
+#
+# 2026-07-04 23:53:00.751335: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_810', 4 bytes spill stores, 4 bytes spill loads
+#
+# 2026-07-04 23:53:01.064723: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_836', 120 bytes spill stores, 120 bytes spill loads
+#
+# 2026-07-04 23:53:01.140899: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_834', 256 bytes spill stores, 256 bytes spill loads
+#
+# 2026-07-04 23:53:01.228227: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_836', 320 bytes spill stores, 320 bytes spill loads
+#
+# 2026-07-04 23:53:12.018070: E external/local_xla/xla/service/slow_operation_alarm.cc:73] Trying algorithm eng0{} for conv (f32[64,192,3,3]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,192,100,100]{3,2,1,0}, f32[128,64,100,100]{3,2,1,0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBackwardFilter", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]} is taking a while...
+# 2026-07-04 23:53:12.039601: E external/local_xla/xla/service/slow_operation_alarm.cc:140] The operation took 1.021669107s
+# Trying algorithm eng0{} for conv (f32[64,192,3,3]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,192,100,100]{3,2,1,0}, f32[128,64,100,100]{3,2,1,0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBackwardFilter", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]} is taking a while...
+# I0000 00:00:1783209195.056430   17228 device_compiler.h:196] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+# 2026-07-04 23:53:33.185188: I external/local_xla/xla/service/gpu/autotuning/dot_search_space.cc:208] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+# 2026-07-04 23:53:33.185234: I external/local_xla/xla/service/gpu/autotuning/dot_search_space.cc:208] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+# 2026-07-04 23:53:34.871916: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_137', 116 bytes spill stores, 116 bytes spill loads
+#
+# 2026-07-04 23:53:35.002137: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_137', 8 bytes spill stores, 8 bytes spill loads
+#
+# 2026-07-04 23:53:35.574404: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_130', 9304 bytes spill stores, 9848 bytes spill loads
+#
+# 239/239 - 44s - 184ms/step - accuracy: 0.6456 - loss: 0.0402 - val_accuracy: 0.7396 - val_loss: 0.0362
+# Epoch 2/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.7639 - loss: 0.0320 - val_accuracy: 0.7589 - val_loss: 0.0314
+# Epoch 3/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.7791 - loss: 0.0293 - val_accuracy: 0.7665 - val_loss: 0.0301
+# Epoch 4/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.7906 - loss: 0.0278 - val_accuracy: 0.7907 - val_loss: 0.0280
+# Epoch 5/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.8001 - loss: 0.0269 - val_accuracy: 0.7920 - val_loss: 0.0277
+# Epoch 6/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.8096 - loss: 0.0257 - val_accuracy: 0.7925 - val_loss: 0.0268
+# Epoch 7/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.8159 - loss: 0.0250 - val_accuracy: 0.7979 - val_loss: 0.0262
+# Epoch 8/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.8294 - loss: 0.0238 - val_accuracy: 0.8126 - val_loss: 0.0251
+# Epoch 9/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.8389 - loss: 0.0227 - val_accuracy: 0.8144 - val_loss: 0.0252
+# Epoch 10/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.8500 - loss: 0.0216 - val_accuracy: 0.8256 - val_loss: 0.0247
+# Epoch 11/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.8628 - loss: 0.0203 - val_accuracy: 0.7880 - val_loss: 0.0271
+# Epoch 12/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.8699 - loss: 0.0197 - val_accuracy: 0.8341 - val_loss: 0.0245
+# Epoch 13/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.8784 - loss: 0.0186 - val_accuracy: 0.8401 - val_loss: 0.0232
+# Epoch 14/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.8904 - loss: 0.0171 - val_accuracy: 0.8420 - val_loss: 0.0246
+# Epoch 15/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.9011 - loss: 0.0160 - val_accuracy: 0.7920 - val_loss: 0.0337
+# Epoch 16/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.9046 - loss: 0.0157 - val_accuracy: 0.8396 - val_loss: 0.0289
+# Epoch 17/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.9147 - loss: 0.0141 - val_accuracy: 0.8489 - val_loss: 0.0262
+# Epoch 18/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.9220 - loss: 0.0133 - val_accuracy: 0.8567 - val_loss: 0.0255
+# Epoch 19/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.9288 - loss: 0.0122 - val_accuracy: 0.8514 - val_loss: 0.0267
+# Epoch 20/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.9346 - loss: 0.0115 - val_accuracy: 0.8460 - val_loss: 0.0276
+# Epoch 21/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.9363 - loss: 0.0111 - val_accuracy: 0.8509 - val_loss: 0.0295
+# Epoch 22/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.9429 - loss: 0.0102 - val_accuracy: 0.8573 - val_loss: 0.0283
+# Epoch 23/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.9461 - loss: 0.0097 - val_accuracy: 0.8584 - val_loss: 0.0305
+# Plot saved to /content/smartbugs-wild-with-content-and-result/output/training_plot_unet_only.png
+# Figure(1000x600)
+# 2026-07-04 23:57:24.752734: I external/local_xla/xla/service/gpu/autotuning/dot_search_space.cc:208] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+# 2026-07-04 23:57:25.765831: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 108 bytes spill stores, 108 bytes spill loads
+#
+# 2026-07-04 23:57:25.805921: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 4 bytes spill stores, 4 bytes spill loads
+#
+# 2026-07-04 23:57:25.905700: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 8 bytes spill stores, 8 bytes spill loads
+#
+# 2026-07-04 23:57:26.056332: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 20 bytes spill stores, 20 bytes spill loads
+#
+# 286/298 ━━━━━━━━━━━━━━━━━━━━ 0s 4ms/step2026-07-04 23:57:28.665562: I external/local_xla/xla/service/gpu/autotuning/dot_search_space.cc:208] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+# 2026-07-04 23:57:29.152529: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 12 bytes spill stores, 12 bytes spill loads
+#
+# 2026-07-04 23:57:29.754764: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 24 bytes spill stores, 24 bytes spill loads
+#
+# 2026-07-04 23:57:29.786339: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 292 bytes spill stores, 292 bytes spill loads
+#
+# 2026-07-04 23:57:29.796805: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 4 bytes spill stores, 4 bytes spill loads
+#
+# 2026-07-04 23:57:29.976560: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 8 bytes spill stores, 8 bytes spill loads
+#
+# 298/298 ━━━━━━━━━━━━━━━━━━━━ 7s 13ms/step
+#
+# ==================================================
+# U-Net-only accuracy:       0.8389
+# Majority-class baseline:   0.5967
+# Improvement over baseline: 24.22%
+# ==================================================
+#
+# Classification Report:
+#               precision    recall  f1-score   support
+#
+#         Safe       0.88      0.85      0.86      5683
+#   Vulnerable       0.79      0.83      0.81      3841
+#
+#     accuracy                           0.84      9524
+#    macro avg       0.83      0.84      0.83      9524
+# weighted avg       0.84      0.84      0.84      9524
+
+
