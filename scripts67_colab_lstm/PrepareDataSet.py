@@ -6,8 +6,9 @@ from imblearn.over_sampling import SMOTE
 import pandas as pd
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.utils import Sequence
+from tensorflow.keras.layers import InputLayer
+
 import sys
-from tensorflow.keras.models import load_model, Model
 from gensim.models import Word2Vec
 import pickle
 import PreProcessTools
@@ -1045,6 +1046,7 @@ def test_unet_branch_alone():
 # قبلاً اجرا و مدل‌هایشان در پوشه output ذخیره شده باشند.
 # =============================================================================
 def check_ensemble_potential():
+    from tensorflow.keras.models import load_model
 
     X_att, Y_att = load_batches_by_prefix(CACHE_DIR_UNET, prefix="att_")
     X_emb, Y_emb = load_batches_by_prefix(CACHE_DIR_UNET, prefix="emb_")
@@ -1110,6 +1112,7 @@ def check_ensemble_potential():
 # در پوشه output ذخیره شده باشند.
 # =============================================================================
 def train_meta_ensemble():
+    from tensorflow.keras.models import load_model, Model
 
     X_att, Y_att = load_batches_by_prefix(CACHE_DIR_UNET, prefix="att_")
     X_emb, Y_emb = load_batches_by_prefix(CACHE_DIR_UNET, prefix="emb_")
@@ -1133,10 +1136,28 @@ def train_meta_ensemble():
     )
 
     # استخراج‌کننده‌ی فیچر: خروجی لایه‌ی ماقبل آخر (قبل از Dense(1, sigmoid))
-    # این کار برای هر دو مدل عمومی است چون هر دو آخرین لایه‌شان
-    # Dense(1, activation='sigmoid') است.
-    lstm_feature_extractor = Model(inputs=lstm_model.input, outputs=lstm_model.layers[-2].output)
-    unet_feature_extractor = Model(inputs=unet_model.input, outputs=unet_model.layers[-2].output)
+    # =========================================================================
+    # اصلاح: به‌جای استفاده از model.input (که برای مدل‌های Sequential لود شده
+    # از فرمت قدیمی h5 در Keras 3 خطای "has never been called and thus has no
+    # defined input" می‌دهد، چون گراف داخلی مدل به‌درستی بازسازی نمی‌شود)،
+    # یک Input جدید می‌سازیم و لایه‌های مدل لود‌شده (که وزن‌هایشان حفظ شده) را
+    # دستی از روی آن رد می‌کنیم. این روش مستقل از نوع مدل (Sequential یا
+    # Functional) کار می‌کند.
+    # =========================================================================
+    def build_feature_extractor(model, input_shape):
+        feat_input = Input(shape=input_shape)
+        x = feat_input
+        for layer in model.layers[:-1]:  # همه لایه‌ها به‌جز Dense(1, sigmoid) آخر
+            if isinstance(layer, InputLayer):
+                # لایه‌ی Input مدل اصلی را رد کن (برای مدل‌های Functional مثل U-Net
+                # این لایه داخل model.layers هست و نباید دوباره روی تنسور جدید
+                # صدا زده شود)
+                continue
+            x = layer(x)
+        return Model(inputs=feat_input, outputs=x)
+
+    lstm_feature_extractor = build_feature_extractor(lstm_model, (sequence_length, vector_length))
+    unet_feature_extractor = build_feature_extractor(unet_model, (sequence_length, sequence_length, 1))
 
     print("Extracting LSTM penultimate features...")
     lstm_feat_train = lstm_feature_extractor.predict(X_emb_train, batch_size=256, verbose=1)
