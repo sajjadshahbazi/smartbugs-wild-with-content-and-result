@@ -810,7 +810,16 @@ def train_UNET_LSTM():
     plt.legend(loc='best')
     plt.grid()
 
-    output_image_path = "training_plot_unet_attention_lstm.png"
+    # =============================================================================
+    # اصلاح: مسیر نسبی "training_plot_unet_attention_lstm.png" جایگزین شد با
+    # os.path.join(ROOT, 'output', ...). دلیل اینکه قبلاً نمودار و مدل این
+    # تابع در پوشه output ذخیره نمی‌شدند دقیقاً همین بود: چون در ابتدای
+    # اسکریپت os.chdir(PATH) اجرا شده (رفتن به پوشه contracts)، مسیر نسبی
+    # فایل را همان‌جا (یا هر جای دیگری که فرآیند در آن اجرا می‌شد) ذخیره
+    # می‌کرد، نه در ROOT/output. الان دقیقاً مثل train_LSTM مسیر کامل
+    # ساخته می‌شود.
+    # =============================================================================
+    output_image_path = os.path.join(ROOT, 'output', 'training_plot_unet_attention_lstm.png')
     plt.savefig(output_image_path, dpi=300, bbox_inches='tight')
     print(f"Plot saved to {output_image_path}")
     plt.show()
@@ -824,13 +833,20 @@ def train_UNET_LSTM():
     print("Classification Report:")
     print(report)
 
-    model.save('final_unet_attention_lstm_model.h5')
+    model_save_path = os.path.join(ROOT, 'output', 'final_unet_attention_lstm_model.h5')
+    model.save(model_save_path)
+    print(f"Model saved to {model_save_path}")
     print("Training complete with U-Net(AttentionMap) + BiLSTM.")
 
 
 def train_LSTM():
-    # بارگذاری داده‌ها
-    X, Y = load_batches(CACHE_DIR, file_extension=".pkl")
+    # =============================================================================
+    # تغییر: طبق درخواست شما، train_LSTM دیگر از CACHE_DIR (vectorcollections)
+    # استفاده نمی‌کند. چون الان دیتاست LSTM هم داخل CACHE_DIR_UNET
+    # (vectorcollections_img) با پیشوند emb_ ذخیره می‌شود، از همان‌جا
+    # (فقط فایل‌های emb_) لود می‌کنیم تا نیازی به اجرای جداگانه دو مسیر نباشد.
+    # =============================================================================
+    X, Y = load_batches_by_prefix(CACHE_DIR_UNET, prefix="emb_")
     print(f"Shape of X: {X.shape}")  # باید (samples, max_function_length, vector_length) باشد
     print(f"Shape of Y: {Y.shape}")  # باید (samples,) باشد
     print("Distribution in Y:", np.unique(Y, return_counts=True))
