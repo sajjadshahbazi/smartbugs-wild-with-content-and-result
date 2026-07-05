@@ -1448,3 +1448,48 @@ if __name__ == "__main__":
 #
 # WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`.
 # Model saved to /content/smartbugs-wild-with-content-and-result/output/final_unet_only_model.h5
+
+
+# result
+# 2026-07-05 15:24:03.801860: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+# 2026-07-05 15:24:03.873406: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+# To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+# size files 47398
+# 2026-07-05 15:24:15.671491: W tensorflow/core/common_runtime/gpu/gpu_bfc_allocator.cc:47] Overriding orig_value setting because the TF_FORCE_GPU_ALLOW_GROWTH environment variable is set. Original config value was 0.
+# WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+# I0000 00:00:1783265055.672615   51497 gpu_device.cc:2020] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 79188 MB memory:  -> device: 0, name: NVIDIA A100-SXM4-80GB, pci bus id: 0000:00:05.0, compute capability: 8.0
+# WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+# WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+# 2026-07-05 15:24:18.794034: I external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:473] Loaded cuDNN version 91900
+# 298/298 ━━━━━━━━━━━━━━━━━━━━ 3s 8ms/step
+# 2026-07-05 15:24:22.243274: I external/local_xla/xla/service/service.cc:163] XLA service 0x798fa40153b0 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
+# 2026-07-05 15:24:22.243305: I external/local_xla/xla/service/service.cc:171]   StreamExecutor device (0): NVIDIA A100-SXM4-80GB, Compute Capability 8.0
+# 2026-07-05 15:24:22.259595: I tensorflow/compiler/mlir/tensorflow/utils/dump_mlir_util.cc:269] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
+# 2026-07-05 15:24:22.320226: I external/local_xla/xla/service/gpu/autotuning/dot_search_space.cc:208] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+# 2026-07-05 15:24:23.359300: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 108 bytes spill stores, 108 bytes spill loads
+#
+# 2026-07-05 15:24:23.394235: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 20 bytes spill stores, 20 bytes spill loads
+#
+# 2026-07-05 15:24:23.470160: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 4 bytes spill stores, 4 bytes spill loads
+#
+# 2026-07-05 15:24:23.640136: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 8 bytes spill stores, 8 bytes spill loads
+#
+# I0000 00:00:1783265065.131756   51629 device_compiler.h:196] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+# 294/298 ━━━━━━━━━━━━━━━━━━━━ 0s 4ms/step2026-07-05 15:24:26.520873: I external/local_xla/xla/service/gpu/autotuning/dot_search_space.cc:208] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+# 2026-07-05 15:24:27.164299: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 12 bytes spill stores, 12 bytes spill loads
+#
+# 2026-07-05 15:24:27.613948: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 292 bytes spill stores, 292 bytes spill loads
+#
+# 2026-07-05 15:24:27.651766: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 8 bytes spill stores, 8 bytes spill loads
+#
+# 2026-07-05 15:24:27.710875: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 24 bytes spill stores, 24 bytes spill loads
+#
+# 2026-07-05 15:24:27.718486: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 4 bytes spill stores, 4 bytes spill loads
+#
+# 298/298 ━━━━━━━━━━━━━━━━━━━━ 7s 12ms/step
+# فقط LSTM درست:  6.77%
+# فقط U-Net درست: 6.97%
+# هر دو درست:     77.14%
+# هر دو غلط:      9.11%
+#
+# پتانسیل بهبود از ensemble: 13.74%
