@@ -1207,3 +1207,89 @@ if __name__ == "__main__":
     # test_unet_branch_alone()
     # check_ensemble_potential()
     train_stacking_ensemble()
+
+
+# 2026-07-05 17:20:04.448195: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+# 2026-07-05 17:20:04.517640: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+# To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+# size files 47398
+# 2026-07-05 17:20:18.293659: W tensorflow/core/common_runtime/gpu/gpu_bfc_allocator.cc:47] Overriding orig_value setting because the TF_FORCE_GPU_ALLOW_GROWTH environment variable is set. Original config value was 0.
+# WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+# I0000 00:00:1783272018.294793   17002 gpu_device.cc:2020] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 79188 MB memory:  -> device: 0, name: NVIDIA A100-SXM4-80GB, pci bus id: 0000:00:05.0, compute capability: 8.0
+# WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+# WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+# در حال پیش‌بینی با مدل‌های پایه روی داده train...
+# 2026-07-05 17:20:26.379371: I external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:473] Loaded cuDNN version 91900
+# 1191/1191 ━━━━━━━━━━━━━━━━━━━━ 10s 8ms/step
+# 2026-07-05 17:20:38.246100: I external/local_xla/xla/service/service.cc:163] XLA service 0x792f8e7a6570 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
+# 2026-07-05 17:20:38.246127: I external/local_xla/xla/service/service.cc:171]   StreamExecutor device (0): NVIDIA A100-SXM4-80GB, Compute Capability 8.0
+# 2026-07-05 17:20:38.276970: I tensorflow/compiler/mlir/tensorflow/utils/dump_mlir_util.cc:269] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
+# 2026-07-05 17:20:38.367348: I external/local_xla/xla/service/gpu/autotuning/dot_search_space.cc:208] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+# 2026-07-05 17:20:39.434529: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 108 bytes spill stores, 108 bytes spill loads
+#
+# 2026-07-05 17:20:39.485403: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 20 bytes spill stores, 20 bytes spill loads
+#
+# 2026-07-05 17:20:39.533885: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 8 bytes spill stores, 8 bytes spill loads
+#
+# 2026-07-05 17:20:39.800553: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 4 bytes spill stores, 4 bytes spill loads
+#
+# I0000 00:00:1783272041.567238   17151 device_compiler.h:196] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+# 1191/1191 ━━━━━━━━━━━━━━━━━━━━ 10s 5ms/step
+# در حال پیش‌بینی با مدل‌های پایه روی داده test...
+# 298/298 ━━━━━━━━━━━━━━━━━━━━ 2s 8ms/step
+# 295/298 ━━━━━━━━━━━━━━━━━━━━ 0s 4ms/step2026-07-05 17:20:53.380625: I external/local_xla/xla/service/gpu/autotuning/dot_search_space.cc:208] All configs were filtered out because none of them sufficiently match the hints. Maybe the hints set does not contain a good representative set of valid configs? Working around this by using the full hints set instead.
+# 2026-07-05 17:20:54.170201: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 12 bytes spill stores, 12 bytes spill loads
+#
+# 2026-07-05 17:20:54.360398: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 292 bytes spill stores, 292 bytes spill loads
+#
+# 2026-07-05 17:20:54.412299: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 24 bytes spill stores, 24 bytes spill loads
+#
+# 2026-07-05 17:20:54.432725: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 4 bytes spill stores, 4 bytes spill loads
+#
+# 2026-07-05 17:20:54.586588: I external/local_xla/xla/stream_executor/cuda/subprocess_compilation.cc:346] ptxas warning : Registers are spilled to local memory in function 'gemm_fusion_dot_123', 8 bytes spill stores, 8 bytes spill loads
+#
+# 298/298 ━━━━━━━━━━━━━━━━━━━━ 4s 12ms/step
+# Epoch 1/50
+# 239/239 - 3s - 14ms/step - accuracy: 0.8413 - loss: 0.0350 - val_accuracy: 0.8527 - val_loss: 0.0295
+# Epoch 2/50
+# 239/239 - 1s - 2ms/step - accuracy: 0.9139 - loss: 0.0224 - val_accuracy: 0.8538 - val_loss: 0.0224
+# Epoch 3/50
+# 239/239 - 1s - 2ms/step - accuracy: 0.9145 - loss: 0.0166 - val_accuracy: 0.8538 - val_loss: 0.0209
+# Epoch 4/50
+# 239/239 - 1s - 2ms/step - accuracy: 0.9156 - loss: 0.0147 - val_accuracy: 0.8543 - val_loss: 0.0212
+# Epoch 5/50
+# 239/239 - 1s - 2ms/step - accuracy: 0.9160 - loss: 0.0141 - val_accuracy: 0.8540 - val_loss: 0.0218
+# Epoch 6/50
+# 239/239 - 1s - 2ms/step - accuracy: 0.9167 - loss: 0.0140 - val_accuracy: 0.8552 - val_loss: 0.0220
+# Epoch 7/50
+# 239/239 - 1s - 3ms/step - accuracy: 0.9166 - loss: 0.0139 - val_accuracy: 0.8554 - val_loss: 0.0222
+# Epoch 8/50
+# 239/239 - 1s - 2ms/step - accuracy: 0.9169 - loss: 0.0138 - val_accuracy: 0.8555 - val_loss: 0.0224
+# Epoch 9/50
+# 239/239 - 1s - 3ms/step - accuracy: 0.9168 - loss: 0.0138 - val_accuracy: 0.8571 - val_loss: 0.0224
+# Epoch 10/50
+# 239/239 - 1s - 3ms/step - accuracy: 0.9175 - loss: 0.0138 - val_accuracy: 0.8554 - val_loss: 0.0225
+# Epoch 11/50
+# 239/239 - 1s - 3ms/step - accuracy: 0.9171 - loss: 0.0138 - val_accuracy: 0.8547 - val_loss: 0.0226
+# Epoch 12/50
+# 239/239 - 1s - 2ms/step - accuracy: 0.9169 - loss: 0.0138 - val_accuracy: 0.8569 - val_loss: 0.0225
+# Epoch 13/50
+# 239/239 - 1s - 2ms/step - accuracy: 0.9172 - loss: 0.0138 - val_accuracy: 0.8563 - val_loss: 0.0226
+# 298/298 ━━━━━━━━━━━━━━━━━━━━ 1s 1ms/step
+#
+# ==================================================
+# Stacking Ensemble Accuracy: 0.8579
+# ==================================================
+#
+# Classification Report:
+#               precision    recall  f1-score   support
+#
+#         Safe       0.87      0.90      0.88      5683
+#   Vulnerable       0.84      0.79      0.82      3841
+#
+#     accuracy                           0.86      9524
+#    macro avg       0.86      0.85      0.85      9524
+# weighted avg       0.86      0.86      0.86      9524
+#
+# WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`.
+# Model saved to /content/smartbugs-wild-with-content-and-result/output/final_stacking_ensemble.h5
