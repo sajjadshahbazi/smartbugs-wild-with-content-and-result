@@ -7,6 +7,7 @@ import pandas as pd
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.utils import Sequence
 import sys
+from tensorflow.keras.models import load_model
 from gensim.models import Word2Vec
 import pickle
 import PreProcessTools
@@ -1044,7 +1045,6 @@ def test_unet_branch_alone():
 # قبلاً اجرا و مدل‌هایشان در پوشه output ذخیره شده باشند.
 # =============================================================================
 def check_ensemble_potential():
-    from tensorflow.keras.models import load_model
 
     X_att, Y_att = load_batches_by_prefix(CACHE_DIR_UNET, prefix="att_")
     X_emb, Y_emb = load_batches_by_prefix(CACHE_DIR_UNET, prefix="emb_")
