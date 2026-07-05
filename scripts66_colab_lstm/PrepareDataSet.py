@@ -1114,127 +1114,137 @@ if __name__ == "__main__":
     #   ۴. check_ensemble_potential() → بررسی پتانسیل ensemble
     #      (نیازمند اجرای قبلی شماره ۱ و ۳ برای وجود فایل‌های مدل ذخیره‌شده)
     # =============================================================================
-    train_LSTM()
+    # train_LSTM()
     # train_UNET_LSTM()
-    # test_unet_branch_alone()
+    test_unet_branch_alone()
     # check_ensemble_potential()
 
 # LSTM :
+# 2026-07-05 14:46:53.740534: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+# 2026-07-05 14:46:53.809123: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+# To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+# size files 47398
+# Shape of X: (47619, 100, 300)
+# Shape of Y: (47619,)
+# Distribution in Y: (array([0, 1], dtype=int32), array([28520, 19099]))
+# Distribution in Y_test: (array([0, 1], dtype=int32), array([5683, 3841]))
+# 2026-07-05 14:47:05.040286: W tensorflow/core/common_runtime/gpu/gpu_bfc_allocator.cc:47] Overriding orig_value setting because the TF_FORCE_GPU_ALLOW_GROWTH environment variable is set. Original config value was 0.
+# WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+# I0000 00:00:1783262825.041412   37099 gpu_device.cc:2020] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 79188 MB memory:  -> device: 0, name: NVIDIA A100-SXM4-80GB, pci bus id: 0000:00:05.0, compute capability: 8.0
 # Epoch 1/50
-# 2026-07-05 14:16:05.159522: I external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:473] Loaded cuDNN version 91900
-# 239/239 - 14s - 60ms/step - accuracy: 0.6920 - loss: 0.0369 - val_accuracy: 0.7376 - val_loss: 0.0332
+# 2026-07-05 14:47:14.622587: I external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:473] Loaded cuDNN version 91900
+# 239/239 - 14s - 59ms/step - accuracy: 0.6952 - loss: 0.0368 - val_accuracy: 0.7610 - val_loss: 0.0326
 # Epoch 2/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.7640 - loss: 0.0318 - val_accuracy: 0.7519 - val_loss: 0.0327
+# 239/239 - 6s - 26ms/step - accuracy: 0.7701 - loss: 0.0315 - val_accuracy: 0.7779 - val_loss: 0.0306
 # Epoch 3/50
-# 239/239 - 6s - 27ms/step - accuracy: 0.7675 - loss: 0.0311 - val_accuracy: 0.7758 - val_loss: 0.0306
+# 239/239 - 6s - 26ms/step - accuracy: 0.7765 - loss: 0.0305 - val_accuracy: 0.7795 - val_loss: 0.0320
 # Epoch 4/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.7744 - loss: 0.0305 - val_accuracy: 0.7719 - val_loss: 0.0303
+# 239/239 - 6s - 26ms/step - accuracy: 0.7767 - loss: 0.0304 - val_accuracy: 0.7808 - val_loss: 0.0301
 # Epoch 5/50
-# 239/239 - 6s - 27ms/step - accuracy: 0.7818 - loss: 0.0297 - val_accuracy: 0.7811 - val_loss: 0.0299
+# 239/239 - 6s - 26ms/step - accuracy: 0.7880 - loss: 0.0294 - val_accuracy: 0.7732 - val_loss: 0.0310
 # Epoch 6/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.7894 - loss: 0.0291 - val_accuracy: 0.7866 - val_loss: 0.0295
+# 239/239 - 6s - 26ms/step - accuracy: 0.7909 - loss: 0.0288 - val_accuracy: 0.7813 - val_loss: 0.0293
 # Epoch 7/50
-# 239/239 - 6s - 27ms/step - accuracy: 0.7893 - loss: 0.0289 - val_accuracy: 0.7921 - val_loss: 0.0294
+# 239/239 - 6s - 26ms/step - accuracy: 0.7893 - loss: 0.0291 - val_accuracy: 0.7741 - val_loss: 0.0305
 # Epoch 8/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.7927 - loss: 0.0286 - val_accuracy: 0.7891 - val_loss: 0.0290
+# 239/239 - 6s - 26ms/step - accuracy: 0.7889 - loss: 0.0289 - val_accuracy: 0.7815 - val_loss: 0.0292
 # Epoch 9/50
-# 239/239 - 6s - 27ms/step - accuracy: 0.7973 - loss: 0.0280 - val_accuracy: 0.7947 - val_loss: 0.0294
+# 239/239 - 6s - 26ms/step - accuracy: 0.7960 - loss: 0.0281 - val_accuracy: 0.7816 - val_loss: 0.0292
 # Epoch 10/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.7892 - loss: 0.0288 - val_accuracy: 0.7874 - val_loss: 0.0284
+# 239/239 - 6s - 26ms/step - accuracy: 0.7986 - loss: 0.0278 - val_accuracy: 0.7740 - val_loss: 0.0302
 # Epoch 11/50
-# 239/239 - 6s - 27ms/step - accuracy: 0.8007 - loss: 0.0275 - val_accuracy: 0.7942 - val_loss: 0.0282
+# 239/239 - 6s - 26ms/step - accuracy: 0.8009 - loss: 0.0276 - val_accuracy: 0.7949 - val_loss: 0.0281
 # Epoch 12/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8036 - loss: 0.0273 - val_accuracy: 0.7954 - val_loss: 0.0281
+# 239/239 - 6s - 26ms/step - accuracy: 0.8035 - loss: 0.0273 - val_accuracy: 0.7993 - val_loss: 0.0277
 # Epoch 13/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8035 - loss: 0.0271 - val_accuracy: 0.7952 - val_loss: 0.0282
+# 239/239 - 6s - 26ms/step - accuracy: 0.8033 - loss: 0.0270 - val_accuracy: 0.7985 - val_loss: 0.0279
 # Epoch 14/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8073 - loss: 0.0268 - val_accuracy: 0.7964 - val_loss: 0.0287
+# 239/239 - 6s - 26ms/step - accuracy: 0.8032 - loss: 0.0269 - val_accuracy: 0.7847 - val_loss: 0.0290
 # Epoch 15/50
-# 239/239 - 6s - 27ms/step - accuracy: 0.8057 - loss: 0.0269 - val_accuracy: 0.7964 - val_loss: 0.0277
+# 239/239 - 6s - 26ms/step - accuracy: 0.8050 - loss: 0.0268 - val_accuracy: 0.7917 - val_loss: 0.0282
 # Epoch 16/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8104 - loss: 0.0264 - val_accuracy: 0.8051 - val_loss: 0.0270
+# 239/239 - 6s - 26ms/step - accuracy: 0.8043 - loss: 0.0266 - val_accuracy: 0.8018 - val_loss: 0.0277
 # Epoch 17/50
-# 239/239 - 6s - 27ms/step - accuracy: 0.8096 - loss: 0.0262 - val_accuracy: 0.8021 - val_loss: 0.0271
+# 239/239 - 6s - 26ms/step - accuracy: 0.8081 - loss: 0.0263 - val_accuracy: 0.7996 - val_loss: 0.0274
 # Epoch 18/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8128 - loss: 0.0261 - val_accuracy: 0.8047 - val_loss: 0.0270
+# 239/239 - 6s - 26ms/step - accuracy: 0.8053 - loss: 0.0266 - val_accuracy: 0.7980 - val_loss: 0.0277
 # Epoch 19/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8149 - loss: 0.0256 - val_accuracy: 0.8027 - val_loss: 0.0267
+# 239/239 - 6s - 26ms/step - accuracy: 0.8123 - loss: 0.0259 - val_accuracy: 0.8002 - val_loss: 0.0276
 # Epoch 20/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8157 - loss: 0.0255 - val_accuracy: 0.8040 - val_loss: 0.0280
+# 239/239 - 6s - 26ms/step - accuracy: 0.8131 - loss: 0.0256 - val_accuracy: 0.8054 - val_loss: 0.0267
 # Epoch 21/50
-# 239/239 - 6s - 27ms/step - accuracy: 0.8156 - loss: 0.0253 - val_accuracy: 0.8009 - val_loss: 0.0265
+# 239/239 - 6s - 26ms/step - accuracy: 0.8173 - loss: 0.0253 - val_accuracy: 0.7983 - val_loss: 0.0279
 # Epoch 22/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8198 - loss: 0.0248 - val_accuracy: 0.8067 - val_loss: 0.0268
+# 239/239 - 6s - 26ms/step - accuracy: 0.8176 - loss: 0.0251 - val_accuracy: 0.8035 - val_loss: 0.0267
 # Epoch 23/50
-# 239/239 - 6s - 27ms/step - accuracy: 0.8204 - loss: 0.0249 - val_accuracy: 0.7994 - val_loss: 0.0266
+# 239/239 - 6s - 26ms/step - accuracy: 0.8202 - loss: 0.0248 - val_accuracy: 0.8093 - val_loss: 0.0265
 # Epoch 24/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8226 - loss: 0.0245 - val_accuracy: 0.8105 - val_loss: 0.0264
+# 239/239 - 6s - 26ms/step - accuracy: 0.8232 - loss: 0.0246 - val_accuracy: 0.8047 - val_loss: 0.0261
 # Epoch 25/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8238 - loss: 0.0243 - val_accuracy: 0.8050 - val_loss: 0.0261
+# 239/239 - 6s - 26ms/step - accuracy: 0.8169 - loss: 0.0251 - val_accuracy: 0.8094 - val_loss: 0.0260
 # Epoch 26/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8275 - loss: 0.0242 - val_accuracy: 0.8093 - val_loss: 0.0260
+# 239/239 - 6s - 26ms/step - accuracy: 0.8257 - loss: 0.0242 - val_accuracy: 0.8022 - val_loss: 0.0268
 # Epoch 27/50
-# 239/239 - 6s - 27ms/step - accuracy: 0.8273 - loss: 0.0239 - val_accuracy: 0.8128 - val_loss: 0.0254
+# 239/239 - 6s - 26ms/step - accuracy: 0.8262 - loss: 0.0241 - val_accuracy: 0.8043 - val_loss: 0.0259
 # Epoch 28/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8291 - loss: 0.0237 - val_accuracy: 0.8085 - val_loss: 0.0256
+# 239/239 - 6s - 26ms/step - accuracy: 0.8296 - loss: 0.0237 - val_accuracy: 0.8169 - val_loss: 0.0264
 # Epoch 29/50
-# 239/239 - 6s - 27ms/step - accuracy: 0.8292 - loss: 0.0239 - val_accuracy: 0.8101 - val_loss: 0.0264
+# 239/239 - 6s - 26ms/step - accuracy: 0.8303 - loss: 0.0234 - val_accuracy: 0.8010 - val_loss: 0.0272
 # Epoch 30/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8331 - loss: 0.0233 - val_accuracy: 0.8149 - val_loss: 0.0252
+# 239/239 - 6s - 26ms/step - accuracy: 0.8345 - loss: 0.0232 - val_accuracy: 0.8203 - val_loss: 0.0251
 # Epoch 31/50
-# 239/239 - 6s - 27ms/step - accuracy: 0.8331 - loss: 0.0233 - val_accuracy: 0.8157 - val_loss: 0.0259
+# 239/239 - 6s - 26ms/step - accuracy: 0.8356 - loss: 0.0229 - val_accuracy: 0.8145 - val_loss: 0.0263
 # Epoch 32/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8373 - loss: 0.0230 - val_accuracy: 0.8044 - val_loss: 0.0263
+# 239/239 - 6s - 26ms/step - accuracy: 0.8383 - loss: 0.0227 - val_accuracy: 0.8157 - val_loss: 0.0255
 # Epoch 33/50
-# 239/239 - 6s - 27ms/step - accuracy: 0.8347 - loss: 0.0229 - val_accuracy: 0.8185 - val_loss: 0.0254
+# 239/239 - 6s - 26ms/step - accuracy: 0.8388 - loss: 0.0226 - val_accuracy: 0.8178 - val_loss: 0.0251
 # Epoch 34/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8420 - loss: 0.0224 - val_accuracy: 0.8239 - val_loss: 0.0245
+# 239/239 - 6s - 26ms/step - accuracy: 0.8407 - loss: 0.0223 - val_accuracy: 0.8229 - val_loss: 0.0242
 # Epoch 35/50
-# 239/239 - 6s - 27ms/step - accuracy: 0.8387 - loss: 0.0227 - val_accuracy: 0.8212 - val_loss: 0.0246
+# 239/239 - 6s - 26ms/step - accuracy: 0.8464 - loss: 0.0220 - val_accuracy: 0.8202 - val_loss: 0.0245
 # Epoch 36/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8398 - loss: 0.0222 - val_accuracy: 0.8141 - val_loss: 0.0256
+# 239/239 - 6s - 26ms/step - accuracy: 0.8437 - loss: 0.0221 - val_accuracy: 0.8183 - val_loss: 0.0249
 # Epoch 37/50
-# 239/239 - 6s - 27ms/step - accuracy: 0.8432 - loss: 0.0219 - val_accuracy: 0.8222 - val_loss: 0.0249
+# 239/239 - 6s - 26ms/step - accuracy: 0.8468 - loss: 0.0218 - val_accuracy: 0.8176 - val_loss: 0.0252
 # Epoch 38/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8460 - loss: 0.0217 - val_accuracy: 0.8227 - val_loss: 0.0252
+# 239/239 - 6s - 26ms/step - accuracy: 0.8479 - loss: 0.0214 - val_accuracy: 0.8239 - val_loss: 0.0238
 # Epoch 39/50
-# 239/239 - 6s - 27ms/step - accuracy: 0.8487 - loss: 0.0213 - val_accuracy: 0.8241 - val_loss: 0.0241
+# 239/239 - 6s - 26ms/step - accuracy: 0.8521 - loss: 0.0211 - val_accuracy: 0.8228 - val_loss: 0.0244
 # Epoch 40/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8497 - loss: 0.0212 - val_accuracy: 0.8182 - val_loss: 0.0248
+# 239/239 - 6s - 26ms/step - accuracy: 0.8529 - loss: 0.0210 - val_accuracy: 0.8198 - val_loss: 0.0250
 # Epoch 41/50
-# 239/239 - 6s - 27ms/step - accuracy: 0.8484 - loss: 0.0213 - val_accuracy: 0.8286 - val_loss: 0.0239
+# 239/239 - 6s - 26ms/step - accuracy: 0.8556 - loss: 0.0209 - val_accuracy: 0.8262 - val_loss: 0.0245
 # Epoch 42/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8549 - loss: 0.0205 - val_accuracy: 0.8278 - val_loss: 0.0244
+# 239/239 - 6s - 26ms/step - accuracy: 0.8539 - loss: 0.0205 - val_accuracy: 0.8252 - val_loss: 0.0241
 # Epoch 43/50
-# 239/239 - 6s - 27ms/step - accuracy: 0.8579 - loss: 0.0204 - val_accuracy: 0.8260 - val_loss: 0.0247
+# 239/239 - 6s - 26ms/step - accuracy: 0.8614 - loss: 0.0203 - val_accuracy: 0.8309 - val_loss: 0.0237
 # Epoch 44/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8591 - loss: 0.0203 - val_accuracy: 0.8257 - val_loss: 0.0245
+# 239/239 - 6s - 26ms/step - accuracy: 0.8590 - loss: 0.0201 - val_accuracy: 0.8288 - val_loss: 0.0242
 # Epoch 45/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8545 - loss: 0.0207 - val_accuracy: 0.8227 - val_loss: 0.0246
+# 239/239 - 6s - 26ms/step - accuracy: 0.8598 - loss: 0.0202 - val_accuracy: 0.8243 - val_loss: 0.0242
 # Epoch 46/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8642 - loss: 0.0198 - val_accuracy: 0.8260 - val_loss: 0.0255
+# 239/239 - 6s - 26ms/step - accuracy: 0.8620 - loss: 0.0200 - val_accuracy: 0.8325 - val_loss: 0.0244
 # Epoch 47/50
-# 239/239 - 6s - 27ms/step - accuracy: 0.8645 - loss: 0.0197 - val_accuracy: 0.8317 - val_loss: 0.0245
+# 239/239 - 6s - 26ms/step - accuracy: 0.8679 - loss: 0.0193 - val_accuracy: 0.8330 - val_loss: 0.0233
 # Epoch 48/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8646 - loss: 0.0194 - val_accuracy: 0.8290 - val_loss: 0.0250
+# 239/239 - 6s - 26ms/step - accuracy: 0.8673 - loss: 0.0191 - val_accuracy: 0.8270 - val_loss: 0.0246
 # Epoch 49/50
-# 239/239 - 6s - 27ms/step - accuracy: 0.8640 - loss: 0.0195 - val_accuracy: 0.8350 - val_loss: 0.0235
+# 239/239 - 6s - 26ms/step - accuracy: 0.8677 - loss: 0.0192 - val_accuracy: 0.8358 - val_loss: 0.0233
 # Epoch 50/50
-# 239/239 - 6s - 26ms/step - accuracy: 0.8697 - loss: 0.0191 - val_accuracy: 0.8340 - val_loss: 0.0245
+# 239/239 - 6s - 26ms/step - accuracy: 0.8673 - loss: 0.0193 - val_accuracy: 0.8359 - val_loss: 0.0233
 # Plot saved to /content/smartbugs-wild-with-content-and-result/output/training_plot_lstm.png
 # Figure(1000x600)
 # 298/298 ━━━━━━━━━━━━━━━━━━━━ 3s 9ms/step
-# Accuracy: 0.8355732885342293
+# Accuracy: 0.8391432171356573
 # Classification Report:
 #               precision    recall  f1-score   support
 #
-#         Safe       0.85      0.88      0.86      5683
-#   Vulnerable       0.81      0.77      0.79      3841
+#         Safe       0.84      0.89      0.87      5683
+#   Vulnerable       0.83      0.76      0.79      3841
 #
 #     accuracy                           0.84      9524
-#    macro avg       0.83      0.83      0.83      9524
-# weighted avg       0.83      0.84      0.83      9524
+#    macro avg       0.84      0.83      0.83      9524
+# weighted avg       0.84      0.84      0.84      9524
 #
 # WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`.
 # Training complete with LSTM.
-
