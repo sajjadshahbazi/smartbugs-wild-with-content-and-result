@@ -6,8 +6,6 @@ from imblearn.over_sampling import SMOTE
 import pandas as pd
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.utils import Sequence
-from tensorflow.keras.layers import InputLayer
-
 import sys
 from gensim.models import Word2Vec
 import pickle
@@ -813,14 +811,11 @@ def train_UNET_LSTM():
     plt.grid()
 
     # =============================================================================
-    # اصلاح: مسیر نسبی "training_plot_unet_attention_lstm.png" جایگزین شد با
-    # os.path.join(ROOT, 'output', ...). دلیل اینکه قبلاً نمودار و مدل این
-    # تابع در پوشه output ذخیره نمی‌شدند دقیقاً همین بود: چون در ابتدای
-    # اسکریپت os.chdir(PATH) اجرا شده (رفتن به پوشه contracts)، مسیر نسبی
-    # فایل را همان‌جا (یا هر جای دیگری که فرآیند در آن اجرا می‌شد) ذخیره
-    # می‌کرد، نه در ROOT/output. الان دقیقاً مثل train_LSTM مسیر کامل
-    # ساخته می‌شود.
+    # اصلاح: قبلاً از مسیر نسبی استفاده می‌شد که باعث می‌شد نمودار در
+    # دایرکتوری کاری فعلی (contracts/) ذخیره شود، نه در پوشه output.
+    # حالا مثل train_LSTM و test_unet_branch_alone در ROOT/output ذخیره می‌شود.
     # =============================================================================
+    os.makedirs(os.path.join(ROOT, 'output'), exist_ok=True)
     output_image_path = os.path.join(ROOT, 'output', 'training_plot_unet_attention_lstm.png')
     plt.savefig(output_image_path, dpi=300, bbox_inches='tight')
     print(f"Plot saved to {output_image_path}")
@@ -835,18 +830,18 @@ def train_UNET_LSTM():
     print("Classification Report:")
     print(report)
 
-    model_save_path = os.path.join(ROOT, 'output', 'final_unet_attention_lstm_model.h5')
-    model.save(model_save_path)
-    print(f"Model saved to {model_save_path}")
+    model.save(os.path.join(ROOT, 'output', 'final_unet_attention_lstm_model.h5'))
     print("Training complete with U-Net(AttentionMap) + BiLSTM.")
 
 
 def train_LSTM():
     # =============================================================================
-    # تغییر: طبق درخواست شما، train_LSTM دیگر از CACHE_DIR (vectorcollections)
-    # استفاده نمی‌کند. چون الان دیتاست LSTM هم داخل CACHE_DIR_UNET
-    # (vectorcollections_img) با پیشوند emb_ ذخیره می‌شود، از همان‌جا
-    # (فقط فایل‌های emb_) لود می‌کنیم تا نیازی به اجرای جداگانه دو مسیر نباشد.
+    # اصلاح جدید: چون الان همه دیتاست در vectorcollections_img ریخته شده،
+    # به‌جای خواندن از CACHE_DIR (vectorcollections)، از CACHE_DIR_UNET
+    # با پیشوند emb_ خوانده می‌شود - یعنی همان فایل‌های embedding که برای
+    # شاخه BiLSTM ساخته شده بودند، اینجا هم برای LSTM تنها استفاده می‌شوند.
+    # تابع load_batches اصلی (که از CACHE_DIR می‌خواند) دست‌نخورده باقی
+    # مانده، فقط اینجا فراخوانی آن با load_batches_by_prefix جایگزین شد.
     # =============================================================================
     X, Y = load_batches_by_prefix(CACHE_DIR_UNET, prefix="emb_")
     print(f"Shape of X: {X.shape}")  # باید (samples, max_function_length, vector_length) باشد
@@ -1089,30 +1084,30 @@ def check_ensemble_potential():
 
 
 # =============================================================================
-# اضافه شد: train_meta_ensemble
-# دلیل: weighted averaging یک وزن *ثابت* برای کل دیتاست است و نمی‌تواند
-# از پتانسیل ensemble (که check_ensemble_potential نشان داد ~13.74% است)
-# به‌خوبی استفاده کند، چون در بعضی نمونه‌ها LSTM بهتر است و در بعضی
-# نمونه‌های دیگر U-Net - یک وزن ثابت نمی‌تواند هم‌زمان به هر دو حالت
-# جواب دهد.
-#
-# این تابع به‌جای آن یک meta-learner (MLP کوچک) train می‌کند که به ازای
-# هر نمونه یاد می‌گیرد چطور دو مدل را ترکیب کند (feature-level stacking):
-#   - به‌جای اینکه فقط دو عدد احتمال نهایی (p_lstm, p_unet) به meta-learner
-#     بدهیم (که آن هم یک ترکیب خطی محدود می‌سازد)، از خروجی لایه Dense
-#     قبل از سیگموید هر دو شاخه (بردار 64 بعدی، نه یک عدد) استفاده می‌کنیم.
-#     این بردارها اطلاعات خام بیشتری از تصمیم هر مدل دارند.
-#   - دو عدد احتمال نهایی هم به‌عنوان فیچر اضافه اضافه می‌شوند (چون
-#     اطلاعات "اطمینان کالیبره‌شده" مدل را دارند).
-#   - یک MLP کوچک روی این بردار ترکیبی train می‌شود تا یاد بگیرد در چه
-#     شرایطی (بر اساس الگوی این ویژگی‌ها) به کدام مدل بیشتر اعتماد کند.
-#
-# نیازمند این است که هم train_LSTM() و هم test_unet_branch_alone()
-# قبلاً اجرا و مدل‌هایشان (final_LSTM_model.h5, final_unet_only_model.h5)
-# در پوشه output ذخیره شده باشند.
+# اضافه شد: build_stacking_meta_model
+# یک مدل بسیار ساده که فقط دو عدد ورودی می‌گیرد: احتمال خروجی مدل LSTM
+# و احتمال خروجی مدل U-Net. یاد می‌گیرد چطور این دو عدد را برای رسیدن
+# به تصمیم نهایی ترکیب کند. این با concatenate کردن feature های خام
+# (که در build_unet_bilstm_model امتحان شد) کاملاً متفاوت است، چون
+# اینجا دو مدل جداگانه کامل train شده‌اند و فقط خروجی نهایی‌شان
+# ترکیب می‌شود - نه اینکه از اول با هم train شوند.
 # =============================================================================
-def train_meta_ensemble():
-    from tensorflow.keras.models import load_model, Model
+def build_stacking_meta_model():
+    meta_input = Input(shape=(2,), name='meta_input')
+    x = Dense(8, activation='relu')(meta_input)
+    output = Dense(1, activation='sigmoid')(x)
+    model = Model(inputs=meta_input, outputs=output)
+    return model
+
+
+# =============================================================================
+# اضافه شد: train_stacking_ensemble
+# نیازمند این است که final_LSTM_model.h5 و final_unet_only_model.h5
+# قبلاً train و در پوشه output ذخیره شده باشند (یعنی train_LSTM() و
+# test_unet_branch_alone() قبلاً اجرا شده باشند).
+# =============================================================================
+def train_stacking_ensemble():
+    from tensorflow.keras.models import load_model
 
     X_att, Y_att = load_batches_by_prefix(CACHE_DIR_UNET, prefix="att_")
     X_emb, Y_emb = load_batches_by_prefix(CACHE_DIR_UNET, prefix="emb_")
@@ -1125,7 +1120,6 @@ def train_meta_ensemble():
     X_emb_train, X_emb_test = X_emb[train_idx], X_emb[test_idx]
     Y_train, Y_test = Y_att[train_idx], Y_att[test_idx]
 
-    print("Loading base models...")
     lstm_model = load_model(
         os.path.join(ROOT, 'output', 'final_LSTM_model.h5'),
         custom_objects={'loss': focal_loss(alpha=0.25, gamma=2.0)}
@@ -1135,120 +1129,47 @@ def train_meta_ensemble():
         custom_objects={'loss': focal_loss(alpha=0.25, gamma=2.0)}
     )
 
-    # استخراج‌کننده‌ی فیچر: خروجی لایه‌ی ماقبل آخر (قبل از Dense(1, sigmoid))
-    # =========================================================================
-    # اصلاح: به‌جای استفاده از model.input (که برای مدل‌های Sequential لود شده
-    # از فرمت قدیمی h5 در Keras 3 خطای "has never been called and thus has no
-    # defined input" می‌دهد، چون گراف داخلی مدل به‌درستی بازسازی نمی‌شود)،
-    # یک Input جدید می‌سازیم و لایه‌های مدل لود‌شده (که وزن‌هایشان حفظ شده) را
-    # دستی از روی آن رد می‌کنیم. این روش مستقل از نوع مدل (Sequential یا
-    # Functional) کار می‌کند.
-    # =========================================================================
-    def build_feature_extractor(model, input_shape):
-        feat_input = Input(shape=input_shape)
-        x = feat_input
-        for layer in model.layers[:-1]:  # همه لایه‌ها به‌جز Dense(1, sigmoid) آخر
-            if isinstance(layer, InputLayer):
-                # لایه‌ی Input مدل اصلی را رد کن (برای مدل‌های Functional مثل U-Net
-                # این لایه داخل model.layers هست و نباید دوباره روی تنسور جدید
-                # صدا زده شود)
-                continue
-            x = layer(x)
-        return Model(inputs=feat_input, outputs=x)
+    # ساخت feature های meta-model: خروجی احتمال هر دو مدل پایه
+    print("در حال پیش‌بینی با مدل‌های پایه روی داده train...")
+    p_lstm_train = lstm_model.predict(X_emb_train).flatten()
+    p_unet_train = unet_model.predict(X_att_train).flatten()
+    meta_X_train = np.column_stack([p_lstm_train, p_unet_train])
 
-    lstm_feature_extractor = build_feature_extractor(lstm_model, (sequence_length, vector_length))
-    unet_feature_extractor = build_feature_extractor(unet_model, (sequence_length, sequence_length, 1))
+    print("در حال پیش‌بینی با مدل‌های پایه روی داده test...")
+    p_lstm_test = lstm_model.predict(X_emb_test).flatten()
+    p_unet_test = unet_model.predict(X_att_test).flatten()
+    meta_X_test = np.column_stack([p_lstm_test, p_unet_test])
 
-    print("Extracting LSTM penultimate features...")
-    lstm_feat_train = lstm_feature_extractor.predict(X_emb_train, batch_size=256, verbose=1)
-    lstm_feat_test = lstm_feature_extractor.predict(X_emb_test, batch_size=256, verbose=1)
-
-    print("Extracting U-Net penultimate features...")
-    unet_feat_train = unet_feature_extractor.predict(X_att_train, batch_size=256, verbose=1)
-    unet_feat_test = unet_feature_extractor.predict(X_att_test, batch_size=256, verbose=1)
-
-    # احتمال نهایی هر مدل هم به‌عنوان فیچر اضافه اضافه می‌شود
-    p_lstm_train = lstm_model.predict(X_emb_train, batch_size=256, verbose=0).flatten()
-    p_unet_train = unet_model.predict(X_att_train, batch_size=256, verbose=0).flatten()
-    p_lstm_test = lstm_model.predict(X_emb_test, batch_size=256, verbose=0).flatten()
-    p_unet_test = unet_model.predict(X_att_test, batch_size=256, verbose=0).flatten()
-
-    meta_X_train = np.concatenate(
-        [lstm_feat_train, unet_feat_train, p_lstm_train.reshape(-1, 1), p_unet_train.reshape(-1, 1)],
-        axis=1
-    )
-    meta_X_test = np.concatenate(
-        [lstm_feat_test, unet_feat_test, p_lstm_test.reshape(-1, 1), p_unet_test.reshape(-1, 1)],
-        axis=1
-    )
-
-    print(f"Shape of meta_X_train: {meta_X_train.shape}")
-    print(f"Shape of meta_X_test:  {meta_X_test.shape}")
-
-    meta_model = Sequential([
-        Input(shape=(meta_X_train.shape[1],)),
-        Dense(64, activation='relu'),
-        Dropout(0.3),
-        Dense(32, activation='relu'),
-        Dense(1, activation='sigmoid')
-    ])
-
+    meta_model = build_stacking_meta_model()
     meta_model.compile(
         optimizer=Adam(learning_rate=0.001),
         loss=focal_loss(alpha=0.25, gamma=2.0),
         metrics=['accuracy']
     )
 
-    meta_model.summary()
-
     early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
 
-    history = meta_model.fit(
+    meta_model.fit(
         meta_X_train, Y_train,
         epochs=50,
-        batch_size=64,
+        batch_size=128,
         validation_split=0.2,
         callbacks=[early_stopping],
         verbose=2
     )
 
-    os.makedirs(os.path.join(ROOT, 'output'), exist_ok=True)
-    plt.figure(figsize=(10, 6))
-    plt.plot(history.history['accuracy'], label='train acc', color='blue')
-    plt.plot(history.history['val_accuracy'], label='val acc', color='yellow')
-    plt.plot(history.history['loss'], label='train loss', color='red')
-    plt.plot(history.history['val_loss'], label='val loss', color='green')
-    plt.title('Meta-Ensemble (Feature-Level Stacking) - Accuracy and Loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy / Loss')
-    plt.legend(loc='best')
-    plt.grid()
-    output_image_path = os.path.join(ROOT, 'output', 'training_plot_meta_ensemble.png')
-    plt.savefig(output_image_path, dpi=300, bbox_inches='tight')
-    print(f"Plot saved to {output_image_path}")
-    plt.show()
-
     Y_pred = (meta_model.predict(meta_X_test) > 0.5).astype("int32")
-    ensemble_accuracy = accuracy_score(Y_test, Y_pred)
+    accuracy = accuracy_score(Y_test, Y_pred)
 
-    # مقایسه با baseline هرکدام از مدل‌های تنها روی همین test set
-    lstm_only_accuracy = accuracy_score(Y_test, (p_lstm_test > 0.5).astype("int32"))
-    unet_only_accuracy = accuracy_score(Y_test, (p_unet_test > 0.5).astype("int32"))
-
-    print(f"\n{'='*60}")
-    print(f"LSTM-only accuracy (این test split):     {lstm_only_accuracy:.4f}")
-    print(f"U-Net-only accuracy (این test split):    {unet_only_accuracy:.4f}")
-    print(f"Meta-Ensemble accuracy:                   {ensemble_accuracy:.4f}")
-    print(f"بهبود نسبت به LSTM تنها:                  {(ensemble_accuracy - lstm_only_accuracy) * 100:.2f} درصد")
-    print(f"{'='*60}\n")
-
-    print("Classification Report (Meta-Ensemble):")
+    print(f"\n{'='*50}")
+    print(f"Stacking Ensemble Accuracy: {accuracy:.4f}")
+    print(f"{'='*50}\n")
+    print("Classification Report:")
     print(classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable'], labels=[0, 1]))
 
-    model_save_path = os.path.join(ROOT, 'output', 'final_meta_ensemble_model.h5')
-    meta_model.save(model_save_path)
-    print(f"Model saved to {model_save_path}")
-    print("Training complete with Meta-Ensemble (Feature-Level Stacking).")
+    os.makedirs(os.path.join(ROOT, 'output'), exist_ok=True)
+    meta_model.save(os.path.join(ROOT, 'output', 'final_stacking_ensemble.h5'))
+    print(f"Model saved to {os.path.join(ROOT, 'output', 'final_stacking_ensemble.h5')}")
 
 
 if __name__ == "__main__":
@@ -1278,11 +1199,11 @@ if __name__ == "__main__":
     #   ۳. test_unet_branch_alone()   → آموزش و ذخیره مدل U-Net تنها
     #   ۴. check_ensemble_potential() → بررسی پتانسیل ensemble
     #      (نیازمند اجرای قبلی شماره ۱ و ۳ برای وجود فایل‌های مدل ذخیره‌شده)
-    #   ۵. train_meta_ensemble()      → ساخت و آموزش ensemble واقعی
-    #      (feature-level stacking با MLP - نیازمند اجرای قبلی شماره ۱ و ۳)
+    #   ۵. train_stacking_ensemble()  → آموزش meta-model روی خروجی هر دو مدل
+    #      (نیازمند اجرای قبلی شماره ۱ و ۳ برای وجود فایل‌های مدل ذخیره‌شده)
     # =============================================================================
     # train_LSTM()
     # train_UNET_LSTM()
     # test_unet_branch_alone()
     # check_ensemble_potential()
-    train_meta_ensemble()
+    train_stacking_ensemble()
