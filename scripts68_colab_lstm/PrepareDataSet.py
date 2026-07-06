@@ -701,59 +701,66 @@ def build_unet_only_model(seq_len=sequence_length):
 
 
 # =============================================================================
-# اضافه شد: extract_penultimate_features
-# به‌جای حدس‌زدن نام دقیق لایه‌ها (که می‌تواند اشتباه باشد)، این تابع
-# به‌صورت خودکار لایه ماقبل‌آخر مدل را پیدا می‌کند - یعنی همان بردار
-# ویژگی قبل از Dense(1, sigmoid) نهایی. این برای هر دو مدل (LSTM و
-# U-Net) به یک شکل کار می‌کند چون هر دو دقیقاً یک لایه Dense(1,sigmoid)
-# در انتها دارند.
+# اضافه شد: extract_penultimate_features_and_prob
+# این تابع هم بردار ویژگی میانی (لایه ماقبل‌آخر) و هم خروجی احتمال نهایی
+# (sigmoid) را از یک مدل از قبل train‌شده استخراج می‌کند - بدون نیاز به
+# train مجدد آن مدل. با استفاده از layers[-2] به‌جای حدس‌زدن نام لایه،
+# این کد مستقل از نام‌گذاری داخلی Keras کار می‌کند.
 # =============================================================================
-def extract_penultimate_features(model_path, X_data):
+def extract_penultimate_features_and_prob(model_path, X_data):
+    from tensorflow.keras.models import load_model, Model as KerasModel
 
     full_model = load_model(
         model_path,
         custom_objects={'loss': focal_loss(alpha=0.25, gamma=2.0)}
     )
-
-    # این خط جدید است — مدل را قبل از دسترسی به .input یک‌بار build می‌کند
-    _ = full_model.predict(X_data[:1])
-
-    # لایه ماقبل‌آخر = بردار ویژگی قبل از خروجی نهایی sigmoid
     feature_layer = full_model.layers[-2]
     feature_extractor = KerasModel(
         inputs=full_model.input,
         outputs=feature_layer.output
     )
-    features = feature_extractor.predict(X_data)
-    return features, feature_layer.output_shape[-1]
+    features = feature_extractor.predict(X_data, verbose=0)
+    prob = full_model.predict(X_data, verbose=0).flatten()
+    feat_dim = feature_layer.output_shape[-1]
+    return features, prob, feat_dim
 
 
 # =============================================================================
 # اضافه شد: build_feature_stacking_model
-# مدل fusion که روی بردارهای ویژگی میانی (نه احتمال نهایی) کار می‌کند.
-# چون این ویژگی‌ها اطلاعات بسیار غنی‌تری نسبت به یک عدد احتمال دارند،
-# مدل fusion می‌تواند الگوهای پیچیده‌تری بین دو شاخه یاد بگیرد.
+# مدل fusion که هم بردار ویژگی میانی (feature) و هم احتمال خام (probability)
+# هر دو شاخه را می‌گیرد - ترکیب هر دو نوع اطلاعات برای بیشترین سیگنال ممکن.
+# BatchNormalization اضافه شده تا آموزش پایدارتر باشد چون ابعاد
+# ورودی feature و probability خیلی متفاوت است (صدها بعد در مقابل 1 بعد).
 # =============================================================================
 def build_feature_stacking_model(lstm_feat_dim, unet_feat_dim):
+    from tensorflow.keras.layers import BatchNormalization
+
     lstm_feat_input = Input(shape=(lstm_feat_dim,), name='lstm_features')
     unet_feat_input = Input(shape=(unet_feat_dim,), name='unet_features')
+    prob_input = Input(shape=(4,), name='prob_features')  # p_lstm, p_unet, |diff|, product
 
-    combined = concatenate([lstm_feat_input, unet_feat_input])
-    x = Dense(32, activation='relu')(combined)
+    lstm_norm = BatchNormalization()(lstm_feat_input)
+    unet_norm = BatchNormalization()(unet_feat_input)
+
+    combined = concatenate([lstm_norm, unet_norm, prob_input])
+    x = Dense(64, activation='relu')(combined)
+    x = Dropout(0.4)(x)
+    x = Dense(32, activation='relu')(x)
     x = Dropout(0.3)(x)
     x = Dense(16, activation='relu')(x)
     output = Dense(1, activation='sigmoid')(x)
 
-    model = Model(inputs=[lstm_feat_input, unet_feat_input], outputs=output)
+    model = Model(inputs=[lstm_feat_input, unet_feat_input, prob_input], outputs=output)
     return model
 
 
 # =============================================================================
 # اضافه شد: train_feature_level_stacking
-# نکته کلیدی: مدل‌های LSTM و U-Net اینجا کاملاً منجمد (frozen) هستند -
-# فقط برای استخراج ویژگی استفاده می‌شوند و هیچ گرادیانی به آن‌ها
-# برنمی‌گردد. این دقیقاً همان چیزی است که مانع تکرار مشکل joint
-# training (train_UNET_LSTM) می‌شود.
+# مدل‌های LSTM و U-Net کاملاً منجمد هستند - فقط برای استخراج ویژگی
+# استفاده می‌شوند، هیچ گرادیانی به آن‌ها برنمی‌گردد.
+# نیازمند وجود final_LSTM_model.h5 و final_unet_only_model.h5 در پوشه
+# output است (از اجراهای قبلی train_LSTM و test_unet_branch_alone) -
+# نیازی به train مجدد آن‌ها نیست.
 # =============================================================================
 def train_feature_level_stacking():
     X_att, Y_att = load_batches_by_prefix(CACHE_DIR_UNET, prefix="att_")
@@ -770,31 +777,43 @@ def train_feature_level_stacking():
     lstm_path = os.path.join(ROOT, 'output', 'final_LSTM_model.h5')
     unet_path = os.path.join(ROOT, 'output', 'final_unet_only_model.h5')
 
-    print("استخراج بردار ویژگی از LSTM (train)...")
-    lstm_feat_train, lstm_dim = extract_penultimate_features(lstm_path, X_emb_train)
-    print("استخراج بردار ویژگی از LSTM (test)...")
-    lstm_feat_test, _ = extract_penultimate_features(lstm_path, X_emb_test)
+    print("استخراج ویژگی و احتمال از LSTM (train)...")
+    lstm_feat_train, p_lstm_train, lstm_dim = extract_penultimate_features_and_prob(lstm_path, X_emb_train)
+    print("استخراج ویژگی و احتمال از LSTM (test)...")
+    lstm_feat_test, p_lstm_test, _ = extract_penultimate_features_and_prob(lstm_path, X_emb_test)
 
-    print("استخراج بردار ویژگی از U-Net (train)...")
-    unet_feat_train, unet_dim = extract_penultimate_features(unet_path, X_att_train)
-    print("استخراج بردار ویژگی از U-Net (test)...")
-    unet_feat_test, _ = extract_penultimate_features(unet_path, X_att_test)
+    print("استخراج ویژگی و احتمال از U-Net (train)...")
+    unet_feat_train, p_unet_train, unet_dim = extract_penultimate_features_and_prob(unet_path, X_att_train)
+    print("استخراج ویژگی و احتمال از U-Net (test)...")
+    unet_feat_test, p_unet_test, _ = extract_penultimate_features_and_prob(unet_path, X_att_test)
 
     print(f"LSTM feature dim: {lstm_dim}, U-Net feature dim: {unet_dim}")
 
+    # ساخت feature های probability (همان که در stacking قبلی امتحان شد)
+    prob_train = np.column_stack([
+        p_lstm_train, p_unet_train,
+        np.abs(p_lstm_train - p_unet_train),
+        p_lstm_train * p_unet_train
+    ])
+    prob_test = np.column_stack([
+        p_lstm_test, p_unet_test,
+        np.abs(p_lstm_test - p_unet_test),
+        p_lstm_test * p_unet_test
+    ])
+
     fusion_model = build_feature_stacking_model(lstm_dim, unet_dim)
     fusion_model.compile(
-        optimizer=Adam(learning_rate=0.001),
+        optimizer=Adam(learning_rate=0.0005),
         loss=focal_loss(alpha=0.25, gamma=2.0),
         metrics=['accuracy']
     )
     fusion_model.summary()
 
-    early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+    early_stopping = EarlyStopping(monitor='val_loss', patience=15, restore_best_weights=True)
 
     history = fusion_model.fit(
-        [lstm_feat_train, unet_feat_train], Y_train,
-        epochs=50,
+        [lstm_feat_train, unet_feat_train, prob_train], Y_train,
+        epochs=100,
         batch_size=128,
         validation_split=0.2,
         callbacks=[early_stopping],
@@ -817,12 +836,10 @@ def train_feature_level_stacking():
     print(f"Plot saved to {output_image_path}")
     plt.show()
 
-    Y_pred = (fusion_model.predict([lstm_feat_test, unet_feat_test]) > 0.5).astype("int32")
+    Y_pred = (fusion_model.predict([lstm_feat_test, unet_feat_test, prob_test]) > 0.5).astype("int32")
     accuracy = accuracy_score(Y_test, Y_pred)
 
-    # برای مقایسه منصفانه، دقت LSTM تنها را هم روی همین test set دوباره حساب می‌کنیم
-    lstm_model = load_model(lstm_path, custom_objects={'loss': focal_loss(alpha=0.25, gamma=2.0)})
-    lstm_only_pred = (lstm_model.predict(X_emb_test) > 0.5).astype("int32").flatten()
+    lstm_only_pred = (p_lstm_test > 0.5).astype("int32")
     lstm_only_accuracy = accuracy_score(Y_test, lstm_only_pred)
 
     print(f"\n{'='*50}")
@@ -835,7 +852,6 @@ def train_feature_level_stacking():
 
     fusion_model.save(os.path.join(ROOT, 'output', 'final_feature_stacking.h5'))
     print(f"Model saved to {os.path.join(ROOT, 'output', 'final_feature_stacking.h5')}")
-
 
 
 if __name__ == "__main__":
