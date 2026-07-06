@@ -6,7 +6,7 @@ from imblearn.over_sampling import SMOTE
 import pandas as pd
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.utils import Sequence
-from tensorflow.keras.layers import BatchNormalization,
+from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import InputLayer
 
 import sys
