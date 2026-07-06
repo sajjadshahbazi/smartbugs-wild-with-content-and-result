@@ -6,6 +6,9 @@ from imblearn.over_sampling import SMOTE
 import pandas as pd
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.utils import Sequence
+from tensorflow.keras.layers import BatchNormalization,
+from tensorflow.keras.layers import InputLayer
+
 import sys
 from gensim.models import Word2Vec
 import pickle
@@ -701,6 +704,29 @@ def build_unet_only_model(seq_len=sequence_length):
 
 
 # =============================================================================
+# اصلاح شد: build_feature_extractor
+# به‌جای استفاده از full_model.input (که برای مدل‌های Sequential لود‌شده
+# از دیسک در Keras 3 با خطا مواجه می‌شود - "layer has never been called"،
+# اینجا یک ورودی جدید می‌سازیم و لایه‌ها را دستی (بدون InputLayer) روی
+# آن اعمال می‌کنیم. این روش برای هر دو نوع مدل Sequential و Functional
+# یکسان و مطمئن کار می‌کند.
+# =============================================================================
+def build_feature_extractor(full_model):
+    input_shape = full_model.input_shape
+    if isinstance(input_shape, list):
+        input_shape = input_shape[0]
+    new_input = Input(shape=input_shape[1:])
+
+    x = new_input
+    body_layers = [l for l in full_model.layers if not isinstance(l, InputLayer)]
+    for layer in body_layers[:-1]:  # همه لایه‌ها به‌جز لایه خروجی نهایی (Dense(1,sigmoid))
+        x = layer(x)
+
+    feature_extractor = KerasModel(inputs=new_input, outputs=x)
+    return feature_extractor
+
+
+# =============================================================================
 # اضافه شد: extract_penultimate_features_and_prob
 # این تابع هم بردار ویژگی میانی (لایه ماقبل‌آخر) و هم خروجی احتمال نهایی
 # (sigmoid) را از یک مدل از قبل train‌شده استخراج می‌کند - بدون نیاز به
@@ -708,20 +734,14 @@ def build_unet_only_model(seq_len=sequence_length):
 # این کد مستقل از نام‌گذاری داخلی Keras کار می‌کند.
 # =============================================================================
 def extract_penultimate_features_and_prob(model_path, X_data):
-    from tensorflow.keras.models import load_model, Model as KerasModel
-
     full_model = load_model(
         model_path,
         custom_objects={'loss': focal_loss(alpha=0.25, gamma=2.0)}
     )
-    feature_layer = full_model.layers[-2]
-    feature_extractor = KerasModel(
-        inputs=full_model.input,
-        outputs=feature_layer.output
-    )
+    feature_extractor = build_feature_extractor(full_model)
     features = feature_extractor.predict(X_data, verbose=0)
     prob = full_model.predict(X_data, verbose=0).flatten()
-    feat_dim = feature_layer.output_shape[-1]
+    feat_dim = features.shape[-1]
     return features, prob, feat_dim
 
 
@@ -733,7 +753,6 @@ def extract_penultimate_features_and_prob(model_path, X_data):
 # ورودی feature و probability خیلی متفاوت است (صدها بعد در مقابل 1 بعد).
 # =============================================================================
 def build_feature_stacking_model(lstm_feat_dim, unet_feat_dim):
-    from tensorflow.keras.layers import BatchNormalization
 
     lstm_feat_input = Input(shape=(lstm_feat_dim,), name='lstm_features')
     unet_feat_input = Input(shape=(unet_feat_dim,), name='unet_features')
