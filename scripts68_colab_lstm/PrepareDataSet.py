@@ -714,6 +714,10 @@ def extract_penultimate_features(model_path, X_data):
         model_path,
         custom_objects={'loss': focal_loss(alpha=0.25, gamma=2.0)}
     )
+
+    # این خط جدید است — مدل را قبل از دسترسی به .input یک‌بار build می‌کند
+    _ = full_model.predict(X_data[:1])
+
     # لایه ماقبل‌آخر = بردار ویژگی قبل از خروجی نهایی sigmoid
     feature_layer = full_model.layers[-2]
     feature_extractor = KerasModel(
