@@ -704,41 +704,54 @@ def build_unet_only_model(seq_len=sequence_length):
 
 
 # =============================================================================
-# اصلاح شد: build_feature_extractor
-# به‌جای استفاده از full_model.input (که برای مدل‌های Sequential لود‌شده
-# از دیسک در Keras 3 با خطا مواجه می‌شود - "layer has never been called"،
-# اینجا یک ورودی جدید می‌سازیم و لایه‌ها را دستی (بدون InputLayer) روی
-# آن اعمال می‌کنیم. این روش برای هر دو نوع مدل Sequential و Functional
-# یکسان و مطمئن کار می‌کند.
+# اصلاح شد (نسخه نهایی): build_feature_extractor_lstm / build_feature_extractor_unet
+# روش قبلی (chain کردن دستی لایه‌ها روی full_model.layers) برای LSTM کار
+# می‌کرد اما برای U-Net با خطا مواجه شد، چون U-Net لایه‌های concatenate
+# (skip-connection) دارد که به چند خروجی قبلی نیاز دارند - نه فقط خروجی
+# بلافصل قبلی - و chain خطی این ساختار را می‌شکند.
+#
+# راه‌حل قطعی: معماری از صفر و با همان توابع build موجود (build_unet_branch،
+# build_bilstm_branch) بازسازی می‌شود - دقیقاً همان گراف صحیح با
+# skip-connection - و فقط وزن‌ها از مدل ذخیره‌شده کپی می‌شوند. این کاملاً
+# مستقل از هر باگ ردیابی گراف در Keras است.
 # =============================================================================
-def build_feature_extractor(full_model):
-    input_shape = full_model.input_shape
-    if isinstance(input_shape, list):
-        input_shape = input_shape[0]
-    new_input = Input(shape=input_shape[1:])
+def build_feature_extractor_lstm(seq_len=sequence_length, vec_len=vector_length):
+    inputs = Input(shape=(seq_len, vec_len))
+    x = Bidirectional(LSTM(128, return_sequences=True))(inputs)
+    x = Dropout(0.5)(x)
+    x = Bidirectional(LSTM(64))(x)
+    return KerasModel(inputs=inputs, outputs=x)
 
-    x = new_input
-    body_layers = [l for l in full_model.layers if not isinstance(l, InputLayer)]
-    for layer in body_layers[:-1]:  # همه لایه‌ها به‌جز لایه خروجی نهایی (Dense(1,sigmoid))
-        x = layer(x)
 
-    feature_extractor = KerasModel(inputs=new_input, outputs=x)
-    return feature_extractor
+def build_feature_extractor_unet(seq_len=sequence_length):
+    unet_input, unet_output = build_unet_branch((seq_len, seq_len, 1))
+    dense1 = Dense(64, activation='relu')(unet_output)
+    return KerasModel(inputs=unet_input, outputs=dense1)
 
 
 # =============================================================================
-# اضافه شد: extract_penultimate_features_and_prob
-# این تابع هم بردار ویژگی میانی (لایه ماقبل‌آخر) و هم خروجی احتمال نهایی
-# (sigmoid) را از یک مدل از قبل train‌شده استخراج می‌کند - بدون نیاز به
-# train مجدد آن مدل. با استفاده از layers[-2] به‌جای حدس‌زدن نام لایه،
-# این کد مستقل از نام‌گذاری داخلی Keras کار می‌کند.
+# اصلاح شد (نسخه نهایی): extract_penultimate_features_and_prob
+# پارامتر model_type ('lstm' یا 'unet') اضافه شد تا معماری صحیح از صفر
+# ساخته شود. وزن‌ها با full_model.get_weights()[:-2] کپی می‌شوند - یعنی
+# همه وزن‌ها به‌جز دو آرایه آخر (kernel و bias لایه Dense(1,sigmoid) نهایی)
+# که این معماری feature-extractor آن‌ها را ندارد.
 # =============================================================================
-def extract_penultimate_features_and_prob(model_path, X_data):
+def extract_penultimate_features_and_prob(model_path, X_data, model_type):
     full_model = load_model(
         model_path,
         custom_objects={'loss': focal_loss(alpha=0.25, gamma=2.0)}
     )
-    feature_extractor = build_feature_extractor(full_model)
+
+    if model_type == 'lstm':
+        feature_extractor = build_feature_extractor_lstm()
+    elif model_type == 'unet':
+        feature_extractor = build_feature_extractor_unet()
+    else:
+        raise ValueError("model_type باید 'lstm' یا 'unet' باشد")
+
+    full_weights = full_model.get_weights()
+    feature_extractor.set_weights(full_weights[:-2])  # بدون وزن‌های Dense(1,sigmoid) نهایی
+
     features = feature_extractor.predict(X_data, verbose=0)
     prob = full_model.predict(X_data, verbose=0).flatten()
     feat_dim = features.shape[-1]
@@ -746,14 +759,11 @@ def extract_penultimate_features_and_prob(model_path, X_data):
 
 
 # =============================================================================
-# اضافه شد: build_feature_stacking_model
+# build_feature_stacking_model
 # مدل fusion که هم بردار ویژگی میانی (feature) و هم احتمال خام (probability)
-# هر دو شاخه را می‌گیرد - ترکیب هر دو نوع اطلاعات برای بیشترین سیگنال ممکن.
-# BatchNormalization اضافه شده تا آموزش پایدارتر باشد چون ابعاد
-# ورودی feature و probability خیلی متفاوت است (صدها بعد در مقابل 1 بعد).
+# هر دو شاخه را می‌گیرد. BatchNormalization برای پایداری آموزش اضافه شده.
 # =============================================================================
 def build_feature_stacking_model(lstm_feat_dim, unet_feat_dim):
-
     lstm_feat_input = Input(shape=(lstm_feat_dim,), name='lstm_features')
     unet_feat_input = Input(shape=(unet_feat_dim,), name='unet_features')
     prob_input = Input(shape=(4,), name='prob_features')  # p_lstm, p_unet, |diff|, product
@@ -774,12 +784,10 @@ def build_feature_stacking_model(lstm_feat_dim, unet_feat_dim):
 
 
 # =============================================================================
-# اضافه شد: train_feature_level_stacking
+# train_feature_level_stacking
 # مدل‌های LSTM و U-Net کاملاً منجمد هستند - فقط برای استخراج ویژگی
-# استفاده می‌شوند، هیچ گرادیانی به آن‌ها برنمی‌گردد.
-# نیازمند وجود final_LSTM_model.h5 و final_unet_only_model.h5 در پوشه
-# output است (از اجراهای قبلی train_LSTM و test_unet_branch_alone) -
-# نیازی به train مجدد آن‌ها نیست.
+# استفاده می‌شوند. نیازمند وجود final_LSTM_model.h5 و
+# final_unet_only_model.h5 در پوشه output است - نیازی به train مجدد آن‌ها نیست.
 # =============================================================================
 def train_feature_level_stacking():
     X_att, Y_att = load_batches_by_prefix(CACHE_DIR_UNET, prefix="att_")
@@ -797,18 +805,17 @@ def train_feature_level_stacking():
     unet_path = os.path.join(ROOT, 'output', 'final_unet_only_model.h5')
 
     print("استخراج ویژگی و احتمال از LSTM (train)...")
-    lstm_feat_train, p_lstm_train, lstm_dim = extract_penultimate_features_and_prob(lstm_path, X_emb_train)
+    lstm_feat_train, p_lstm_train, lstm_dim = extract_penultimate_features_and_prob(lstm_path, X_emb_train, model_type='lstm')
     print("استخراج ویژگی و احتمال از LSTM (test)...")
-    lstm_feat_test, p_lstm_test, _ = extract_penultimate_features_and_prob(lstm_path, X_emb_test)
+    lstm_feat_test, p_lstm_test, _ = extract_penultimate_features_and_prob(lstm_path, X_emb_test, model_type='lstm')
 
     print("استخراج ویژگی و احتمال از U-Net (train)...")
-    unet_feat_train, p_unet_train, unet_dim = extract_penultimate_features_and_prob(unet_path, X_att_train)
+    unet_feat_train, p_unet_train, unet_dim = extract_penultimate_features_and_prob(unet_path, X_att_train, model_type='unet')
     print("استخراج ویژگی و احتمال از U-Net (test)...")
-    unet_feat_test, p_unet_test, _ = extract_penultimate_features_and_prob(unet_path, X_att_test)
+    unet_feat_test, p_unet_test, _ = extract_penultimate_features_and_prob(unet_path, X_att_test, model_type='unet')
 
     print(f"LSTM feature dim: {lstm_dim}, U-Net feature dim: {unet_dim}")
 
-    # ساخت feature های probability (همان که در stacking قبلی امتحان شد)
     prob_train = np.column_stack([
         p_lstm_train, p_unet_train,
         np.abs(p_lstm_train - p_unet_train),
