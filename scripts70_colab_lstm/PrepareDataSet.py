@@ -6,6 +6,7 @@ from imblearn.over_sampling import SMOTE
 import pandas as pd
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.utils import Sequence
+from tensorflow.keras.models import load_model
 import sys
 from gensim.models import Word2Vec
 import pickle
@@ -1041,7 +1042,6 @@ def test_unet_branch_alone():
 # قبلاً اجرا و مدل‌هایشان در پوشه output ذخیره شده باشند.
 # =============================================================================
 def check_ensemble_potential():
-    from tensorflow.keras.models import load_model
 
     X_att, Y_att = load_batches_by_prefix(CACHE_DIR_UNET, prefix="att_")
     X_emb, Y_emb = load_batches_by_prefix(CACHE_DIR_UNET, prefix="emb_")
@@ -1107,7 +1107,7 @@ def build_stacking_meta_model():
 # test_unet_branch_alone() قبلاً اجرا شده باشند).
 # =============================================================================
 def train_stacking_ensemble():
-    from tensorflow.keras.models import load_model
+
 
     X_att, Y_att = load_batches_by_prefix(CACHE_DIR_UNET, prefix="att_")
     X_emb, Y_emb = load_batches_by_prefix(CACHE_DIR_UNET, prefix="emb_")
@@ -1202,8 +1202,8 @@ if __name__ == "__main__":
     #   ۵. train_stacking_ensemble()  → آموزش meta-model روی خروجی هر دو مدل
     #      (نیازمند اجرای قبلی شماره ۱ و ۳ برای وجود فایل‌های مدل ذخیره‌شده)
     # =============================================================================
-    train_LSTM()
-    # train_UNET_LSTM()
+    # train_LSTM()
+    train_UNET_LSTM()
     # test_unet_branch_alone()
     # check_ensemble_potential()
     # train_stacking_ensemble()
