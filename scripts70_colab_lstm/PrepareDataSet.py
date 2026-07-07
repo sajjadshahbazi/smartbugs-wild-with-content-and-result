@@ -1203,8 +1203,8 @@ if __name__ == "__main__":
     #      (نیازمند اجرای قبلی شماره ۱ و ۳ برای وجود فایل‌های مدل ذخیره‌شده)
     # =============================================================================
     # train_LSTM()
-    train_UNET_LSTM()
-    # test_unet_branch_alone()
+    # train_UNET_LSTM()
+    test_unet_branch_alone()
     # check_ensemble_potential()
     # train_stacking_ensemble()
 
