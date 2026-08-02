@@ -40,13 +40,13 @@ import matplotlib.pyplot as plt
 # دست نخورده است.
 # =============================================================================
 # =============================================================================
-# اصلاح ۹: اضافه شدن BatchNormalization
-# طبق درخواست شما (مرحله ۱ از پیشنهادهای بهبود U-Net): برای کاهش overfitting
-# دیده‌شده در نمودار train/val (val_loss بعد از epoch ~13 دوباره بالا می‌رفت)،
-# لایه‌های BatchNormalization به شاخه U-Net اضافه می‌شود.
+# اصلاح ۹ (بازبینی‌شده): BatchNormalization ابتدا اضافه شد ولی چون در آزمایش
+# واقعی باعث ناپایداری و افت شدید دقت شد (نگاه کنید به کامنت داخل
+# build_unet_branch)، از import ها حذف شد و فقط GlobalMaxPooling2D
+# (اصلاح ۱۲) اضافه شده است.
 # =============================================================================
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, UpSampling2D, concatenate, Flatten, BatchNormalization
-from tensorflow.keras.layers import GlobalAveragePooling2D
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, UpSampling2D, concatenate, Flatten, SpatialDropout2D
+from tensorflow.keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D
 from tensorflow.keras.models import Model
 
 duration_stat = {}
@@ -94,11 +94,11 @@ target_vulnerability_integer_underflow = 'Integer Underflow'  # sum safe smart c
 
 target_vulner = target_vulnerability_reentrancy
 
-ROOT = '/content/smartbugs-wild-with-content-and-result' # Linux
-CACHE_DIR = os.path.join(ROOT, 'vectorcollections') # Linux
+# ROOT = '/content/smartbugs-wild-with-content-and-result' # Linux
+# CACHE_DIR = os.path.join(ROOT, 'vectorcollections') # Linux
 
-# ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-# CACHE_DIR = os.path.join(ROOT, 'vectorcollections')
+ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+CACHE_DIR = os.path.join(ROOT, 'vectorcollections')
 
 # =============================================================================
 # اضافه شد: مسیر جدا برای دیتاست U-Net + BiLSTM
@@ -113,11 +113,11 @@ CACHE_DIR_UNET = os.path.join(ROOT, 'vectorcollections_img')
 cache_path = os.path.join(CACHE_DIR, 'tokenized_fragments.pkl')
 vulnerability_fd = open(os.path.join(ROOT, 'metadata', 'vulnerabilities.csv'), 'w', encoding='utf-8')
 
-# PATH = f"{ROOT}\\contracts\\"  # main data set
+PATH = f"{ROOT}\\contracts\\"  # main data set
 # PATH = f"{ROOT}\\contract\\"  # part of main data set
 # PATH = f"{ROOT}\\contra\\"  # one smart contract
 
-PATH = os.path.join(ROOT, 'contracts') # Linux
+# PATH = os.path.join(ROOT, 'contracts') # Linux
 os.chdir(PATH)
 
 final_df = pd.DataFrame(columns=['X', 'Y'])
@@ -163,8 +163,8 @@ def getResultVulnarable(contract_name, target_vulnerability):
     res = False
     lines = []
     for tool in tools:
-        # path_result = os.path.join(f"{ROOT}\\results\\", tool, output_name, contract_name, 'result.json')
-        path_result = os.path.join(f"{ROOT}results", tool, output_name, contract_name, 'result.json') # Linux
+        path_result = os.path.join(f"{ROOT}\\results\\", tool, output_name, contract_name, 'result.json')
+        # path_result = os.path.join(f"{ROOT}results", tool, output_name, contract_name, 'result.json') # Linux
         if not os.path.exists(path_result):
             continue
         with open(path_result, 'r', encoding='utf-8') as fd:
@@ -478,23 +478,33 @@ def vectorize_tokens_fasttext(tokens):
 #
 # ورودی: embedding_matrix با شکل (sequence_length, vector_length)
 #         real_token_count = تعداد توکن‌های واقعی قبل از padding
-# خروجی: ماتریس (sequence_length, sequence_length, 1) برای U-Net
+# خروجی: ماتریس (sequence_length, sequence_length, 3) برای U-Net
 #
-# روش کار:
-#   ۱. similarity_matrix = شباهت cosine بین همه جفت توکن‌ها
-#      (بردارهای padding صفر هستند، پس شباهتشان صفر می‌شود - بی‌اثر)
-#   ۲. co_occurrence_matrix = آیا دو توکن در فاصله co_occurrence_window
-#      از هم قرار دارند (1) یا نه (0) - فقط بین توکن‌های واقعی
-#   ۳. attention_map = similarity_matrix * co_occurrence_matrix
+# اصلاح ۱۳: کدگذاری سه‌کاناله به‌جای فشرده‌کردن در یک کانال
+# مشکل نسخه‌ی قبلی: attention_map = similarity_matrix * co_matrix باعث
+# می‌شد عدد ۰ دو معنای متفاوت داشته باشد - هم «کنار هم نبودند» و هم
+# «کنار هم بودند ولی شباهتشان صفر یا منفی بود». چون similarity از cosine
+# می‌آید بازه‌اش [-1, +1] است (-1 یعنی دو بردار کاملاً خلاف جهت/متضاد)،
+# و هر نگاشت تک‌کاناله‌ای (مثل (sim+1)/2 قبل از ضرب) همچنان حداقل یک
+# جفت حالت متفاوت را به همان عدد خروجی می‌رساند.
+# راه‌حل: سه کانال مستقل (شبیه تصویر RGB) که شبکه خودش یاد می‌گیرد
+# ترکیبشان کند:
+#   کانال ۱ (co-occurrence خام): آیا دو توکن در فاصله window از هم
+#      هستند؟ همیشه ۰ یا ۱ - بدون ابهام.
+#   کانال ۲ (similarity خام): شباهت cosine نگاشته‌شده به [0,1]، حتی
+#      برای توکن‌های دور از هم هم معنادار نگه داشته می‌شود (قبلاً این
+#      اطلاعات برای توکن‌های دور از هم کاملاً دور ریخته می‌شد).
+#   کانال ۳ (تعامل): حاصل‌ضرب دو کانال بالا - همان attention map قبلی،
+#      اما به‌عنوان اطلاعات مکمل نه جایگزین.
 # =============================================================================
 def create_attention_map(embedding_matrix, real_token_count, window=co_occurrence_window):
     """
     :param embedding_matrix: آرایه (sequence_length, vector_length) - خروجی vectorize_tokens
     :param real_token_count: تعداد توکن‌های واقعی قبل از padding
     :param window: اندازه پنجره co-occurrence
-    :return: آرایه (sequence_length, sequence_length, 1)
+    :return: آرایه (sequence_length, sequence_length, 3)
     """
-    # مرحله ۱: similarity matrix با cosine similarity
+    # مرحله ۱: similarity matrix با cosine similarity - بازه [-1, +1]
     norms = np.linalg.norm(embedding_matrix, axis=1, keepdims=True)
     norms[norms == 0] = 1e-10  # جلوگیری از تقسیم بر صفر برای بردارهای padding
     normalized = embedding_matrix / norms
@@ -510,11 +520,14 @@ def create_attention_map(embedding_matrix, real_token_count, window=co_occurrenc
                 co_matrix[idx][idx + w] = 1.0
                 co_matrix[idx + w][idx] = 1.0
 
-    # مرحله ۳: ترکیب - ضرب عنصر به عنصر
-    attention_map = similarity_matrix * co_matrix  # (seq_len, seq_len)
+    # مرحله ۳: ساخت سه کانال مستقل
+    channel_cooccurrence = co_matrix  # کانال ۱: همیشه ۰ یا ۱ - بدون ابهام
+    channel_similarity = (similarity_matrix + 1) / 2  # کانال ۲: نگاشت [-1,1] به [0,1]
+    channel_interaction = channel_similarity * co_matrix  # کانال ۳: تعامل دو کانال بالا
 
-    # مرحله ۴: اضافه کردن بعد channel برای Conv2D در U-Net
-    attention_map = attention_map.reshape(seq_len, seq_len, 1)
+    attention_map = np.stack(
+        [channel_cooccurrence, channel_similarity, channel_interaction], axis=-1
+    )  # شکل خروجی: (seq_len, seq_len, 3)
 
     return attention_map.astype('float32')
 
@@ -769,42 +782,66 @@ def process_batch_with_categorization_for_unet(files, target_vulnerability, batc
 def build_unet_branch(input_shape):
     inputs = Input(shape=input_shape, name='attention_map_input')
 
+    # =============================================================================
+    # اصلاح ۹ (بازبینی‌شده): BatchNormalization به‌طور کامل حذف شد
+    # دلیل: در آزمایش واقعی روی این attention map (که خیلی sparse است)،
+    # BatchNormalization باعث ناسازگاری آمار train/inference و collapse شدن
+    # مدل روی یک کلاس در validation شد (دقت از 86.73% به 64.32% سقوط کرد).
+    # به‌عنوان تصمیم مهندسی، به‌جای ریسک دوباره BatchNorm (حتی با احتیاط)،
+    # فقط از Dropout برای کنترل overfitting استفاده می‌شود که در آزمایش قبلی
+    # هیچ بی‌ثباتی ایجاد نکرد.
+    # =============================================================================
     # Encoder
     conv1 = Conv2D(64, (3, 3), activation='relu', padding='same')(inputs)
-    # =============================================================================
-    # اصلاح ۹ (ادامه): BatchNormalization بعد از هر Conv2D
-    # دلیل: کمک به پایداری و سرعت آموزش و کاهش overfitting - مطابق درخواست
-    # شما در مرحله ۱ از پیشنهادهای بهبود U-Net.
-    # =============================================================================
-    conv1 = BatchNormalization()(conv1)
     pool1 = MaxPooling2D((2, 2))(conv1)
 
     conv2 = Conv2D(128, (3, 3), activation='relu', padding='same')(pool1)
-    conv2 = BatchNormalization()(conv2)
     pool2 = MaxPooling2D((2, 2))(conv2)
 
     # Bottleneck
     conv3 = Conv2D(256, (3, 3), activation='relu', padding='same')(pool2)
-    conv3 = BatchNormalization()(conv3)
-    # اصلاح ۹ (ادامه): Dropout در bottleneck - بیشترین ریسک overfit اینجاست
-    conv3 = Dropout(0.3)(conv3)
+    # =============================================================================
+    # اصلاح ۱۵: Dropout معمولی → SpatialDropout2D
+    # دلیل: Dropout معمولی روی یک feature map کانولوشنی هر پیکسل را
+    # مستقل صفر می‌کند، اما پیکسل‌های همسایه در feature map به‌شدت
+    # همبسته‌اند (از یک kernel مشترک آمده‌اند)، پس شبکه به‌راحتی می‌تواند
+    # مقدار حذف‌شده را از همسایه‌ها «حدس بزند» و اثر regularization ضعیف
+    # می‌شود. SpatialDropout2D کل یک کانال feature map را حذف می‌کند که
+    # برای این نوع لایه استاندارد و مؤثرتر است.
+    # =============================================================================
+    conv3 = SpatialDropout2D(0.3)(conv3)
 
     # Decoder
     up1 = UpSampling2D((2, 2))(conv3)
     concat1 = concatenate([conv2, up1])
     conv4 = Conv2D(128, (3, 3), activation='relu', padding='same')(concat1)
-    conv4 = BatchNormalization()(conv4)
 
     up2 = UpSampling2D((2, 2))(conv4)
     concat2 = concatenate([conv1, up2])
     conv5 = Conv2D(64, (3, 3), activation='relu', padding='same')(concat2)
-    conv5 = BatchNormalization()(conv5)
 
-    # اصلاح ۸: GlobalAveragePooling2D جایگزین Flatten شد
-    pooled = GlobalAveragePooling2D()(conv5)
+    # =============================================================================
+    # اصلاح ۱۲: GlobalMaxPooling2D کنار GlobalAveragePooling2D
+    # دلیل: توابع کوتاه‌تر از sequence_length، بخش بزرگی از نقشه‌شان صفر
+    # (padding) است. GlobalAveragePooling2D به‌تنهایی این صفرها را هم در
+    # میانگین حساب می‌کند و سیگنال واقعی را رقیق می‌کند. GlobalMaxPooling2D
+    # کمتر تحت‌تأثیر padding قرار می‌گیرد و الگوهای قوی موضعی را حفظ می‌کند؛
+    # هر دو با هم concatenate می‌شوند تا هیچ اطلاعاتی از دست نرود.
+    # =============================================================================
+    avg_pool = GlobalAveragePooling2D()(conv5)
+    max_pool = GlobalMaxPooling2D()(conv5)
+    pooled = concatenate([avg_pool, max_pool])
+
     dense_out = Dense(128, activation='relu')(pooled)
-    # اصلاح ۹ (ادامه): Dropout قبل از خروجی نهایی برای کاهش overfitting
-    dense_out = Dropout(0.4)(dense_out)
+    # =============================================================================
+    # اصلاح ۱۶: Dropout اضافی بعد از pooling حذف شد
+    # دلیل: مجموع Dropout(bottleneck) + Dropout(اینجا) + Dropout(head در
+    # build_unet_only_model) + L2 روی مدلی با کمتر از ۱ میلیون پارامتر،
+    # برای یک overfitting نسبتاً خفیف (val_loss فقط 0.0206→0.0260) زیاده‌روی
+    # است و ریسک واقعی underfitting دارد. این لایه حذف شد؛ فقط SpatialDropout2D
+    # در bottleneck و Dropout+L2 در build_unet_only_model باقی می‌ماند.
+    # =============================================================================
+
 
     return inputs, dense_out
 
@@ -828,7 +865,9 @@ def build_bilstm_branch(input_shape):
 # خروجی: احتمال آسیب‌پذیری با sigmoid
 # =============================================================================
 def build_unet_bilstm_model(seq_len=sequence_length, vec_len=vector_length):
-    unet_input, unet_output = build_unet_branch((seq_len, seq_len, 1))
+    # اصلاح ۱۳ (ادامه): شکل ورودی از 1 کانال به 3 کانال تغییر کرد چون
+    # create_attention_map حالا (seq_len, seq_len, 3) برمی‌گرداند.
+    unet_input, unet_output = build_unet_branch((seq_len, seq_len, 3))
     lstm_input, lstm_output = build_bilstm_branch((seq_len, vec_len))
 
     combined = concatenate([unet_output, lstm_output])
@@ -1041,8 +1080,18 @@ def train_LSTM():
 # تغییر نکرده است.
 # =============================================================================
 def build_unet_only_model(seq_len=sequence_length):
-    unet_input, unet_output = build_unet_branch((seq_len, seq_len, 1))
-    dense1 = Dense(64, activation='relu')(unet_output)
+    # اصلاح ۱۳ (ادامه): شکل ورودی از 1 کانال به 3 کانال تغییر کرد چون
+    # create_attention_map حالا (seq_len, seq_len, 3) برمی‌گرداند.
+    unet_input, unet_output = build_unet_branch((seq_len, seq_len, 3))
+    # =============================================================================
+    # اصلاح ۱۴ (بازبینی‌شده): Dropout و L2 regularization روی سر (head) طبقه‌بندی
+    # علاوه بر SpatialDropout2D داخل build_unet_branch، یک Dropout و
+    # kernel_regularizer='l2' هم اینجا اضافه شده. طبق اصلاح ۱۶، لایه‌ی
+    # Dropout دوم بعد از dense1 حذف شد تا مجموع regularization متناسب با
+    # شدت overfitting اصلی (نسبتاً خفیف) بماند و ریسک underfitting کم شود.
+    # =============================================================================
+    x = Dropout(0.3)(unet_output)
+    dense1 = Dense(64, activation='relu', kernel_regularizer='l2')(x)
     outputs = Dense(1, activation='sigmoid')(dense1)
     model = Model(inputs=unet_input, outputs=outputs)
     return model
@@ -1299,11 +1348,11 @@ if __name__ == "__main__":
     # این دو تابع کاملاً مستقل از هم هستند و در دو مسیر جدا ذخیره می‌کنند،
     # پس هیچ تداخلی با هم ندارند.
     # =============================================================================
-    # for batch_index, i in enumerate(range(0, len(files), batch_size)):
-    #     batch_files = files[i:i + batch_size]
-    #     print(f"size batch_files {batch_files.__len__()}")
-    #     # process_batch_with_categorization(batch_files, target_vulner, batch_size, batch_index)
-    #     process_batch_with_categorization_for_unet(batch_files, target_vulner, batch_size, batch_index)
+    for batch_index, i in enumerate(range(0, len(files), batch_size)):
+        batch_files = files[i:i + batch_size]
+        print(f"size batch_files {batch_files.__len__()}")
+        # process_batch_with_categorization(batch_files, target_vulner, batch_size, batch_index)
+        process_batch_with_categorization_for_unet(batch_files, target_vulner, batch_size, batch_index)
 
     # =============================================================================
     # بخش آموزش: طبق درخواست شما این‌ها به‌صورت جدا و در اجراهای متفاوت
@@ -1319,182 +1368,6 @@ if __name__ == "__main__":
     # =============================================================================
     # train_LSTM()
     # train_UNET_LSTM()
-    test_unet_branch_alone()
+    # test_unet_branch_alone()
     # check_ensemble_potential()
     # train_stacking_ensemble()
-
-2026-07-30 00:49:03.948096: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
-To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-size files 47398
-Shape of X_att: (47619, 100, 100, 1)
-Distribution in Y: (array([0, 1], dtype=int32), array([28520, 19099]))
-Majority-class baseline accuracy: 0.5967
-2026-07-30 00:49:10.289911: W tensorflow/core/common_runtime/gpu/gpu_bfc_allocator.cc:47] Overriding orig_value setting because the TF_FORCE_GPU_ALLOW_GROWTH environment variable is set. Original config value was 0.
-WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-I0000 00:00:1785372550.291441   52998 gpu_device.cc:2020] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 13757 MB memory:  -> device: 0, name: Tesla T4, pci bus id: 0000:00:04.0, compute capability: 7.5
-Model: "functional"
-┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┓
-┃ Layer (type)        ┃ Output Shape      ┃    Param # ┃ Connected to      ┃
-┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━┩
-│ attention_map_input │ (None, 100, 100,  │          0 │ -                 │
-│ (InputLayer)        │ 1)                │            │                   │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ conv2d (Conv2D)     │ (None, 100, 100,  │        640 │ attention_map_in… │
-│                     │ 64)               │            │                   │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ batch_normalization │ (None, 100, 100,  │        256 │ conv2d[0][0]      │
-│ (BatchNormalizatio… │ 64)               │            │                   │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ max_pooling2d       │ (None, 50, 50,    │          0 │ batch_normalizat… │
-│ (MaxPooling2D)      │ 64)               │            │                   │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ conv2d_1 (Conv2D)   │ (None, 50, 50,    │     73,856 │ max_pooling2d[0]… │
-│                     │ 128)              │            │                   │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ batch_normalizatio… │ (None, 50, 50,    │        512 │ conv2d_1[0][0]    │
-│ (BatchNormalizatio… │ 128)              │            │                   │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ max_pooling2d_1     │ (None, 25, 25,    │          0 │ batch_normalizat… │
-│ (MaxPooling2D)      │ 128)              │            │                   │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ conv2d_2 (Conv2D)   │ (None, 25, 25,    │    295,168 │ max_pooling2d_1[… │
-│                     │ 256)              │            │                   │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ batch_normalizatio… │ (None, 25, 25,    │      1,024 │ conv2d_2[0][0]    │
-│ (BatchNormalizatio… │ 256)              │            │                   │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ dropout (Dropout)   │ (None, 25, 25,    │          0 │ batch_normalizat… │
-│                     │ 256)              │            │                   │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ up_sampling2d       │ (None, 50, 50,    │          0 │ dropout[0][0]     │
-│ (UpSampling2D)      │ 256)              │            │                   │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ concatenate         │ (None, 50, 50,    │          0 │ batch_normalizat… │
-│ (Concatenate)       │ 384)              │            │ up_sampling2d[0]… │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ conv2d_3 (Conv2D)   │ (None, 50, 50,    │    442,496 │ concatenate[0][0] │
-│                     │ 128)              │            │                   │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ batch_normalizatio… │ (None, 50, 50,    │        512 │ conv2d_3[0][0]    │
-│ (BatchNormalizatio… │ 128)              │            │                   │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ up_sampling2d_1     │ (None, 100, 100,  │          0 │ batch_normalizat… │
-│ (UpSampling2D)      │ 128)              │            │                   │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ concatenate_1       │ (None, 100, 100,  │          0 │ batch_normalizat… │
-│ (Concatenate)       │ 192)              │            │ up_sampling2d_1[… │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ conv2d_4 (Conv2D)   │ (None, 100, 100,  │    110,656 │ concatenate_1[0]… │
-│                     │ 64)               │            │                   │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ batch_normalizatio… │ (None, 100, 100,  │        256 │ conv2d_4[0][0]    │
-│ (BatchNormalizatio… │ 64)               │            │                   │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ global_average_poo… │ (None, 64)        │          0 │ batch_normalizat… │
-│ (GlobalAveragePool… │                   │            │                   │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ dense (Dense)       │ (None, 128)       │      8,320 │ global_average_p… │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ dropout_1 (Dropout) │ (None, 128)       │          0 │ dense[0][0]       │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ dense_1 (Dense)     │ (None, 64)        │      8,256 │ dropout_1[0][0]   │
-├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-│ dense_2 (Dense)     │ (None, 1)         │         65 │ dense_1[0][0]     │
-└─────────────────────┴───────────────────┴────────────┴───────────────────┘
- Total params: 942,017 (3.59 MB)
- Trainable params: 940,737 (3.59 MB)
- Non-trainable params: 1,280 (5.00 KB)
-2026-07-30 00:49:11.620171: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 1219040000 exceeds 10% of free system memory.
-2026-07-30 00:49:12.699145: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 1219040000 exceeds 10% of free system memory.
-Epoch 1/50
-2026-07-30 00:49:16.929761: I external/local_xla/xla/service/service.cc:163] XLA service 0x7c0b04059a40 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
-2026-07-30 00:49:16.929789: I external/local_xla/xla/service/service.cc:171]   StreamExecutor device (0): Tesla T4, Compute Capability 7.5
-2026-07-30 00:49:17.021978: I tensorflow/compiler/mlir/tensorflow/utils/dump_mlir_util.cc:269] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
-2026-07-30 00:49:17.605929: I external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:473] Loaded cuDNN version 91900
-2026-07-30 00:49:18.323767: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[128,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,1,100,100]{3,2,1,0}, f32[64,1,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 00:49:18.454475: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[128,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,64,50,50]{3,2,1,0}, f32[128,64,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 00:49:19.360255: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[128,256,25,25]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,128,25,25]{3,2,1,0}, f32[256,128,3,3]{3,2,1,0}, f32[256]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 00:49:20.047295: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[128,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,384,50,50]{3,2,1,0}, f32[128,384,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 00:49:24.014948: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[128,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,192,100,100]{3,2,1,0}, f32[64,192,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 00:49:30.457409: E external/local_xla/xla/stream_executor/cuda/cuda_timer.cc:86] Delay kernel timed out: measured time has sub-optimal accuracy. There may be a missing warmup execution, please investigate in Nsight Systems.
-2026-07-30 00:49:30.710988: E external/local_xla/xla/stream_executor/cuda/cuda_timer.cc:86] Delay kernel timed out: measured time has sub-optimal accuracy. There may be a missing warmup execution, please investigate in Nsight Systems.
-I0000 00:00:1785372594.803155   53083 device_compiler.h:196] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
-2026-07-30 00:49:54.807888: W external/local_xla/xla/tsl/framework/bfc_allocator.cc:382] Garbage collection: deallocate free memory regions (i.e., allocations) so that we can re-allocate a larger region to avoid OOM due to memory fragmentation. If you see this message frequently, you are running near the threshold of the available device memory and re-allocation may incur great performance overhead. You may try smaller batch sizes to observe the performance impact. Set TF_ENABLE_GPU_GARBAGE_COLLECTION=false if you'd like to disable this feature.
-2026-07-30 00:51:41.921655: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[12,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[12,1,100,100]{3,2,1,0}, f32[64,1,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 00:51:41.934467: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[12,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[12,64,50,50]{3,2,1,0}, f32[128,64,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 00:51:42.047590: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[12,256,25,25]{3,2,1,0}, u8[0]{0}) custom-call(f32[12,128,25,25]{3,2,1,0}, f32[256,128,3,3]{3,2,1,0}, f32[256]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 00:51:42.141986: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[12,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[12,384,50,50]{3,2,1,0}, f32[128,384,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 00:51:42.805828: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[12,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[12,192,100,100]{3,2,1,0}, f32[64,192,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 00:51:44.376109: E external/local_xla/xla/stream_executor/cuda/cuda_timer.cc:86] Delay kernel timed out: measured time has sub-optimal accuracy. There may be a missing warmup execution, please investigate in Nsight Systems.
-2026-07-30 00:51:44.550021: E external/local_xla/xla/stream_executor/cuda/cuda_timer.cc:86] Delay kernel timed out: measured time has sub-optimal accuracy. There may be a missing warmup execution, please investigate in Nsight Systems.
-2026-07-30 00:51:51.891165: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[128,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,1,100,100]{3,2,1,0}, f32[64,1,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 00:51:51.988709: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[128,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,64,50,50]{3,2,1,0}, f32[128,64,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 00:51:53.150113: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[128,256,25,25]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,128,25,25]{3,2,1,0}, f32[256,128,3,3]{3,2,1,0}, f32[256]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 00:51:54.096909: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[128,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,384,50,50]{3,2,1,0}, f32[128,384,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 00:51:59.018788: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[128,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,192,100,100]{3,2,1,0}, f32[64,192,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 00:52:13.475495: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[67,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[67,1,100,100]{3,2,1,0}, f32[64,1,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 00:52:13.541025: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[67,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[67,64,50,50]{3,2,1,0}, f32[128,64,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 00:52:14.195809: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[67,256,25,25]{3,2,1,0}, u8[0]{0}) custom-call(f32[67,128,25,25]{3,2,1,0}, f32[256,128,3,3]{3,2,1,0}, f32[256]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 00:52:14.607729: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[67,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[67,384,50,50]{3,2,1,0}, f32[128,384,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 00:52:17.330674: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[67,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[67,192,100,100]{3,2,1,0}, f32[64,192,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`.
-239/239 - 188s - 785ms/step - accuracy: 0.7721 - loss: 0.0300 - val_accuracy: 0.3922 - val_loss: 0.6916 - learning_rate: 0.0010
-Epoch 2/50
-WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`.
-239/239 - 115s - 482ms/step - accuracy: 0.8083 - loss: 0.0258 - val_accuracy: 0.6524 - val_loss: 0.0373 - learning_rate: 0.0010
-Epoch 3/50
-239/239 - 115s - 480ms/step - accuracy: 0.8215 - loss: 0.0244 - val_accuracy: 0.3922 - val_loss: 1.0338 - learning_rate: 0.0010
-Epoch 4/50
-239/239 - 114s - 478ms/step - accuracy: 0.8339 - loss: 0.0231 - val_accuracy: 0.3922 - val_loss: 2.4040 - learning_rate: 0.0010
-Epoch 5/50
-239/239 - 114s - 478ms/step - accuracy: 0.8405 - loss: 0.0221 - val_accuracy: 0.3922 - val_loss: 2.3827 - learning_rate: 0.0010
-Epoch 6/50
-
-Epoch 6: ReduceLROnPlateau reducing learning rate to 0.0005000000237487257.
-239/239 - 115s - 479ms/step - accuracy: 0.8532 - loss: 0.0211 - val_accuracy: 0.3922 - val_loss: 1.7060 - learning_rate: 0.0010
-Epoch 7/50
-239/239 - 115s - 479ms/step - accuracy: 0.8744 - loss: 0.0187 - val_accuracy: 0.3922 - val_loss: 2.2773 - learning_rate: 5.0000e-04
-Epoch 8/50
-239/239 - 115s - 480ms/step - accuracy: 0.8831 - loss: 0.0176 - val_accuracy: 0.6696 - val_loss: 0.0436 - learning_rate: 5.0000e-04
-Epoch 9/50
-239/239 - 114s - 478ms/step - accuracy: 0.8926 - loss: 0.0166 - val_accuracy: 0.3922 - val_loss: 2.4225 - learning_rate: 5.0000e-04
-Epoch 10/50
-
-Epoch 10: ReduceLROnPlateau reducing learning rate to 0.0002500000118743628.
-239/239 - 113s - 474ms/step - accuracy: 0.9004 - loss: 0.0157 - val_accuracy: 0.3922 - val_loss: 2.4225 - learning_rate: 5.0000e-04
-Epoch 11/50
-239/239 - 113s - 475ms/step - accuracy: 0.9182 - loss: 0.0131 - val_accuracy: 0.3922 - val_loss: 1.1117 - learning_rate: 2.5000e-04
-Epoch 12/50
-239/239 - 114s - 475ms/step - accuracy: 0.9252 - loss: 0.0121 - val_accuracy: 0.3922 - val_loss: 2.4225 - learning_rate: 2.5000e-04
-Plot saved to /content/smartbugs-wild-with-content-and-result/output/training_plot_unet_only.png
-Figure(1000x600)
-2026-07-30 01:13:20.019862: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[32,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[32,1,100,100]{3,2,1,0}, f32[64,1,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 01:13:20.039171: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[32,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[32,64,50,50]{3,2,1,0}, f32[128,64,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 01:13:20.295177: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[32,256,25,25]{3,2,1,0}, u8[0]{0}) custom-call(f32[32,128,25,25]{3,2,1,0}, f32[256,128,3,3]{3,2,1,0}, f32[256]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 01:13:20.523579: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[32,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[32,384,50,50]{3,2,1,0}, f32[128,384,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 01:13:22.511542: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[32,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[32,192,100,100]{3,2,1,0}, f32[64,192,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-297/298 ━━━━━━━━━━━━━━━━━━━━ 0s 41ms/step2026-07-30 01:13:37.689996: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[20,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[20,1,100,100]{3,2,1,0}, f32[64,1,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 01:13:37.712627: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[20,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[20,64,50,50]{3,2,1,0}, f32[128,64,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 01:13:37.860181: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[20,256,25,25]{3,2,1,0}, u8[0]{0}) custom-call(f32[20,128,25,25]{3,2,1,0}, f32[256,128,3,3]{3,2,1,0}, f32[256]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 01:13:38.008432: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[20,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[20,384,50,50]{3,2,1,0}, f32[128,384,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-2026-07-30 01:13:39.345024: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[20,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[20,192,100,100]{3,2,1,0}, f32[64,192,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-298/298 ━━━━━━━━━━━━━━━━━━━━ 21s 53ms/step
-
-==================================================
-U-Net-only accuracy:       0.6432
-Majority-class baseline:   0.5967
-Improvement over baseline: 4.65%
-==================================================
-
-Classification Report:
-              precision    recall  f1-score   support
-
-        Safe       0.63      0.97      0.76      5683
-  Vulnerable       0.78      0.16      0.27      3841
-
-    accuracy                           0.64      9524
-   macro avg       0.71      0.57      0.52      9524
-weighted avg       0.69      0.64      0.56      9524
-
-WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`.
-Model saved to /content/smartbugs-wild-with-content-and-result/output/final_unet_only_model.h5
