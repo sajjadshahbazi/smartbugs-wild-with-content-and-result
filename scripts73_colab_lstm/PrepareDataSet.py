@@ -1348,11 +1348,13 @@ if __name__ == "__main__":
     # این دو تابع کاملاً مستقل از هم هستند و در دو مسیر جدا ذخیره می‌کنند،
     # پس هیچ تداخلی با هم ندارند.
     # =============================================================================
-    for batch_index, i in enumerate(range(0, len(files), batch_size)):
-        batch_files = files[i:i + batch_size]
-        print(f"size batch_files {batch_files.__len__()}")
-        # process_batch_with_categorization(batch_files, target_vulner, batch_size, batch_index)
-        process_batch_with_categorization_for_unet(batch_files, target_vulner, batch_size, batch_index)
+    # for batch_index, i in enumerate(range(0, len(files), batch_size)):
+    #     if batch_index < 38:
+    #         continue
+    #
+    #     batch_files = files[i:i + batch_size]
+    #     print(f"size batch_files {batch_files.__len__()}")
+    #     process_batch_with_categorization_for_unet(batch_files, target_vulner, batch_size, batch_index)
 
     # =============================================================================
     # بخش آموزش: طبق درخواست شما این‌ها به‌صورت جدا و در اجراهای متفاوت
@@ -1368,6 +1370,6 @@ if __name__ == "__main__":
     # =============================================================================
     # train_LSTM()
     # train_UNET_LSTM()
-    # test_unet_branch_alone()
+    test_unet_branch_alone()
     # check_ensemble_potential()
     # train_stacking_ensemble()
