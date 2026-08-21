@@ -94,11 +94,11 @@ target_vulnerability_integer_underflow = 'Integer Underflow'  # sum safe smart c
 
 target_vulner = target_vulnerability_reentrancy
 
-ROOT = '/content/smartbugs-wild-with-content-and-result' # Linux
-CACHE_DIR = os.path.join(ROOT, 'vectorcollections') # Linux
+# ROOT = '/content/smartbugs-wild-with-content-and-result' # Linux
+# CACHE_DIR = os.path.join(ROOT, 'vectorcollections') # Linux
 
-# ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-# CACHE_DIR = os.path.join(ROOT, 'vectorcollections')
+ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+CACHE_DIR = os.path.join(ROOT, 'vectorcollections')
 
 # =============================================================================
 # اضافه شد: مسیر جدا برای دیتاست U-Net + BiLSTM
@@ -113,11 +113,11 @@ CACHE_DIR_UNET = os.path.join(ROOT, 'vectorcollections_img')
 cache_path = os.path.join(CACHE_DIR, 'tokenized_fragments.pkl')
 vulnerability_fd = open(os.path.join(ROOT, 'metadata', 'vulnerabilities.csv'), 'w', encoding='utf-8')
 
-# PATH = f"{ROOT}\\contracts\\"  # main data set
+PATH = f"{ROOT}\\contracts\\"  # main data set
 # PATH = f"{ROOT}\\contract\\"  # part of main data set
 # PATH = f"{ROOT}\\contra\\"  # one smart contract
 
-PATH = os.path.join(ROOT, 'contracts') # Linux
+# PATH = os.path.join(ROOT, 'contracts') # Linux
 os.chdir(PATH)
 
 final_df = pd.DataFrame(columns=['X', 'Y'])
@@ -163,8 +163,8 @@ def getResultVulnarable(contract_name, target_vulnerability):
     res = False
     lines = []
     for tool in tools:
-        # path_result = os.path.join(f"{ROOT}\\results\\", tool, output_name, contract_name, 'result.json')
-        path_result = os.path.join(f"{ROOT}results", tool, output_name, contract_name, 'result.json') # Linux
+        path_result = os.path.join(f"{ROOT}\\results\\", tool, output_name, contract_name, 'result.json')
+        # path_result = os.path.join(f"{ROOT}results", tool, output_name, contract_name, 'result.json') # Linux
         if not os.path.exists(path_result):
             continue
         with open(path_result, 'r', encoding='utf-8') as fd:
@@ -964,7 +964,7 @@ def train_UNET_LSTM():
     print("Classification Report:")
     print(report)
 
-    model.save(os.path.join(ROOT, 'output', 'final_unet_attention_lstm_model.h5'))
+    model.save(os.path.join(ROOT, 'output', 'final_unet_attention_lstm_model.keras'))
     print("Training complete with U-Net(AttentionMap) + BiLSTM.")
 
 
@@ -1067,7 +1067,7 @@ def train_LSTM():
     print(report)
 
     # ذخیره مدل
-    model.save(os.path.join(ROOT, 'output', 'final_LSTM_model.h5'))
+    model.save(os.path.join(ROOT, 'output', 'final_LSTM_model.keras'))
 
     print("Training complete with LSTM.")
 
@@ -1151,7 +1151,7 @@ def test_unet_branch_alone():
 
     os.makedirs(os.path.join(ROOT, 'output'), exist_ok=True)
     checkpoint = ModelCheckpoint(
-        os.path.join(ROOT, 'output', 'best_unet_only_model.h5'),
+        os.path.join(ROOT, 'output', 'best_unet_only_model.keras'),
         monitor='val_loss',
         save_best_only=True
     )
@@ -1194,8 +1194,8 @@ def test_unet_branch_alone():
     print(classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable'], labels=[0, 1]))
 
     # اضافه شد: ذخیره مدل برای استفاده در check_ensemble_potential
-    model.save(os.path.join(ROOT, 'output', 'final_unet_only_model.h5'))
-    print(f"Model saved to {os.path.join(ROOT, 'output', 'final_unet_only_model.h5')}")
+    model.save(os.path.join(ROOT, 'output', 'final_unet_only_model.keras'))
+    print(f"Model saved to {os.path.join(ROOT, 'output', 'final_unet_only_model.keras')}")
 
 
 # =============================================================================
@@ -1219,11 +1219,11 @@ def check_ensemble_potential():
     Y_test = Y_att[test_idx]
 
     lstm_model = load_model(
-        os.path.join(ROOT, 'output', 'final_LSTM_model.h5'),
+        os.path.join(ROOT, 'output', 'final_LSTM_model.keras'),
         custom_objects={'loss': focal_loss(alpha=0.25, gamma=2.0)}
     )
     unet_model = load_model(
-        os.path.join(ROOT, 'output', 'final_unet_only_model.h5'),
+        os.path.join(ROOT, 'output', 'final_unet_only_model.keras'),
         custom_objects={'loss': focal_loss(alpha=0.25, gamma=2.0)}
     )
 
@@ -1285,11 +1285,11 @@ def train_stacking_ensemble():
     Y_train, Y_test = Y_att[train_idx], Y_att[test_idx]
 
     lstm_model = load_model(
-        os.path.join(ROOT, 'output', 'final_LSTM_model.h5'),
+        os.path.join(ROOT, 'output', 'final_LSTM_model.keras'),
         custom_objects={'loss': focal_loss(alpha=0.25, gamma=2.0)}
     )
     unet_model = load_model(
-        os.path.join(ROOT, 'output', 'final_unet_only_model.h5'),
+        os.path.join(ROOT, 'output', 'final_unet_only_model.keras'),
         custom_objects={'loss': focal_loss(alpha=0.25, gamma=2.0)}
     )
 
@@ -1332,8 +1332,8 @@ def train_stacking_ensemble():
     print(classification_report(Y_test, Y_pred, target_names=['Safe', 'Vulnerable'], labels=[0, 1]))
 
     os.makedirs(os.path.join(ROOT, 'output'), exist_ok=True)
-    meta_model.save(os.path.join(ROOT, 'output', 'final_stacking_ensemble.h5'))
-    print(f"Model saved to {os.path.join(ROOT, 'output', 'final_stacking_ensemble.h5')}")
+    meta_model.save(os.path.join(ROOT, 'output', 'final_stacking_ensemble.keras'))
+    print(f"Model saved to {os.path.join(ROOT, 'output', 'final_stacking_ensemble.keras')}")
 
 
 if __name__ == "__main__":
