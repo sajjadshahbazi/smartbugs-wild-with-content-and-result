@@ -1370,9 +1370,9 @@ if __name__ == "__main__":
     # =============================================================================
     # train_LSTM()
     # train_UNET_LSTM()
-    # test_unet_branch_alone()
+    test_unet_branch_alone()
     # check_ensemble_potential()
-    train_stacking_ensemble()
+    # train_stacking_ensemble()
 
 
 # 2026-08-21 15:37:43.775987: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
