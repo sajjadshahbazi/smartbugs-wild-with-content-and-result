@@ -1368,8 +1368,8 @@ if __name__ == "__main__":
     #   ۵. train_stacking_ensemble()  → آموزش meta-model روی خروجی هر دو مدل
     #      (نیازمند اجرای قبلی شماره ۱ و ۳ برای وجود فایل‌های مدل ذخیره‌شده)
     # =============================================================================
-    train_LSTM()
+    # train_LSTM()
     # train_UNET_LSTM()
     # test_unet_branch_alone()
-    # check_ensemble_potential()
+    check_ensemble_potential()
     # train_stacking_ensemble()
