@@ -1123,7 +1123,7 @@ def test_unet_branch_alone():
 
     model.compile(
         optimizer=Adam(learning_rate=0.001),
-        loss=focal_loss(alpha=0.25, gamma=2.0),
+        loss=focal_loss(alpha=0.6, gamma=2.0),
         metrics=['accuracy']
     )
 
