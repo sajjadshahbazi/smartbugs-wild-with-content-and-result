@@ -1129,7 +1129,8 @@ def test_unet_branch_alone():
     model.summary()
 
     early_stopping = EarlyStopping(
-        monitor='val_loss',
+        monitor='val_accuracy',
+        mode='max',
         patience=10,
         restore_best_weights=True
     )
@@ -1142,7 +1143,8 @@ def test_unet_branch_alone():
     # restore_best_weights در حافظه، روی دیسک هم ذخیره می‌شوند.
     # =============================================================================
     reduce_lr = ReduceLROnPlateau(
-        monitor='val_loss',
+        monitor='val_accuracy',
+        mode='max',
         factor=0.5,
         patience=4,
         min_lr=1e-6,
@@ -1152,7 +1154,8 @@ def test_unet_branch_alone():
     os.makedirs(os.path.join(ROOT, 'output'), exist_ok=True)
     checkpoint = ModelCheckpoint(
         os.path.join(ROOT, 'output', 'best_unet_only_model.keras'),
-        monitor='val_loss',
+        monitor='val_accuracy',
+        mode='max',
         save_best_only=True
     )
 
