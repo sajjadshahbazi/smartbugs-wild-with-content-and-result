@@ -1415,10 +1415,19 @@ def train_stacking_ensemble():
     meta_model.save(os.path.join(ROOT, 'output', 'final_stacking_ensemble.keras'))
     print(f"Model saved to {os.path.join(ROOT, 'output', 'final_stacking_ensemble.keras')}")
 
-
 if __name__ == "__main__":
-    files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
-    print(f"size files {files.__len__()}")
+    # files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
+    # print(f"size files {files.__len__()}")
+
+    # =============================================================================
+    # اضافه شد: ساخت/لود یک‌بارهٔ مدل FastText سراسری قبل از شروع batch‌ها
+    # تا embedding شاخهٔ U-Net (attention map) در همهٔ نمونه‌ها یکسان و
+    # قابل generalize باشد، نه per-function جداگانه.
+    # =============================================================================
+    # if os.path.exists(GLOBAL_FASTTEXT_PATH):
+    #     global_ft_model = FastText.load(GLOBAL_FASTTEXT_PATH)
+    # else:
+    #     global_ft_model = build_global_fasttext_model()
 
     # =============================================================================
     # تغییر: طبق درخواست شما، در همین اجرای اول، دیتاست هر دو حالت
@@ -1428,12 +1437,33 @@ if __name__ == "__main__":
     # این دو تابع کاملاً مستقل از هم هستند و در دو مسیر جدا ذخیره می‌کنند،
     # پس هیچ تداخلی با هم ندارند.
     # =============================================================================
-    for batch_index, i in enumerate(range(0, len(files), batch_size)):
-        # if batch_index > 29:
-            # continue
-            batch_files = files[i:i + batch_size]
-            print(f"size batch_files {batch_files.__len__()}")
-            process_batch_with_categorization_for_unet(batch_files, target_vulner, batch_size, batch_index)
+    # for batch_index, i in enumerate(range(0, len(files), batch_size)):
+    #     # if batch_index < 29:
+    #         # continue
+    #     batch_files = files[i:i + batch_size]
+    #     print(f"size batch_files {batch_files.__len__()}")
+    #     process_batch_with_categorization_for_unet(
+    #         batch_files, target_vulner, batch_size, batch_index,
+    #         global_fasttext_model=global_ft_model
+    #     )
+# if __name__ == "__main__":
+#     files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
+#     print(f"size files {files.__len__()}")
+#
+#     # =============================================================================
+#     # تغییر: طبق درخواست شما، در همین اجرای اول، دیتاست هر دو حالت
+#     # (LSTM تنها و U-Net+BiLSTM) در یک حلقه ساخته می‌شوند:
+#     #   - process_batch_with_categorization      → ذخیره در vectorcollections/
+#     #   - process_batch_with_categorization_for_unet → ذخیره در vectorcollections_img/
+#     # این دو تابع کاملاً مستقل از هم هستند و در دو مسیر جدا ذخیره می‌کنند،
+#     # پس هیچ تداخلی با هم ندارند.
+#     # =============================================================================
+#     for batch_index, i in enumerate(range(0, len(files), batch_size)):
+#         # if batch_index > 29:
+#             # continue
+#             batch_files = files[i:i + batch_size]
+#             print(f"size batch_files {batch_files.__len__()}")
+#             process_batch_with_categorization_for_unet(batch_files, target_vulner, batch_size, batch_index)
 
     # =============================================================================
     # بخش آموزش: طبق درخواست شما این‌ها به‌صورت جدا و در اجراهای متفاوت
@@ -1449,250 +1479,6 @@ if __name__ == "__main__":
     # =============================================================================
     # train_LSTM()
     # train_UNET_LSTM()
-    # test_unet_branch_alone()
+    test_unet_branch_alone()
     # check_ensemble_potential()
     # train_stacking_ensemble()
-
-# 2026-08-29 22:58:50.612972: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
-# To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-# Shape of X_att: (47619, 100, 100, 3)
-# Distribution in Y: (array([0, 1], dtype=int32), array([28520, 19099]))
-# Majority-class baseline accuracy: 0.5967
-# 2026-08-29 22:59:09.712574: W tensorflow/core/common_runtime/gpu/gpu_bfc_allocator.cc:47] Overriding orig_value setting because the TF_FORCE_GPU_ALLOW_GROWTH environment variable is set. Original config value was 0.
-# WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-# I0000 00:00:1788044349.714006   26716 gpu_device.cc:2020] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 13757 MB memory:  -> device: 0, name: Tesla T4, pci bus id: 0000:00:04.0, compute capability: 7.5
-# Model: "functional"
-# ┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┓
-# ┃ Layer (type)        ┃ Output Shape      ┃    Param # ┃ Connected to      ┃
-# ┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━┩
-# │ attention_map_input │ (None, 100, 100,  │          0 │ -                 │
-# │ (InputLayer)        │ 3)                │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ conv2d (Conv2D)     │ (None, 100, 100,  │      1,792 │ attention_map_in… │
-# │                     │ 64)               │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ max_pooling2d       │ (None, 50, 50,    │          0 │ conv2d[0][0]      │
-# │ (MaxPooling2D)      │ 64)               │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ conv2d_1 (Conv2D)   │ (None, 50, 50,    │     73,856 │ max_pooling2d[0]… │
-# │                     │ 128)              │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ max_pooling2d_1     │ (None, 25, 25,    │          0 │ conv2d_1[0][0]    │
-# │ (MaxPooling2D)      │ 128)              │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ conv2d_2 (Conv2D)   │ (None, 25, 25,    │    295,168 │ max_pooling2d_1[… │
-# │                     │ 256)              │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ spatial_dropout2d   │ (None, 25, 25,    │          0 │ conv2d_2[0][0]    │
-# │ (SpatialDropout2D)  │ 256)              │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ up_sampling2d       │ (None, 50, 50,    │          0 │ spatial_dropout2… │
-# │ (UpSampling2D)      │ 256)              │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ concatenate         │ (None, 50, 50,    │          0 │ conv2d_1[0][0],   │
-# │ (Concatenate)       │ 384)              │            │ up_sampling2d[0]… │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ conv2d_3 (Conv2D)   │ (None, 50, 50,    │    442,496 │ concatenate[0][0] │
-# │                     │ 128)              │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ up_sampling2d_1     │ (None, 100, 100,  │          0 │ conv2d_3[0][0]    │
-# │ (UpSampling2D)      │ 128)              │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ concatenate_1       │ (None, 100, 100,  │          0 │ conv2d[0][0],     │
-# │ (Concatenate)       │ 192)              │            │ up_sampling2d_1[… │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ conv2d_4 (Conv2D)   │ (None, 100, 100,  │    110,656 │ concatenate_1[0]… │
-# │                     │ 64)               │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ global_average_poo… │ (None, 64)        │          0 │ conv2d_4[0][0]    │
-# │ (GlobalAveragePool… │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ global_max_pooling… │ (None, 64)        │          0 │ conv2d_4[0][0]    │
-# │ (GlobalMaxPooling2… │                   │            │                   │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ concatenate_2       │ (None, 128)       │          0 │ global_average_p… │
-# │ (Concatenate)       │                   │            │ global_max_pooli… │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ dense (Dense)       │ (None, 128)       │     16,512 │ concatenate_2[0]… │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ dropout (Dropout)   │ (None, 128)       │          0 │ dense[0][0]       │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ dense_1 (Dense)     │ (None, 64)        │      8,256 │ dropout[0][0]     │
-# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
-# │ dense_2 (Dense)     │ (None, 1)         │         65 │ dense_1[0][0]     │
-# └─────────────────────┴───────────────────┴────────────┴───────────────────┘
-#  Total params: 948,801 (3.62 MB)
-#  Trainable params: 948,801 (3.62 MB)
-#  Non-trainable params: 0 (0.00 B)
-# 2026-08-29 22:59:13.574445: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 3657120000 exceeds 10% of free system memory.
-# 2026-08-29 22:59:16.935439: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 3657120000 exceeds 10% of free system memory.
-# Epoch 1/50
-# 2026-08-29 22:59:21.994862: I external/local_xla/xla/service/service.cc:163] XLA service 0x7ca7fc090ae0 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
-# 2026-08-29 22:59:21.994912: I external/local_xla/xla/service/service.cc:171]   StreamExecutor device (0): Tesla T4, Compute Capability 7.5
-# 2026-08-29 22:59:22.126707: I tensorflow/compiler/mlir/tensorflow/utils/dump_mlir_util.cc:269] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
-# 2026-08-29 22:59:22.650605: I external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:473] Loaded cuDNN version 91900
-# 2026-08-29 22:59:23.947433: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[128,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,3,100,100]{3,2,1,0}, f32[64,3,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-29 22:59:24.143916: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[128,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,64,50,50]{3,2,1,0}, f32[128,64,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-29 22:59:24.827666: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[128,256,25,25]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,128,25,25]{3,2,1,0}, f32[256,128,3,3]{3,2,1,0}, f32[256]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-29 22:59:25.402443: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[128,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,384,50,50]{3,2,1,0}, f32[128,384,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-29 22:59:28.977123: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[128,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,192,100,100]{3,2,1,0}, f32[64,192,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-29 22:59:34.613075: E external/local_xla/xla/stream_executor/cuda/cuda_timer.cc:86] Delay kernel timed out: measured time has sub-optimal accuracy. There may be a missing warmup execution, please investigate in Nsight Systems.
-# 2026-08-29 22:59:34.861611: E external/local_xla/xla/stream_executor/cuda/cuda_timer.cc:86] Delay kernel timed out: measured time has sub-optimal accuracy. There may be a missing warmup execution, please investigate in Nsight Systems.
-# I0000 00:00:1788044396.598958   26874 device_compiler.h:196] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
-# 2026-08-29 22:59:56.603742: W external/local_xla/xla/tsl/framework/bfc_allocator.cc:382] Garbage collection: deallocate free memory regions (i.e., allocations) so that we can re-allocate a larger region to avoid OOM due to memory fragmentation. If you see this message frequently, you are running near the threshold of the available device memory and re-allocation may incur great performance overhead. You may try smaller batch sizes to observe the performance impact. Set TF_ENABLE_GPU_GARBAGE_COLLECTION=false if you'd like to disable this feature.
-# 2026-08-29 23:01:19.506280: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[12,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[12,3,100,100]{3,2,1,0}, f32[64,3,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-29 23:01:19.526885: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[12,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[12,64,50,50]{3,2,1,0}, f32[128,64,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-29 23:01:19.631604: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[12,256,25,25]{3,2,1,0}, u8[0]{0}) custom-call(f32[12,128,25,25]{3,2,1,0}, f32[256,128,3,3]{3,2,1,0}, f32[256]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-29 23:01:19.721233: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[12,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[12,384,50,50]{3,2,1,0}, f32[128,384,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-29 23:01:20.366726: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[12,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[12,192,100,100]{3,2,1,0}, f32[64,192,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kNone","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-29 23:01:21.678508: E external/local_xla/xla/stream_executor/cuda/cuda_timer.cc:86] Delay kernel timed out: measured time has sub-optimal accuracy. There may be a missing warmup execution, please investigate in Nsight Systems.
-# 2026-08-29 23:01:21.849164: E external/local_xla/xla/stream_executor/cuda/cuda_timer.cc:86] Delay kernel timed out: measured time has sub-optimal accuracy. There may be a missing warmup execution, please investigate in Nsight Systems.
-# 2026-08-29 23:01:27.017923: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 914280000 exceeds 10% of free system memory.
-# 2026-08-29 23:01:27.866564: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 914280000 exceeds 10% of free system memory.
-# 2026-08-29 23:01:29.220688: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[128,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,3,100,100]{3,2,1,0}, f32[64,3,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-29 23:01:29.327108: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[128,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,64,50,50]{3,2,1,0}, f32[128,64,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-29 23:01:30.053808: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[128,256,25,25]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,128,25,25]{3,2,1,0}, f32[256,128,3,3]{3,2,1,0}, f32[256]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-29 23:01:30.864527: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[128,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,384,50,50]{3,2,1,0}, f32[128,384,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-29 23:01:34.693338: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[128,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[128,192,100,100]{3,2,1,0}, f32[64,192,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-29 23:01:47.347347: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[67,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[67,3,100,100]{3,2,1,0}, f32[64,3,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-29 23:01:47.413709: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[67,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[67,64,50,50]{3,2,1,0}, f32[128,64,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-29 23:01:47.817637: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[67,256,25,25]{3,2,1,0}, u8[0]{0}) custom-call(f32[67,128,25,25]{3,2,1,0}, f32[256,128,3,3]{3,2,1,0}, f32[256]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-29 23:01:48.171509: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[67,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[67,384,50,50]{3,2,1,0}, f32[128,384,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-29 23:01:50.363749: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[67,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[67,192,100,100]{3,2,1,0}, f32[64,192,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 239/239 - 154s - 645ms/step - accuracy: 0.7202 - loss: 0.2190 - val_accuracy: 0.7774 - val_loss: 0.0347 - learning_rate: 0.0010
-# Epoch 2/50
-# 239/239 - 93s - 388ms/step - accuracy: 0.7858 - loss: 0.0303 - val_accuracy: 0.7981 - val_loss: 0.0291 - learning_rate: 0.0010
-# Epoch 3/50
-# 239/239 - 94s - 395ms/step - accuracy: 0.8061 - loss: 0.0273 - val_accuracy: 0.8018 - val_loss: 0.0273 - learning_rate: 0.0010
-# Epoch 4/50
-# 239/239 - 95s - 396ms/step - accuracy: 0.8212 - loss: 0.0259 - val_accuracy: 0.7991 - val_loss: 0.0285 - learning_rate: 0.0010
-# Epoch 5/50
-# 239/239 - 95s - 396ms/step - accuracy: 0.8330 - loss: 0.0244 - val_accuracy: 0.8195 - val_loss: 0.0255 - learning_rate: 0.0010
-# Epoch 6/50
-# 239/239 - 94s - 395ms/step - accuracy: 0.8397 - loss: 0.0235 - val_accuracy: 0.8151 - val_loss: 0.0253 - learning_rate: 0.0010
-# Epoch 7/50
-# 239/239 - 95s - 396ms/step - accuracy: 0.8464 - loss: 0.0227 - val_accuracy: 0.8279 - val_loss: 0.0253 - learning_rate: 0.0010
-# Epoch 8/50
-# 239/239 - 94s - 395ms/step - accuracy: 0.8536 - loss: 0.0219 - val_accuracy: 0.8344 - val_loss: 0.0238 - learning_rate: 0.0010
-# Epoch 9/50
-# 239/239 - 94s - 394ms/step - accuracy: 0.8600 - loss: 0.0211 - val_accuracy: 0.8403 - val_loss: 0.0226 - learning_rate: 0.0010
-# Epoch 10/50
-# 239/239 - 94s - 393ms/step - accuracy: 0.8659 - loss: 0.0208 - val_accuracy: 0.8447 - val_loss: 0.0224 - learning_rate: 0.0010
-# Epoch 11/50
-# 239/239 - 94s - 393ms/step - accuracy: 0.8706 - loss: 0.0199 - val_accuracy: 0.8489 - val_loss: 0.0224 - learning_rate: 0.0010
-# Epoch 12/50
-# 239/239 - 93s - 391ms/step - accuracy: 0.8770 - loss: 0.0193 - val_accuracy: 0.8458 - val_loss: 0.0223 - learning_rate: 0.0010
-# Epoch 13/50
-# 239/239 - 93s - 390ms/step - accuracy: 0.8762 - loss: 0.0191 - val_accuracy: 0.8509 - val_loss: 0.0237 - learning_rate: 0.0010
-# Epoch 14/50
-# 239/239 - 94s - 392ms/step - accuracy: 0.8859 - loss: 0.0181 - val_accuracy: 0.8542 - val_loss: 0.0233 - learning_rate: 0.0010
-# Epoch 15/50
-# 239/239 - 93s - 391ms/step - accuracy: 0.8891 - loss: 0.0178 - val_accuracy: 0.8561 - val_loss: 0.0227 - learning_rate: 0.0010
-# Epoch 16/50
-# 239/239 - 94s - 392ms/step - accuracy: 0.8923 - loss: 0.0171 - val_accuracy: 0.8622 - val_loss: 0.0215 - learning_rate: 0.0010
-# Epoch 17/50
-# 239/239 - 94s - 391ms/step - accuracy: 0.8960 - loss: 0.0168 - val_accuracy: 0.8627 - val_loss: 0.0219 - learning_rate: 0.0010
-# Epoch 18/50
-# 239/239 - 93s - 391ms/step - accuracy: 0.9026 - loss: 0.0162 - val_accuracy: 0.8635 - val_loss: 0.0210 - learning_rate: 0.0010
-# Epoch 19/50
-# 239/239 - 93s - 391ms/step - accuracy: 0.9071 - loss: 0.0155 - val_accuracy: 0.8619 - val_loss: 0.0230 - learning_rate: 0.0010
-# Epoch 20/50
-# 239/239 - 93s - 390ms/step - accuracy: 0.9059 - loss: 0.0156 - val_accuracy: 0.8653 - val_loss: 0.0223 - learning_rate: 0.0010
-# Epoch 21/50
-# 239/239 - 93s - 389ms/step - accuracy: 0.9120 - loss: 0.0149 - val_accuracy: 0.8657 - val_loss: 0.0214 - learning_rate: 0.0010
-# Epoch 22/50
-# 239/239 - 93s - 390ms/step - accuracy: 0.9151 - loss: 0.0146 - val_accuracy: 0.8670 - val_loss: 0.0237 - learning_rate: 0.0010
-# Epoch 23/50
-# 239/239 - 93s - 389ms/step - accuracy: 0.9192 - loss: 0.0138 - val_accuracy: 0.8680 - val_loss: 0.0212 - learning_rate: 0.0010
-# Epoch 24/50
-# 239/239 - 93s - 389ms/step - accuracy: 0.9184 - loss: 0.0140 - val_accuracy: 0.8728 - val_loss: 0.0241 - learning_rate: 0.0010
-# Epoch 25/50
-# 239/239 - 93s - 389ms/step - accuracy: 0.9212 - loss: 0.0134 - val_accuracy: 0.8706 - val_loss: 0.0245 - learning_rate: 0.0010
-# Epoch 26/50
-# 239/239 - 93s - 390ms/step - accuracy: 0.9251 - loss: 0.0130 - val_accuracy: 0.8714 - val_loss: 0.0227 - learning_rate: 0.0010
-# Epoch 27/50
-# 239/239 - 93s - 390ms/step - accuracy: 0.9256 - loss: 0.0130 - val_accuracy: 0.8761 - val_loss: 0.0238 - learning_rate: 0.0010
-# Epoch 28/50
-# 239/239 - 93s - 390ms/step - accuracy: 0.9285 - loss: 0.0125 - val_accuracy: 0.8768 - val_loss: 0.0225 - learning_rate: 0.0010
-# Epoch 29/50
-# 239/239 - 93s - 389ms/step - accuracy: 0.9295 - loss: 0.0123 - val_accuracy: 0.8733 - val_loss: 0.0225 - learning_rate: 0.0010
-# Epoch 30/50
-# 239/239 - 93s - 389ms/step - accuracy: 0.9251 - loss: 0.0128 - val_accuracy: 0.8798 - val_loss: 0.0236 - learning_rate: 0.0010
-# Epoch 31/50
-# 239/239 - 93s - 388ms/step - accuracy: 0.9357 - loss: 0.0114 - val_accuracy: 0.8739 - val_loss: 0.0238 - learning_rate: 0.0010
-# Epoch 32/50
-# 239/239 - 93s - 388ms/step - accuracy: 0.9356 - loss: 0.0114 - val_accuracy: 0.8791 - val_loss: 0.0231 - learning_rate: 0.0010
-# Epoch 33/50
-# 239/239 - 93s - 388ms/step - accuracy: 0.9360 - loss: 0.0113 - val_accuracy: 0.8791 - val_loss: 0.0246 - learning_rate: 0.0010
-# Epoch 34/50
-#
-# Epoch 34: ReduceLROnPlateau reducing learning rate to 0.0005000000237487257.
-# 239/239 - 93s - 388ms/step - accuracy: 0.9354 - loss: 0.0114 - val_accuracy: 0.8777 - val_loss: 0.0236 - learning_rate: 0.0010
-# Epoch 35/50
-# 239/239 - 93s - 389ms/step - accuracy: 0.9471 - loss: 0.0095 - val_accuracy: 0.8808 - val_loss: 0.0280 - learning_rate: 5.0000e-04
-# Epoch 36/50
-# 239/239 - 93s - 388ms/step - accuracy: 0.9516 - loss: 0.0088 - val_accuracy: 0.8796 - val_loss: 0.0295 - learning_rate: 5.0000e-04
-# Epoch 37/50
-# 239/239 - 93s - 389ms/step - accuracy: 0.9530 - loss: 0.0085 - val_accuracy: 0.8824 - val_loss: 0.0266 - learning_rate: 5.0000e-04
-# Epoch 38/50
-# 239/239 - 93s - 388ms/step - accuracy: 0.9527 - loss: 0.0085 - val_accuracy: 0.8821 - val_loss: 0.0266 - learning_rate: 5.0000e-04
-# Epoch 39/50
-# 239/239 - 93s - 388ms/step - accuracy: 0.9534 - loss: 0.0085 - val_accuracy: 0.8798 - val_loss: 0.0275 - learning_rate: 5.0000e-04
-# Epoch 40/50
-# 239/239 - 93s - 388ms/step - accuracy: 0.9552 - loss: 0.0081 - val_accuracy: 0.8815 - val_loss: 0.0315 - learning_rate: 5.0000e-04
-# Epoch 41/50
-# 239/239 - 93s - 388ms/step - accuracy: 0.9561 - loss: 0.0080 - val_accuracy: 0.8846 - val_loss: 0.0288 - learning_rate: 5.0000e-04
-# Epoch 42/50
-# 239/239 - 93s - 388ms/step - accuracy: 0.9555 - loss: 0.0082 - val_accuracy: 0.8794 - val_loss: 0.0278 - learning_rate: 5.0000e-04
-# Epoch 43/50
-# 239/239 - 93s - 388ms/step - accuracy: 0.9555 - loss: 0.0080 - val_accuracy: 0.8806 - val_loss: 0.0333 - learning_rate: 5.0000e-04
-# Epoch 44/50
-# 239/239 - 93s - 389ms/step - accuracy: 0.9555 - loss: 0.0081 - val_accuracy: 0.8813 - val_loss: 0.0291 - learning_rate: 5.0000e-04
-# Epoch 45/50
-#
-# Epoch 45: ReduceLROnPlateau reducing learning rate to 0.0002500000118743628.
-# 239/239 - 93s - 388ms/step - accuracy: 0.9566 - loss: 0.0077 - val_accuracy: 0.8796 - val_loss: 0.0367 - learning_rate: 5.0000e-04
-# Epoch 46/50
-# 239/239 - 93s - 388ms/step - accuracy: 0.9600 - loss: 0.0071 - val_accuracy: 0.8790 - val_loss: 0.0297 - learning_rate: 2.5000e-04
-# Epoch 47/50
-# 239/239 - 93s - 388ms/step - accuracy: 0.9623 - loss: 0.0069 - val_accuracy: 0.8810 - val_loss: 0.0285 - learning_rate: 2.5000e-04
-# Epoch 48/50
-# 239/239 - 93s - 389ms/step - accuracy: 0.9627 - loss: 0.0067 - val_accuracy: 0.8813 - val_loss: 0.0323 - learning_rate: 2.5000e-04
-# Epoch 49/50
-#
-# Epoch 49: ReduceLROnPlateau reducing learning rate to 0.0001250000059371814.
-# 239/239 - 93s - 388ms/step - accuracy: 0.9622 - loss: 0.0068 - val_accuracy: 0.8815 - val_loss: 0.0353 - learning_rate: 2.5000e-04
-# Epoch 50/50
-# 239/239 - 93s - 388ms/step - accuracy: 0.9646 - loss: 0.0064 - val_accuracy: 0.8824 - val_loss: 0.0338 - learning_rate: 1.2500e-04
-# Plot saved to /content/smartbugs-wild-with-content-and-result/output/training_plot_unet_only.png
-# Figure(1000x600)
-# 2026-08-30 00:18:05.027221: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 1142880000 exceeds 10% of free system memory.
-# 2026-08-30 00:18:07.273707: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[32,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[32,3,100,100]{3,2,1,0}, f32[64,3,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-30 00:18:07.317757: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[32,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[32,64,50,50]{3,2,1,0}, f32[128,64,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-30 00:18:07.573080: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[32,256,25,25]{3,2,1,0}, u8[0]{0}) custom-call(f32[32,128,25,25]{3,2,1,0}, f32[256,128,3,3]{3,2,1,0}, f32[256]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-30 00:18:07.763294: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[32,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[32,384,50,50]{3,2,1,0}, f32[128,384,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-30 00:18:09.139433: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[32,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[32,192,100,100]{3,2,1,0}, f32[64,192,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 297/298 ━━━━━━━━━━━━━━━━━━━━ 0s 36ms/step2026-08-30 00:18:22.273857: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[20,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[20,3,100,100]{3,2,1,0}, f32[64,3,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-30 00:18:22.307902: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[20,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[20,64,50,50]{3,2,1,0}, f32[128,64,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-30 00:18:22.449815: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[20,256,25,25]{3,2,1,0}, u8[0]{0}) custom-call(f32[20,128,25,25]{3,2,1,0}, f32[256,128,3,3]{3,2,1,0}, f32[256]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-30 00:18:22.583106: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[20,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[20,384,50,50]{3,2,1,0}, f32[128,384,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-08-30 00:18:23.632957: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[20,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[20,192,100,100]{3,2,1,0}, f32[64,192,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 298/298 ━━━━━━━━━━━━━━━━━━━━ 18s 47ms/step
-#
-# ==================================================
-# U-Net-only accuracy:       0.8790
-# Majority-class baseline:   0.5967
-# Improvement over baseline: 28.23%
-# ==================================================
-#
-# Classification Report:
-#               precision    recall  f1-score   support
-#
-#         Safe       0.89      0.92      0.90      5683
-#   Vulnerable       0.87      0.82      0.85      3841
-#
-#     accuracy                           0.88      9524
-#    macro avg       0.88      0.87      0.87      9524
-# weighted avg       0.88      0.88      0.88      9524
-#
-# Model saved to /content/smartbugs-wild-with-content-and-result/output/final_unet_only_model.keras
