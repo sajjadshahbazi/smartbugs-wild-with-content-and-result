@@ -1588,83 +1588,79 @@ if __name__ == "__main__":
     #   ۵. train_stacking_ensemble()  → آموزش meta-model روی خروجی هر دو مدل
     #      (نیازمند اجرای قبلی شماره ۱ و ۳ برای وجود فایل‌های مدل ذخیره‌شده)
     # =============================================================================
-    train_LSTM()
+    # train_LSTM()
     # train_UNET_LSTM()
-    # test_unet_branch_alone()
+    test_unet_branch_alone()
     # check_ensemble_potential()
     # train_stacking_ensemble()aa
 
-# 2026-09-06 16:31:24.300176: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+# 2026-09-06 18:09:54.926426: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
 # To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
 # Shape of X: (47619, 100, 300)
 # Shape of Y: (47619,)
 # Distribution in Y: (array([0, 1], dtype=int32), array([28520, 19099]))
 # Distribution in Y_test: (array([0, 1], dtype=int32), array([5683, 3841]))
-# 2026-09-06 16:31:51.005985: W tensorflow/core/common_runtime/gpu/gpu_bfc_allocator.cc:47] Overriding orig_value setting because the TF_FORCE_GPU_ALLOW_GROWTH environment variable is set. Original config value was 0.
+# 2026-09-06 18:10:24.137908: W tensorflow/core/common_runtime/gpu/gpu_bfc_allocator.cc:47] Overriding orig_value setting because the TF_FORCE_GPU_ALLOW_GROWTH environment variable is set. Original config value was 0.
 # WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-# I0000 00:00:1788712311.007420   40586 gpu_device.cc:2020] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 13757 MB memory:  -> device: 0, name: Tesla T4, pci bus id: 0000:00:04.0, compute capability: 7.5
-# 2026-09-06 16:31:57.307693: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 3657120000 exceeds 10% of free system memory.
-# 2026-09-06 16:32:00.746301: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 3657120000 exceeds 10% of free system memory.
+# I0000 00:00:1788718224.139385   13413 gpu_device.cc:2020] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 13757 MB memory:  -> device: 0, name: Tesla T4, pci bus id: 0000:00:04.0, compute capability: 7.5
+# 2026-09-06 18:10:30.127205: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 3657120000 exceeds 10% of free system memory.
+# 2026-09-06 18:10:33.797200: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 3657120000 exceeds 10% of free system memory.
 # Epoch 1/50
-# 2026-09-06 16:32:06.611701: I external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:473] Loaded cuDNN version 91900
-# 2026-09-06 16:32:18.188508: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 914280000 exceeds 10% of free system memory.
-# 2026-09-06 16:32:19.114748: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 914280000 exceeds 10% of free system memory.
-# 239/239 - 18s - 77ms/step - accuracy: 0.7986 - loss: 0.0276 - val_accuracy: 0.8323 - val_loss: 0.0235
+# 2026-09-06 18:10:40.038711: I external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:473] Loaded cuDNN version 91900
+# 2026-09-06 18:10:51.499592: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 914280000 exceeds 10% of free system memory.
+# 2026-09-06 18:10:52.478280: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 914280000 exceeds 10% of free system memory.
+# 239/239 - 18s - 77ms/step - accuracy: 0.8016 - loss: 0.0270 - val_accuracy: 0.8127 - val_loss: 0.0250
 # Epoch 2/50
-# 239/239 - 10s - 40ms/step - accuracy: 0.8457 - loss: 0.0222 - val_accuracy: 0.8379 - val_loss: 0.0226
+# 239/239 - 9s - 40ms/step - accuracy: 0.8459 - loss: 0.0223 - val_accuracy: 0.8296 - val_loss: 0.0231
 # Epoch 3/50
-# 239/239 - 10s - 40ms/step - accuracy: 0.8570 - loss: 0.0209 - val_accuracy: 0.8435 - val_loss: 0.0214
+# 239/239 - 10s - 40ms/step - accuracy: 0.8539 - loss: 0.0210 - val_accuracy: 0.8449 - val_loss: 0.0221
 # Epoch 4/50
-# 239/239 - 10s - 41ms/step - accuracy: 0.8627 - loss: 0.0199 - val_accuracy: 0.8493 - val_loss: 0.0215
+# 239/239 - 10s - 40ms/step - accuracy: 0.8639 - loss: 0.0200 - val_accuracy: 0.8432 - val_loss: 0.0213
 # Epoch 5/50
-# 239/239 - 10s - 41ms/step - accuracy: 0.8702 - loss: 0.0192 - val_accuracy: 0.8540 - val_loss: 0.0203
+# 239/239 - 10s - 41ms/step - accuracy: 0.8718 - loss: 0.0190 - val_accuracy: 0.8580 - val_loss: 0.0208
 # Epoch 6/50
-# 239/239 - 10s - 41ms/step - accuracy: 0.8764 - loss: 0.0182 - val_accuracy: 0.8488 - val_loss: 0.0214
+# 239/239 - 10s - 41ms/step - accuracy: 0.8755 - loss: 0.0182 - val_accuracy: 0.8550 - val_loss: 0.0204
 # Epoch 7/50
-# 239/239 - 10s - 41ms/step - accuracy: 0.8816 - loss: 0.0176 - val_accuracy: 0.8597 - val_loss: 0.0201
+# 239/239 - 10s - 41ms/step - accuracy: 0.8839 - loss: 0.0174 - val_accuracy: 0.8665 - val_loss: 0.0196
 # Epoch 8/50
-# 239/239 - 10s - 41ms/step - accuracy: 0.8878 - loss: 0.0168 - val_accuracy: 0.8676 - val_loss: 0.0193
+# 239/239 - 10s - 42ms/step - accuracy: 0.8911 - loss: 0.0165 - val_accuracy: 0.8647 - val_loss: 0.0200
 # Epoch 9/50
-# 239/239 - 10s - 42ms/step - accuracy: 0.8924 - loss: 0.0161 - val_accuracy: 0.8663 - val_loss: 0.0198
+# 239/239 - 10s - 43ms/step - accuracy: 0.8945 - loss: 0.0159 - val_accuracy: 0.8693 - val_loss: 0.0193
 # Epoch 10/50
-# 239/239 - 10s - 42ms/step - accuracy: 0.8981 - loss: 0.0156 - val_accuracy: 0.8706 - val_loss: 0.0201
+# 239/239 - 10s - 42ms/step - accuracy: 0.9012 - loss: 0.0150 - val_accuracy: 0.8706 - val_loss: 0.0187
 # Epoch 11/50
-# 239/239 - 10s - 43ms/step - accuracy: 0.9028 - loss: 0.0146 - val_accuracy: 0.8691 - val_loss: 0.0205
+# 239/239 - 10s - 42ms/step - accuracy: 0.9049 - loss: 0.0146 - val_accuracy: 0.8761 - val_loss: 0.0196
 # Epoch 12/50
-# 239/239 - 10s - 43ms/step - accuracy: 0.9103 - loss: 0.0140 - val_accuracy: 0.8774 - val_loss: 0.0191
+# 239/239 - 10s - 42ms/step - accuracy: 0.9103 - loss: 0.0137 - val_accuracy: 0.8735 - val_loss: 0.0208
 # Epoch 13/50
-# 239/239 - 10s - 43ms/step - accuracy: 0.9127 - loss: 0.0134 - val_accuracy: 0.8820 - val_loss: 0.0202
+# 239/239 - 10s - 42ms/step - accuracy: 0.9167 - loss: 0.0130 - val_accuracy: 0.8760 - val_loss: 0.0210
 # Epoch 14/50
-# 239/239 - 10s - 43ms/step - accuracy: 0.9178 - loss: 0.0129 - val_accuracy: 0.8794 - val_loss: 0.0215
+# 239/239 - 10s - 42ms/step - accuracy: 0.9194 - loss: 0.0124 - val_accuracy: 0.8832 - val_loss: 0.0209
 # Epoch 15/50
-# 239/239 - 10s - 43ms/step - accuracy: 0.9213 - loss: 0.0124 - val_accuracy: 0.8844 - val_loss: 0.0199
+# 239/239 - 10s - 42ms/step - accuracy: 0.9249 - loss: 0.0117 - val_accuracy: 0.8824 - val_loss: 0.0234
 # Epoch 16/50
-# 239/239 - 10s - 42ms/step - accuracy: 0.9261 - loss: 0.0118 - val_accuracy: 0.8890 - val_loss: 0.0205
+# 239/239 - 10s - 42ms/step - accuracy: 0.9281 - loss: 0.0115 - val_accuracy: 0.8855 - val_loss: 0.0215
 # Epoch 17/50
-# 239/239 - 10s - 42ms/step - accuracy: 0.9282 - loss: 0.0114 - val_accuracy: 0.8850 - val_loss: 0.0222
+# 239/239 - 10s - 42ms/step - accuracy: 0.9302 - loss: 0.0110 - val_accuracy: 0.8862 - val_loss: 0.0210
 # Epoch 18/50
-# 239/239 - 10s - 43ms/step - accuracy: 0.9324 - loss: 0.0109 - val_accuracy: 0.8832 - val_loss: 0.0225
+# 239/239 - 10s - 42ms/step - accuracy: 0.9340 - loss: 0.0105 - val_accuracy: 0.8808 - val_loss: 0.0228
 # Epoch 19/50
-# 239/239 - 10s - 42ms/step - accuracy: 0.9354 - loss: 0.0105 - val_accuracy: 0.8896 - val_loss: 0.0221
+# 239/239 - 10s - 42ms/step - accuracy: 0.9359 - loss: 0.0103 - val_accuracy: 0.8821 - val_loss: 0.0234
 # Epoch 20/50
-# 239/239 - 10s - 42ms/step - accuracy: 0.9363 - loss: 0.0101 - val_accuracy: 0.8882 - val_loss: 0.0228
-# Epoch 21/50
-# 239/239 - 10s - 42ms/step - accuracy: 0.9389 - loss: 0.0100 - val_accuracy: 0.8890 - val_loss: 0.0231
-# Epoch 22/50
-# 239/239 - 10s - 43ms/step - accuracy: 0.9426 - loss: 0.0094 - val_accuracy: 0.8883 - val_loss: 0.0236
+# 239/239 - 10s - 42ms/step - accuracy: 0.9391 - loss: 0.0099 - val_accuracy: 0.8855 - val_loss: 0.0251
 # Plot saved to /content/smartbugs-wild-with-content-and-result/output/training_plot_lstm.png
 # Figure(1000x600)
-# 2026-09-06 16:35:53.725705: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 1142880000 exceeds 10% of free system memory.
+# 2026-09-06 18:14:04.733277: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 1142880000 exceeds 10% of free system memory.
 # 298/298 ━━━━━━━━━━━━━━━━━━━━ 3s 9ms/step
-# Accuracy: 0.8720075598488031
+# Accuracy: 0.8732675346493071
 # Classification Report:
 #               precision    recall  f1-score   support
 #
-#         Safe       0.86      0.94      0.90      5683
-#   Vulnerable       0.90      0.77      0.83      3841
+#         Safe       0.87      0.92      0.90      5683
+#   Vulnerable       0.87      0.80      0.84      3841
 #
 #     accuracy                           0.87      9524
-#    macro avg       0.88      0.86      0.86      9524
+#    macro avg       0.87      0.86      0.87      9524
 # weighted avg       0.87      0.87      0.87      9524
 #
 # Training complete with LSTM.
