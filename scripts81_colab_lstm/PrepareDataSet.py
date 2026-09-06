@@ -1593,3 +1593,80 @@ if __name__ == "__main__":
     test_unet_branch_alone()
     # check_ensemble_potential()
     # train_stacking_ensemble()aa
+
+# 2026-09-06 16:31:24.300176: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+# To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+# Shape of X: (47619, 100, 300)
+# Shape of Y: (47619,)
+# Distribution in Y: (array([0, 1], dtype=int32), array([28520, 19099]))
+# Distribution in Y_test: (array([0, 1], dtype=int32), array([5683, 3841]))
+# 2026-09-06 16:31:51.005985: W tensorflow/core/common_runtime/gpu/gpu_bfc_allocator.cc:47] Overriding orig_value setting because the TF_FORCE_GPU_ALLOW_GROWTH environment variable is set. Original config value was 0.
+# WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+# I0000 00:00:1788712311.007420   40586 gpu_device.cc:2020] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 13757 MB memory:  -> device: 0, name: Tesla T4, pci bus id: 0000:00:04.0, compute capability: 7.5
+# 2026-09-06 16:31:57.307693: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 3657120000 exceeds 10% of free system memory.
+# 2026-09-06 16:32:00.746301: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 3657120000 exceeds 10% of free system memory.
+# Epoch 1/50
+# 2026-09-06 16:32:06.611701: I external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:473] Loaded cuDNN version 91900
+# 2026-09-06 16:32:18.188508: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 914280000 exceeds 10% of free system memory.
+# 2026-09-06 16:32:19.114748: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 914280000 exceeds 10% of free system memory.
+# 239/239 - 18s - 77ms/step - accuracy: 0.7986 - loss: 0.0276 - val_accuracy: 0.8323 - val_loss: 0.0235
+# Epoch 2/50
+# 239/239 - 10s - 40ms/step - accuracy: 0.8457 - loss: 0.0222 - val_accuracy: 0.8379 - val_loss: 0.0226
+# Epoch 3/50
+# 239/239 - 10s - 40ms/step - accuracy: 0.8570 - loss: 0.0209 - val_accuracy: 0.8435 - val_loss: 0.0214
+# Epoch 4/50
+# 239/239 - 10s - 41ms/step - accuracy: 0.8627 - loss: 0.0199 - val_accuracy: 0.8493 - val_loss: 0.0215
+# Epoch 5/50
+# 239/239 - 10s - 41ms/step - accuracy: 0.8702 - loss: 0.0192 - val_accuracy: 0.8540 - val_loss: 0.0203
+# Epoch 6/50
+# 239/239 - 10s - 41ms/step - accuracy: 0.8764 - loss: 0.0182 - val_accuracy: 0.8488 - val_loss: 0.0214
+# Epoch 7/50
+# 239/239 - 10s - 41ms/step - accuracy: 0.8816 - loss: 0.0176 - val_accuracy: 0.8597 - val_loss: 0.0201
+# Epoch 8/50
+# 239/239 - 10s - 41ms/step - accuracy: 0.8878 - loss: 0.0168 - val_accuracy: 0.8676 - val_loss: 0.0193
+# Epoch 9/50
+# 239/239 - 10s - 42ms/step - accuracy: 0.8924 - loss: 0.0161 - val_accuracy: 0.8663 - val_loss: 0.0198
+# Epoch 10/50
+# 239/239 - 10s - 42ms/step - accuracy: 0.8981 - loss: 0.0156 - val_accuracy: 0.8706 - val_loss: 0.0201
+# Epoch 11/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.9028 - loss: 0.0146 - val_accuracy: 0.8691 - val_loss: 0.0205
+# Epoch 12/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.9103 - loss: 0.0140 - val_accuracy: 0.8774 - val_loss: 0.0191
+# Epoch 13/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.9127 - loss: 0.0134 - val_accuracy: 0.8820 - val_loss: 0.0202
+# Epoch 14/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.9178 - loss: 0.0129 - val_accuracy: 0.8794 - val_loss: 0.0215
+# Epoch 15/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.9213 - loss: 0.0124 - val_accuracy: 0.8844 - val_loss: 0.0199
+# Epoch 16/50
+# 239/239 - 10s - 42ms/step - accuracy: 0.9261 - loss: 0.0118 - val_accuracy: 0.8890 - val_loss: 0.0205
+# Epoch 17/50
+# 239/239 - 10s - 42ms/step - accuracy: 0.9282 - loss: 0.0114 - val_accuracy: 0.8850 - val_loss: 0.0222
+# Epoch 18/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.9324 - loss: 0.0109 - val_accuracy: 0.8832 - val_loss: 0.0225
+# Epoch 19/50
+# 239/239 - 10s - 42ms/step - accuracy: 0.9354 - loss: 0.0105 - val_accuracy: 0.8896 - val_loss: 0.0221
+# Epoch 20/50
+# 239/239 - 10s - 42ms/step - accuracy: 0.9363 - loss: 0.0101 - val_accuracy: 0.8882 - val_loss: 0.0228
+# Epoch 21/50
+# 239/239 - 10s - 42ms/step - accuracy: 0.9389 - loss: 0.0100 - val_accuracy: 0.8890 - val_loss: 0.0231
+# Epoch 22/50
+# 239/239 - 10s - 43ms/step - accuracy: 0.9426 - loss: 0.0094 - val_accuracy: 0.8883 - val_loss: 0.0236
+# Plot saved to /content/smartbugs-wild-with-content-and-result/output/training_plot_lstm.png
+# Figure(1000x600)
+# 2026-09-06 16:35:53.725705: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 1142880000 exceeds 10% of free system memory.
+# 298/298 ━━━━━━━━━━━━━━━━━━━━ 3s 9ms/step
+# Accuracy: 0.8720075598488031
+# Classification Report:
+#               precision    recall  f1-score   support
+#
+#         Safe       0.86      0.94      0.90      5683
+#   Vulnerable       0.90      0.77      0.83      3841
+#
+#     accuracy                           0.87      9524
+#    macro avg       0.88      0.86      0.86      9524
+# weighted avg       0.87      0.87      0.87      9524
+#
+# Training complete with LSTM.
+#
+# ===================================================================
