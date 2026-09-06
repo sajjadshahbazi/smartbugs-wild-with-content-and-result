@@ -1989,3 +1989,157 @@ if __name__ == "__main__":
 # weighted avg       0.89      0.89      0.89      9524
 #
 # Model saved to /content/smartbugs-wild-with-content-and-result/output/final_stacking_ensemble.keras
+
+
+# --------------------
+# 2026-09-06 21:54:16.027435: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+# To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+# Shape of X_att (attention map): (47619, 100, 100, 3)
+# Shape of X_emb (embedding): (47619, 100, 300)
+# Shape of Y: (47619,)
+# Distribution in Y: (array([0, 1], dtype=int32), array([28520, 19099]))
+# Distribution in Y_test: (array([0, 1], dtype=int32), array([5683, 3841]))
+# 2026-09-06 21:55:01.634898: W tensorflow/core/common_runtime/gpu/gpu_bfc_allocator.cc:47] Overriding orig_value setting because the TF_FORCE_GPU_ALLOW_GROWTH environment variable is set. Original config value was 0.
+# WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+# I0000 00:00:1788731701.636475   10301 gpu_device.cc:2020] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 13757 MB memory:  -> device: 0, name: Tesla T4, pci bus id: 0000:00:04.0, compute capability: 7.5
+# Model: "functional"
+# ┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┓
+# ┃ Layer (type)        ┃ Output Shape      ┃    Param # ┃ Connected to      ┃
+# ┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━┩
+# │ attention_map_input │ (None, 100, 100,  │          0 │ -                 │
+# │ (InputLayer)        │ 3)                │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ conv2d (Conv2D)     │ (None, 100, 100,  │      1,792 │ attention_map_in… │
+# │                     │ 64)               │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ max_pooling2d       │ (None, 50, 50,    │          0 │ conv2d[0][0]      │
+# │ (MaxPooling2D)      │ 64)               │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ conv2d_1 (Conv2D)   │ (None, 50, 50,    │     73,856 │ max_pooling2d[0]… │
+# │                     │ 128)              │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ max_pooling2d_1     │ (None, 25, 25,    │          0 │ conv2d_1[0][0]    │
+# │ (MaxPooling2D)      │ 128)              │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ conv2d_2 (Conv2D)   │ (None, 25, 25,    │    295,168 │ max_pooling2d_1[… │
+# │                     │ 256)              │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ spatial_dropout2d   │ (None, 25, 25,    │          0 │ conv2d_2[0][0]    │
+# │ (SpatialDropout2D)  │ 256)              │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ up_sampling2d       │ (None, 50, 50,    │          0 │ spatial_dropout2… │
+# │ (UpSampling2D)      │ 256)              │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ concatenate         │ (None, 50, 50,    │          0 │ conv2d_1[0][0],   │
+# │ (Concatenate)       │ 384)              │            │ up_sampling2d[0]… │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ conv2d_3 (Conv2D)   │ (None, 50, 50,    │    442,496 │ concatenate[0][0] │
+# │                     │ 128)              │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ up_sampling2d_1     │ (None, 100, 100,  │          0 │ conv2d_3[0][0]    │
+# │ (UpSampling2D)      │ 128)              │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ concatenate_1       │ (None, 100, 100,  │          0 │ conv2d[0][0],     │
+# │ (Concatenate)       │ 192)              │            │ up_sampling2d_1[… │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ conv2d_4 (Conv2D)   │ (None, 100, 100,  │    110,656 │ concatenate_1[0]… │
+# │                     │ 64)               │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ embedding_input     │ (None, 100, 300)  │          0 │ -                 │
+# │ (InputLayer)        │                   │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ global_average_poo… │ (None, 64)        │          0 │ conv2d_4[0][0]    │
+# │ (GlobalAveragePool… │                   │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ global_max_pooling… │ (None, 64)        │          0 │ conv2d_4[0][0]    │
+# │ (GlobalMaxPooling2… │                   │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ bidirectional       │ (None, 100, 256)  │    439,296 │ embedding_input[… │
+# │ (Bidirectional)     │                   │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ concatenate_2       │ (None, 128)       │          0 │ global_average_p… │
+# │ (Concatenate)       │                   │            │ global_max_pooli… │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ dropout (Dropout)   │ (None, 100, 256)  │          0 │ bidirectional[0]… │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ dense (Dense)       │ (None, 128)       │     16,512 │ concatenate_2[0]… │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ bidirectional_1     │ (None, 128)       │    164,352 │ dropout[0][0]     │
+# │ (Bidirectional)     │                   │            │                   │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ concatenate_3       │ (None, 256)       │          0 │ dense[0][0],      │
+# │ (Concatenate)       │                   │            │ bidirectional_1[… │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ dense_1 (Dense)     │ (None, 128)       │     32,896 │ concatenate_3[0]… │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ dense_2 (Dense)     │ (None, 64)        │      8,256 │ dense_1[0][0]     │
+# ├─────────────────────┼───────────────────┼────────────┼───────────────────┤
+# │ dense_3 (Dense)     │ (None, 1)         │         65 │ dense_2[0][0]     │
+# └─────────────────────┴───────────────────┴────────────┴───────────────────┘
+#  Total params: 1,585,345 (6.05 MB)
+#  Trainable params: 1,585,345 (6.05 MB)
+#  Non-trainable params: 0 (0.00 B)
+# 2026-09-06 21:55:06.482161: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 3657120000 exceeds 10% of free system memory.
+# 2026-09-06 21:55:11.638051: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 3657120000 exceeds 10% of free system memory.
+# 2026-09-06 21:55:14.911369: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 3657120000 exceeds 10% of free system memory.
+# 2026-09-06 21:55:17.276290: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 3657120000 exceeds 10% of free system memory.
+# Epoch 1/50
+# E0000 00:00:1788731724.075878   10301 meta_optimizer.cc:967] layout failed: INVALID_ARGUMENT: Size of values 0 does not match size of permutation 4 @ fanin shape inStatefulPartitionedCall/functional_1/spatial_dropout2d_1/stateless_dropout/SelectV2-2-TransposeNHWCToNCHW-LayoutOptimizer
+# 2026-09-06 21:55:25.083028: I external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:473] Loaded cuDNN version 91900
+# 2026-09-06 21:57:42.398639: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 914280000 exceeds 10% of free system memory.
+# 477/477 - 156s - 328ms/step - accuracy: 0.8122 - loss: 0.0261 - val_accuracy: 0.8317 - val_loss: 0.0234
+# Epoch 2/50
+# 477/477 - 139s - 292ms/step - accuracy: 0.8511 - loss: 0.0221 - val_accuracy: 0.8430 - val_loss: 0.0222
+# Epoch 3/50
+# 477/477 - 139s - 291ms/step - accuracy: 0.8580 - loss: 0.0207 - val_accuracy: 0.8447 - val_loss: 0.0212
+# Epoch 4/50
+# 477/477 - 138s - 290ms/step - accuracy: 0.8677 - loss: 0.0197 - val_accuracy: 0.8481 - val_loss: 0.0211
+# Epoch 5/50
+# 477/477 - 138s - 289ms/step - accuracy: 0.8725 - loss: 0.0190 - val_accuracy: 0.8481 - val_loss: 0.0208
+# Epoch 6/50
+# 477/477 - 138s - 289ms/step - accuracy: 0.8798 - loss: 0.0180 - val_accuracy: 0.8593 - val_loss: 0.0199
+# Epoch 7/50
+# 477/477 - 138s - 288ms/step - accuracy: 0.8859 - loss: 0.0173 - val_accuracy: 0.8617 - val_loss: 0.0197
+# Epoch 8/50
+# 477/477 - 137s - 288ms/step - accuracy: 0.8915 - loss: 0.0164 - val_accuracy: 0.8631 - val_loss: 0.0208
+# Epoch 9/50
+# 477/477 - 137s - 286ms/step - accuracy: 0.8969 - loss: 0.0156 - val_accuracy: 0.8626 - val_loss: 0.0204
+# Epoch 10/50
+# 477/477 - 136s - 285ms/step - accuracy: 0.8992 - loss: 0.0152 - val_accuracy: 0.8685 - val_loss: 0.0198
+# Epoch 11/50
+# 477/477 - 136s - 284ms/step - accuracy: 0.9063 - loss: 0.0145 - val_accuracy: 0.8719 - val_loss: 0.0195
+# Epoch 12/50
+# 477/477 - 136s - 286ms/step - accuracy: 0.9085 - loss: 0.0139 - val_accuracy: 0.8718 - val_loss: 0.0200
+# Epoch 13/50
+# 477/477 - 136s - 285ms/step - accuracy: 0.9123 - loss: 0.0135 - val_accuracy: 0.8707 - val_loss: 0.0227
+# Epoch 14/50
+# 477/477 - 136s - 286ms/step - accuracy: 0.9170 - loss: 0.0129 - val_accuracy: 0.8739 - val_loss: 0.0208
+# Epoch 15/50
+# 477/477 - 136s - 285ms/step - accuracy: 0.9210 - loss: 0.0123 - val_accuracy: 0.8697 - val_loss: 0.0225
+# Epoch 16/50
+# 477/477 - 135s - 283ms/step - accuracy: 0.9226 - loss: 0.0121 - val_accuracy: 0.8798 - val_loss: 0.0235
+# Epoch 17/50
+# 477/477 - 135s - 283ms/step - accuracy: 0.9250 - loss: 0.0117 - val_accuracy: 0.8795 - val_loss: 0.0223
+# Epoch 18/50
+# 477/477 - 135s - 282ms/step - accuracy: 0.9273 - loss: 0.0114 - val_accuracy: 0.8850 - val_loss: 0.0247
+# Epoch 19/50
+# 477/477 - 135s - 283ms/step - accuracy: 0.9307 - loss: 0.0109 - val_accuracy: 0.8802 - val_loss: 0.0252
+# Epoch 20/50
+# 477/477 - 135s - 282ms/step - accuracy: 0.9345 - loss: 0.0105 - val_accuracy: 0.8803 - val_loss: 0.0231
+# Epoch 21/50
+# 477/477 - 134s - 282ms/step - accuracy: 0.9356 - loss: 0.0104 - val_accuracy: 0.8837 - val_loss: 0.0236
+# Plot saved to /content/smartbugs-wild-with-content-and-result/output/training_plot_unet_attention_lstm.png
+# Figure(1000x600)
+# 298/298 ━━━━━━━━━━━━━━━━━━━━ 15s 45ms/step
+# Accuracy: 0.875892482150357
+# Classification Report:
+#               precision    recall  f1-score   support
+#
+#         Safe       0.89      0.90      0.90      5683
+#   Vulnerable       0.85      0.84      0.85      3841
+#
+#     accuracy                           0.88      9524
+#    macro avg       0.87      0.87      0.87      9524
+# weighted avg       0.88      0.88      0.88      9524
+#
+# Training complete with U-Net(AttentionMap) + BiLSTM.
