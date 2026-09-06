@@ -1516,18 +1516,18 @@ def train_stacking_ensemble():
     print(f"Model saved to {os.path.join(ROOT, 'output', 'final_stacking_ensemble.keras')}")
 
 if __name__ == "__main__":
-    files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
-    print(f"size files {files.__len__()}")
+    # files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
+    # print(f"size files {files.__len__()}")
 
     # =============================================================================
     # اضافه شد: ساخت/لود یک‌بارهٔ مدل FastText سراسری قبل از شروع batch‌ها
     # تا embedding شاخهٔ U-Net (attention map) در همهٔ نمونه‌ها یکسان و
     # قابل generalize باشد، نه per-function جداگانه.
     # =============================================================================
-    if os.path.exists(GLOBAL_FASTTEXT_PATH):
-        global_ft_model = FastText.load(GLOBAL_FASTTEXT_PATH)
-    else:
-        global_ft_model = build_global_fasttext_model()
+    # if os.path.exists(GLOBAL_FASTTEXT_PATH):
+    #     global_ft_model = FastText.load(GLOBAL_FASTTEXT_PATH)
+    # else:
+    #     global_ft_model = build_global_fasttext_model()
 
     # =============================================================================
     # اضافه شد: ساخت/لود یک‌بارهٔ مدل Word2Vec سراسری قبل از شروع batch‌ها
@@ -1535,10 +1535,10 @@ if __name__ == "__main__":
     # شاخهٔ BiLSTM هم در همهٔ نمونه‌ها یکسان و قابل generalize باشد، نه
     # per-function جداگانه.
     # =============================================================================
-    if os.path.exists(GLOBAL_WORD2VEC_PATH):
-        global_w2v_model = Word2Vec.load(GLOBAL_WORD2VEC_PATH)
-    else:
-        global_w2v_model = build_global_word2vec_model()
+    # if os.path.exists(GLOBAL_WORD2VEC_PATH):
+    #     global_w2v_model = Word2Vec.load(GLOBAL_WORD2VEC_PATH)
+    # else:
+    #     global_w2v_model = build_global_word2vec_model()
 
     # =============================================================================
     # تغییر: طبق درخواست شما، در همین اجرای اول، دیتاست هر دو حالت
@@ -1548,15 +1548,15 @@ if __name__ == "__main__":
     # این دو تابع کاملاً مستقل از هم هستند و در دو مسیر جدا ذخیره می‌کنند،
     # پس هیچ تداخلی با هم ندارند.
     # =============================================================================
-    for batch_index, i in enumerate(range(0, len(files), batch_size)):
-        if batch_index > 40:
-            batch_files = files[i:i + batch_size]
-            print(f"size batch_files {batch_files.__len__()}")
-            process_batch_with_categorization_for_unet(
-                batch_files, target_vulner, batch_size, batch_index,
-                global_fasttext_model=global_ft_model,
-                global_word2vec_model=global_w2v_model
-            )
+    # for batch_index, i in enumerate(range(0, len(files), batch_size)):
+    #     if batch_index > 40:
+    #         batch_files = files[i:i + batch_size]
+    #         print(f"size batch_files {batch_files.__len__()}")
+    #         process_batch_with_categorization_for_unet(
+    #             batch_files, target_vulner, batch_size, batch_index,
+    #             global_fasttext_model=global_ft_model,
+    #             global_word2vec_model=global_w2v_model
+    #         )
 # if __name__ == "__main__":
 #     files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
 #     print(f"size files {files.__len__()}")
