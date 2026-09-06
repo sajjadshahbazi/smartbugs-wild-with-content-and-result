@@ -1103,7 +1103,7 @@ def train_UNET_LSTM():
     history = model.fit(
         [X_att_train, X_emb_train], Y_train,
         epochs=50,
-        batch_size=128,
+        batch_size=64,
         validation_split=0.2,
         callbacks=[early_stopping],
         verbose=2
