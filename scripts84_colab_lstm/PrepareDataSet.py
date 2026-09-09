@@ -1103,7 +1103,7 @@ def train_UNET_LSTM():
     history = model.fit(
         [X_att_train, X_emb_train], Y_train,
         epochs=50,
-        batch_size=64,
+        batch_size=128,
         validation_split=0.2,
         callbacks=[early_stopping],
         verbose=2
@@ -1425,16 +1425,7 @@ def check_ensemble_potential():
     print(f"فقط U-Net درست: {only_unet_right*100:.2f}%")
     print(f"هر دو درست:     {both_right*100:.2f}%")
     print(f"هر دو غلط:      {both_wrong*100:.2f}%")
-    print(f"\nپتانسیل بهبود از ensemble: {(only_lstm_right + only_unet_right) * 100:.2f}%")
-
-    # =============================================================================
-    # اضافه شد: بررسی همبستگی خروجی احتمالی دو مدل (نه فقط تصمیم صفر/یک)
-    # همبستگی بالا (مثلاً > 0.7) یعنی دو مدل عملاً سیگنال مشابهی می‌بینند
-    # (redundant هستند). همبستگی پایین یعنی واقعاً دیدهای متفاوتی دارند
-    # و مشکل جای دیگری (مثلاً نحوه fusion) است، نه ماهیت ورودی.
-    # =============================================================================
-    correlation = np.corrcoef(p_lstm, p_unet)[0, 1]
-    print(f"\nهمبستگی خروجی احتمالی دو مدل (Pearson): {correlation:.3f}")
+    print(f"\nپتانسیل بهبود از ensemble: {(only_lstm_right + only_unet_right)*100:.2f}%")
 
 
 # =============================================================================
@@ -1525,18 +1516,18 @@ def train_stacking_ensemble():
     print(f"Model saved to {os.path.join(ROOT, 'output', 'final_stacking_ensemble.keras')}")
 
 if __name__ == "__main__":
-    # files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
-    # print(f"size files {files.__len__()}")
+    files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
+    print(f"size files {files.__len__()}")
 
     # =============================================================================
     # اضافه شد: ساخت/لود یک‌بارهٔ مدل FastText سراسری قبل از شروع batch‌ها
     # تا embedding شاخهٔ U-Net (attention map) در همهٔ نمونه‌ها یکسان و
     # قابل generalize باشد، نه per-function جداگانه.
     # =============================================================================
-    # if os.path.exists(GLOBAL_FASTTEXT_PATH):
-    #     global_ft_model = FastText.load(GLOBAL_FASTTEXT_PATH)
-    # else:
-    #     global_ft_model = build_global_fasttext_model()
+    if os.path.exists(GLOBAL_FASTTEXT_PATH):
+        global_ft_model = FastText.load(GLOBAL_FASTTEXT_PATH)
+    else:
+        global_ft_model = build_global_fasttext_model()
 
     # =============================================================================
     # اضافه شد: ساخت/لود یک‌بارهٔ مدل Word2Vec سراسری قبل از شروع batch‌ها
@@ -1544,10 +1535,10 @@ if __name__ == "__main__":
     # شاخهٔ BiLSTM هم در همهٔ نمونه‌ها یکسان و قابل generalize باشد، نه
     # per-function جداگانه.
     # =============================================================================
-    # if os.path.exists(GLOBAL_WORD2VEC_PATH):
-    #     global_w2v_model = Word2Vec.load(GLOBAL_WORD2VEC_PATH)
-    # else:
-    #     global_w2v_model = build_global_word2vec_model()
+    if os.path.exists(GLOBAL_WORD2VEC_PATH):
+        global_w2v_model = Word2Vec.load(GLOBAL_WORD2VEC_PATH)
+    else:
+        global_w2v_model = build_global_word2vec_model()
 
     # =============================================================================
     # تغییر: طبق درخواست شما، در همین اجرای اول، دیتاست هر دو حالت
@@ -1557,15 +1548,16 @@ if __name__ == "__main__":
     # این دو تابع کاملاً مستقل از هم هستند و در دو مسیر جدا ذخیره می‌کنند،
     # پس هیچ تداخلی با هم ندارند.
     # =============================================================================
-    # for batch_index, i in enumerate(range(0, len(files), batch_size)):
-    #     if batch_index > 40:
-    #         batch_files = files[i:i + batch_size]
-    #         print(f"size batch_files {batch_files.__len__()}")
-    #         process_batch_with_categorization_for_unet(
-    #             batch_files, target_vulner, batch_size, batch_index,
-    #             global_fasttext_model=global_ft_model,
-    #             global_word2vec_model=global_w2v_model
-    #         )
+    for batch_index, i in enumerate(range(0, len(files), batch_size)):
+        # if batch_index < 29:
+            # continue
+        batch_files = files[i:i + batch_size]
+        print(f"size batch_files {batch_files.__len__()}")
+        process_batch_with_categorization_for_unet(
+            batch_files, target_vulner, batch_size, batch_index,
+            global_fasttext_model=global_ft_model,
+            global_word2vec_model=global_w2v_model
+        )
 # if __name__ == "__main__":
 #     files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
 #     print(f"size files {files.__len__()}")
@@ -1599,42 +1591,6 @@ if __name__ == "__main__":
     # =============================================================================
     # train_LSTM()
     # train_UNET_LSTM()
-    # test_unet_branch_alone()
-    check_ensemble_potential()
-    # train_stacking_ensemble()
-
-
-# 2026-09-08 15:00:19.362320: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
-# To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-# 2026-09-08 15:00:59.937171: W tensorflow/core/common_runtime/gpu/gpu_bfc_allocator.cc:47] Overriding orig_value setting because the TF_FORCE_GPU_ALLOW_GROWTH environment variable is set. Original config value was 0.
-# WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-# I0000 00:00:1788879659.938607   10078 gpu_device.cc:2020] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 13757 MB memory:  -> device: 0, name: Tesla T4, pci bus id: 0000:00:04.0, compute capability: 7.5
-# 2026-09-08 15:01:02.519824: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 1142880000 exceeds 10% of free system memory.
-# 2026-09-08 15:01:03.584214: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 1142880000 exceeds 10% of free system memory.
-# 2026-09-08 15:01:04.746898: I external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:473] Loaded cuDNN version 91900
-# 298/298 ━━━━━━━━━━━━━━━━━━━━ 4s 10ms/step
-# 2026-09-08 15:01:08.672353: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 1142880000 exceeds 10% of free system memory.
-# 2026-09-08 15:01:09.680565: W external/local_xla/xla/tsl/framework/cpu_allocator_impl.cc:84] Allocation of 1142880000 exceeds 10% of free system memory.
-# 2026-09-08 15:01:10.677325: I external/local_xla/xla/service/service.cc:163] XLA service 0x79c9b00cfb90 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
-# 2026-09-08 15:01:10.677351: I external/local_xla/xla/service/service.cc:171]   StreamExecutor device (0): Tesla T4, Compute Capability 7.5
-# 2026-09-08 15:01:10.717336: I tensorflow/compiler/mlir/tensorflow/utils/dump_mlir_util.cc:269] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
-# 2026-09-08 15:01:11.488831: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[32,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[32,3,100,100]{3,2,1,0}, f32[64,3,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-09-08 15:01:11.608915: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[32,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[32,64,50,50]{3,2,1,0}, f32[128,64,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-09-08 15:01:11.941778: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[32,256,25,25]{3,2,1,0}, u8[0]{0}) custom-call(f32[32,128,25,25]{3,2,1,0}, f32[256,128,3,3]{3,2,1,0}, f32[256]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-09-08 15:01:12.112450: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[32,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[32,384,50,50]{3,2,1,0}, f32[128,384,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-09-08 15:01:13.254830: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[32,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[32,192,100,100]{3,2,1,0}, f32[64,192,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# I0000 00:00:1788879675.447598   10337 device_compiler.h:196] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
-# 297/298 ━━━━━━━━━━━━━━━━━━━━ 0s 32ms/step2026-09-08 15:01:25.375991: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[20,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[20,3,100,100]{3,2,1,0}, f32[64,3,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-09-08 15:01:25.433697: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[20,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[20,64,50,50]{3,2,1,0}, f32[128,64,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-09-08 15:01:25.563091: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[20,256,25,25]{3,2,1,0}, u8[0]{0}) custom-call(f32[20,128,25,25]{3,2,1,0}, f32[256,128,3,3]{3,2,1,0}, f32[256]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-09-08 15:01:25.689364: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[20,128,50,50]{3,2,1,0}, u8[0]{0}) custom-call(f32[20,384,50,50]{3,2,1,0}, f32[128,384,3,3]{3,2,1,0}, f32[128]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 2026-09-08 15:01:26.556922: I external/local_xla/xla/service/gpu/autotuning/conv_algorithm_picker.cc:546] Omitted potentially buggy algorithm eng14{k25=2} for conv (f32[20,64,100,100]{3,2,1,0}, u8[0]{0}) custom-call(f32[20,192,100,100]{3,2,1,0}, f32[64,192,3,3]{3,2,1,0}, f32[64]{0}), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01, custom_call_target="__cudnn$convBiasActivationForward", backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"cudnn_conv_backend_config":{"activation_mode":"kRelu","conv_result_scale":1,"side_input_scale":0,"leakyrelu_alpha":0},"force_earliest_schedule":false,"reification_cost":[]}
-# 298/298 ━━━━━━━━━━━━━━━━━━━━ 18s 43ms/step
-# فقط LSTM درست:  5.00%
-# فقط U-Net درست: 6.19%
-# هر دو درست:     82.33%
-# هر دو غلط:      6.48%
-#
-# پتانسیل بهبود از ensemble: 11.19%
-#
-# همبستگی خروجی احتمالی دو مدل (Pearson): 0.867
+    test_unet_branch_alone()
+    # check_ensemble_potential()
+    # train_stacking_ensemble()aa
