@@ -1430,19 +1430,54 @@ def check_ensemble_potential():
 
 # =============================================================================
 # اضافه شد: build_stacking_meta_model
-# یک مدل بسیار ساده که فقط دو عدد ورودی می‌گیرد: احتمال خروجی مدل LSTM
-# و احتمال خروجی مدل U-Net. یاد می‌گیرد چطور این دو عدد را برای رسیدن
-# به تصمیم نهایی ترکیب کند. این با concatenate کردن feature های خام
+# یک مدل که خروجی احتمال دو مدل پایه (LSTM و U-Net) را ترکیب می‌کند تا
+# به یک تصمیم نهایی برسد. این با concatenate کردن feature های خام
 # (که در build_unet_bilstm_model امتحان شد) کاملاً متفاوت است، چون
 # اینجا دو مدل جداگانه کامل train شده‌اند و فقط خروجی نهایی‌شان
 # ترکیب می‌شود - نه اینکه از اول با هم train شوند.
+#
+# =============================================================================
+# اصلاح: غنی‌سازی meta-features از 2 به 4 ورودی + اضافه شدن Dropout
+# دلیل: طبق check_ensemble_potential، سقف نظری ensemble حدود 93.52% بود
+# اما نتیجه‌ی واقعی 88.85% شد - یعنی meta-model فقط بخشی از پتانسیل
+# موجود را استخراج کرده. لاگ آموزش هم overfitting شدید نشان می‌داد
+# (train accuracy ~97% در برابر val accuracy ~88.5% از همان epoch 2).
+#
+# دو تغییر برای این مشکل:
+#   ۱. ورودی از [p_lstm, p_unet] به [p_lstm, p_unet, |p_lstm-p_unet|,
+#      p_lstm*p_unet] گسترش یافت. دو فیچر اضافه («اختلاف‌نظر» و
+#      «تعامل» دو مدل) سیگنال صریح‌تری از اینکه دو مدل «چقدر با هم
+#      موافق/مخالف‌اند» به meta-model می‌دهند که از دو عدد خام به‌تنهایی
+#      قابل استخراج نیست (یک شبکه‌ی 8 نورونی به‌سختی می‌تواند خودش این
+#      روابط غیرخطی ساده را از 2 ورودی کشف کند).
+#   ۲. Dropout(0.5) بعد از هر لایه‌ی Dense اضافه شد تا از حفظ‌کردن
+#      (memorization) دقیق مقادیر train جلوگیری شود - همان چیزی که در
+#      لاگ قبلی باعث شکاف 8.5 درصدی train/val شده بود.
 # =============================================================================
 def build_stacking_meta_model():
-    meta_input = Input(shape=(2,), name='meta_input')
-    x = Dense(8, activation='relu')(meta_input)
+    meta_input = Input(shape=(4,), name='meta_input')
+    x = Dense(16, activation='relu')(meta_input)
+    x = Dropout(0.5)(x)
+    x = Dense(8, activation='relu')(x)
+    x = Dropout(0.5)(x)
     output = Dense(1, activation='sigmoid')(x)
     model = Model(inputs=meta_input, outputs=output)
     return model
+
+
+# =============================================================================
+# اضافه شد: build_meta_features
+# تابع کمکی مشترک بین train_stacking_ensemble و هر جای دیگری که بخواهد
+# همان 4 فیچر meta-model را بسازد - تا فرمول ساخت فیچرها فقط یک‌بار
+# نوشته شود و در train/test (و هر استفاده‌ی آینده) دقیقاً یکسان بماند.
+# =============================================================================
+def build_meta_features(p_lstm, p_unet):
+    return np.column_stack([
+        p_lstm,
+        p_unet,
+        np.abs(p_lstm - p_unet),  # اختلاف‌نظر دو مدل
+        p_lstm * p_unet,          # تعامل دو مدل
+    ])
 
 
 # =============================================================================
@@ -1474,15 +1509,17 @@ def train_stacking_ensemble():
     )
 
     # ساخت feature های meta-model: خروجی احتمال هر دو مدل پایه
+    # اصلاح: به‌جای 2 فیچر خام، از build_meta_features (4 فیچر) استفاده
+    # می‌شود - نگاه کنید به کامنت‌های build_stacking_meta_model برای دلیل.
     print("در حال پیش‌بینی با مدل‌های پایه روی داده train...")
     p_lstm_train = lstm_model.predict(X_emb_train).flatten()
     p_unet_train = unet_model.predict(X_att_train).flatten()
-    meta_X_train = np.column_stack([p_lstm_train, p_unet_train])
+    meta_X_train = build_meta_features(p_lstm_train, p_unet_train)
 
     print("در حال پیش‌بینی با مدل‌های پایه روی داده test...")
     p_lstm_test = lstm_model.predict(X_emb_test).flatten()
     p_unet_test = unet_model.predict(X_att_test).flatten()
-    meta_X_test = np.column_stack([p_lstm_test, p_unet_test])
+    meta_X_test = build_meta_features(p_lstm_test, p_unet_test)
 
     meta_model = build_stacking_meta_model()
     meta_model.compile(
@@ -1516,18 +1553,18 @@ def train_stacking_ensemble():
     print(f"Model saved to {os.path.join(ROOT, 'output', 'final_stacking_ensemble.keras')}")
 
 if __name__ == "__main__":
-    files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
-    print(f"size files {files.__len__()}")
+    # files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
+    # print(f"size files {files.__len__()}")
 
     # =============================================================================
     # اضافه شد: ساخت/لود یک‌بارهٔ مدل FastText سراسری قبل از شروع batch‌ها
     # تا embedding شاخهٔ U-Net (attention map) در همهٔ نمونه‌ها یکسان و
     # قابل generalize باشد، نه per-function جداگانه.
     # =============================================================================
-    if os.path.exists(GLOBAL_FASTTEXT_PATH):
-        global_ft_model = FastText.load(GLOBAL_FASTTEXT_PATH)
-    else:
-        global_ft_model = build_global_fasttext_model()
+    # if os.path.exists(GLOBAL_FASTTEXT_PATH):
+    #     global_ft_model = FastText.load(GLOBAL_FASTTEXT_PATH)
+    # else:
+    #     global_ft_model = build_global_fasttext_model()
 
     # =============================================================================
     # اضافه شد: ساخت/لود یک‌بارهٔ مدل Word2Vec سراسری قبل از شروع batch‌ها
@@ -1535,10 +1572,10 @@ if __name__ == "__main__":
     # شاخهٔ BiLSTM هم در همهٔ نمونه‌ها یکسان و قابل generalize باشد، نه
     # per-function جداگانه.
     # =============================================================================
-    if os.path.exists(GLOBAL_WORD2VEC_PATH):
-        global_w2v_model = Word2Vec.load(GLOBAL_WORD2VEC_PATH)
-    else:
-        global_w2v_model = build_global_word2vec_model()
+    # if os.path.exists(GLOBAL_WORD2VEC_PATH):
+    #     global_w2v_model = Word2Vec.load(GLOBAL_WORD2VEC_PATH)
+    # else:
+    #     global_w2v_model = build_global_word2vec_model()
 
     # =============================================================================
     # تغییر: طبق درخواست شما، در همین اجرای اول، دیتاست هر دو حالت
@@ -1548,16 +1585,16 @@ if __name__ == "__main__":
     # این دو تابع کاملاً مستقل از هم هستند و در دو مسیر جدا ذخیره می‌کنند،
     # پس هیچ تداخلی با هم ندارند.
     # =============================================================================
-    for batch_index, i in enumerate(range(0, len(files), batch_size)):
+    # for batch_index, i in enumerate(range(0, len(files), batch_size)):
         # if batch_index < 29:
             # continue
-        batch_files = files[i:i + batch_size]
-        print(f"size batch_files {batch_files.__len__()}")
-        process_batch_with_categorization_for_unet(
-            batch_files, target_vulner, batch_size, batch_index,
-            global_fasttext_model=global_ft_model,
-            global_word2vec_model=global_w2v_model
-        )
+        # batch_files = files[i:i + batch_size]
+        # print(f"size batch_files {batch_files.__len__()}")
+        # process_batch_with_categorization_for_unet(
+        #     batch_files, target_vulner, batch_size, batch_index,
+        #     global_fasttext_model=global_ft_model,
+        #     global_word2vec_model=global_w2v_model
+        # )
 # if __name__ == "__main__":
 #     files = [os.path.join(PATH, f) for f in os.listdir(PATH) if f.endswith(".sol")]
 #     print(f"size files {files.__len__()}")
